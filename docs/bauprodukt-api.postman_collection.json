@@ -6,7 +6,7 @@
     "_exporter_id": "bauprodukt-demo",
     "version": {
       "major": 1,
-      "minor": 0,
+      "minor": 1,
       "patch": 0
     }
   },
@@ -400,6 +400,12 @@
                   "value": "",
                   "disabled": true,
                   "description": "Filter by category ID"
+                },
+                {
+                  "key": "stock_code",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter by stock code"
                 }
               ]
             },
@@ -463,6 +469,30 @@
           }
         },
         {
+          "name": "Search Products by Stock Code",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products?stock_code={{stock_code}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"],
+              "query": [
+                {
+                  "key": "stock_code",
+                  "value": "{{stock_code}}"
+                }
+              ]
+            },
+            "description": "Search products by stock code"
+          }
+        },
+        {
           "name": "Create Product",
           "request": {
             "method": "POST",
@@ -474,7 +504,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Bosch Professional GSB 18V-55 Akülü Darbeli Matkap\",\n  \"slug\": \"bosch-professional-gsb-18v-55-akulu-darbeli-matkap\",\n  \"description\": \"18V Li-ion akülü darbeli matkap. Metal ve ahşap delme işlemleri için ideal.\",\n  \"price\": 899.99,\n  \"stock\": 25,\n  \"image_url\": \"https://example.com/images/bosch-drill.jpg\",\n  \"brand_id\": \"{{brand_id}}\",\n  \"category_id\": \"{{category_id}}\"\n}"
+              "raw": "{\n  \"name\": \"Bosch Professional GSB 18V-55 Akülü Darbeli Matkap\",\n  \"slug\": \"bosch-professional-gsb-18v-55-akulu-darbeli-matkap\",\n  \"description\": \"18V Li-ion akülü darbeli matkap. Metal ve ahşap delme işlemleri için ideal.\",\n  \"price\": 899.99,\n  \"stock\": 25,\n  \"stock_code\": \"BSH-GSB18V55\",\n  \"image_url\": \"https://example.com/images/bosch-drill.jpg\",\n  \"brand_id\": \"{{brand_id}}\",\n  \"category_id\": \"{{category_id}}\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/products",
@@ -496,7 +526,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Makita DHP484Z Akülü Darbeli Matkap\",\n  \"price\": 750.00,\n  \"stock\": 15\n}"
+              "raw": "{\n  \"name\": \"Makita DHP484Z Akülü Darbeli Matkap\",\n  \"price\": 750.00,\n  \"stock\": 15,\n  \"stock_code\": \"MKT-DHP484Z\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/products",
@@ -536,7 +566,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Bosch Professional GSB 18V-55 Akülü Darbeli Matkap (Yenilenmiş)\",\n  \"price\": 999.99,\n  \"stock\": 30,\n  \"description\": \"Yenilenmiş model. 18V Li-ion akülü darbeli matkap. Metal ve ahşap delme işlemleri için ideal. Gelişmiş torque ayarları.\"\n}"
+              "raw": "{\n  \"name\": \"Bosch Professional GSB 18V-55 Akülü Darbeli Matkap (Yenilenmiş)\",\n  \"price\": 999.99,\n  \"stock\": 30,\n  \"stock_code\": \"BSH-GSB18V55-R\",\n  \"description\": \"Yenilenmiş model. 18V Li-ion akülü darbeli matkap. Metal ve ahşap delme işlemleri için ideal. Gelişmiş torque ayarları.\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/products/{{product_id}}",
