@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
-import { deleteFile } from '@/lib/upload'
+import { deleteFile, uploadFile, validateFile } from '@/lib/upload'
 
 interface RouteParams {
   params: { id: string }
@@ -31,6 +31,92 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     })
   } catch (error) {
     console.error('Product images API error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+// Tekli ürün görseli ekle
+export async function POST(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { id: productId } = await params
+    const formData = await request.formData()
+    
+    const file = formData.get('file') as File
+    const orderIndex = parseInt(formData.get('order_index') as string) || 0
+    const isCover = formData.get('is_cover') === 'true'
+
+    // Dosya kontrolü
+    if (!file) {
+      return NextResponse.json(
+        { error: 'No file provided' },
+        { status: 400 }
+      )
+    }
+
+    // Dosya validasyonu
+    const validation = validateFile(file)
+    if (!validation.valid) {
+      return NextResponse.json(
+        { error: `File validation failed: ${validation.error}` },
+        { status: 400 }
+      )
+    }
+
+    // Eğer cover olarak işaretlenmişse, mevcut cover'ları kaldır
+    if (isCover) {
+      await supabase
+        .from('product_images')
+        .update({ is_cover: false })
+        .eq('product_id', productId)
+        .eq('is_cover', true)
+    }
+
+    // Dosyayı yükle
+    const uploadResult = await uploadFile(file, 'images', 'products')
+    
+    if (!uploadResult.success) {
+      return NextResponse.json(
+        { error: `Upload failed: ${uploadResult.error}` },
+        { status: 500 }
+      )
+    }
+
+    // Veritabanına kaydet
+    const { data, error } = await supabase
+      .from('product_images')
+      .insert({
+        product_id: productId,
+        image_url: uploadResult.url!,
+        order_index: orderIndex,
+        is_cover: isCover
+      })
+      .select('*')
+      .single()
+
+    if (error) {
+      console.error('Image insert error:', error)
+      
+      // Upload edilen dosyayı temizle
+      await deleteFile(uploadResult.url!, 'images').catch(err => 
+        console.error('Failed to cleanup uploaded file:', err)
+      )
+      
+      return NextResponse.json(
+        { error: 'Failed to save image to database' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      message: 'Image uploaded successfully',
+      data: data
+    }, { status: 201 })
+
+  } catch (error) {
+    console.error('Single image upload error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
