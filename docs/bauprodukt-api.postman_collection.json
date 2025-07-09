@@ -1,0 +1,1049 @@
+{
+  "info": {
+    "name": "Bauprodukt Demo API",
+    "description": "Complete API collection for testing Bauprodukt Demo application with sample data",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "bauprodukt-demo",
+    "version": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "item": [
+    {
+      "name": "Brands",
+      "item": [
+        {
+          "name": "Get All Brands",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/brands?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "brands"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Search by brand name",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Retrieve all brands with pagination and optional search"
+          }
+        },
+        {
+          "name": "Search Brands",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/brands?search=bosch&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "brands"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "bosch"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Search brands by name"
+          }
+        },
+        {
+          "name": "Create Brand",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bosch\",\n  \"slug\": \"bosch\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/brands",
+              "host": ["{{base_url}}"],
+              "path": ["api", "brands"]
+            },
+            "description": "Create a new brand"
+          }
+        },
+        {
+          "name": "Create Brand (Auto Slug)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Makita Power Tools\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/brands",
+              "host": ["{{base_url}}"],
+              "path": ["api", "brands"]
+            },
+            "description": "Create brand with auto-generated slug from name"
+          }
+        },
+        {
+          "name": "Get Brand by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/brands/{{brand_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "brands", "{{brand_id}}"]
+            },
+            "description": "Get a specific brand by ID"
+          }
+        },
+        {
+          "name": "Update Brand",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bosch Professional\",\n  \"slug\": \"bosch-professional\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/brands/{{brand_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "brands", "{{brand_id}}"]
+            },
+            "description": "Update an existing brand"
+          }
+        },
+        {
+          "name": "Delete Brand",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/brands/{{brand_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "brands", "{{brand_id}}"]
+            },
+            "description": "Delete a brand (only if not used by products)"
+          }
+        }
+      ],
+      "description": "Brand management endpoints"
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Get All Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/categories?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "parent_id",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter by parent category ID"
+                }
+              ]
+            },
+            "description": "Get all categories with optional filters"
+          }
+        },
+        {
+          "name": "Get Root Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/categories?parent_id=null",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories"],
+              "query": [
+                {
+                  "key": "parent_id",
+                  "value": "null"
+                }
+              ]
+            },
+            "description": "Get only root categories (no parent)"
+          }
+        },
+        {
+          "name": "Create Root Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Güç Aletleri\",\n  \"slug\": \"guc-aletleri\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories"]
+            },
+            "description": "Create a root category"
+          }
+        },
+        {
+          "name": "Create Subcategory",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Matkap\",\n  \"slug\": \"matkap\",\n  \"parent_id\": \"{{category_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories"]
+            },
+            "description": "Create a subcategory with parent"
+          }
+        },
+        {
+          "name": "Get Category by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/categories/{{category_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories", "{{category_id}}"]
+            },
+            "description": "Get a specific category by ID"
+          }
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Professional Güç Aletleri\",\n  \"slug\": \"professional-guc-aletleri\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/categories/{{category_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories", "{{category_id}}"]
+            },
+            "description": "Update an existing category"
+          }
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/categories/{{category_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories", "{{category_id}}"]
+            },
+            "description": "Delete a category"
+          }
+        }
+      ],
+      "description": "Category management endpoints"
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "brand",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter by brand ID"
+                },
+                {
+                  "key": "category",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter by category ID"
+                }
+              ]
+            },
+            "description": "Get all products with optional filters"
+          }
+        },
+        {
+          "name": "Search Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products?search=matkap&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "matkap"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Search products by name"
+          }
+        },
+        {
+          "name": "Filter Products by Brand",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products?brand={{brand_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"],
+              "query": [
+                {
+                  "key": "brand",
+                  "value": "{{brand_id}}"
+                }
+              ]
+            },
+            "description": "Filter products by brand"
+          }
+        },
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bosch Professional GSB 18V-55 Akülü Darbeli Matkap\",\n  \"slug\": \"bosch-professional-gsb-18v-55-akulu-darbeli-matkap\",\n  \"description\": \"18V Li-ion akülü darbeli matkap. Metal ve ahşap delme işlemleri için ideal.\",\n  \"price\": 899.99,\n  \"stock\": 25,\n  \"image_url\": \"https://example.com/images/bosch-drill.jpg\",\n  \"brand_id\": \"{{brand_id}}\",\n  \"category_id\": \"{{category_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"]
+            },
+            "description": "Create a new product"
+          }
+        },
+        {
+          "name": "Create Product (Minimal)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Makita DHP484Z Akülü Darbeli Matkap\",\n  \"price\": 750.00,\n  \"stock\": 15\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"]
+            },
+            "description": "Create product with minimal required fields"
+          }
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}"]
+            },
+            "description": "Get a specific product by ID with brand and category info"
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bosch Professional GSB 18V-55 Akülü Darbeli Matkap (Yenilenmiş)\",\n  \"price\": 999.99,\n  \"stock\": 30,\n  \"description\": \"Yenilenmiş model. 18V Li-ion akülü darbeli matkap. Metal ve ahşap delme işlemleri için ideal. Gelişmiş torque ayarları.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}"]
+            },
+            "description": "Update an existing product"
+          }
+        },
+        {
+          "name": "Update Product Stock",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stock\": 50\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}"]
+            },
+            "description": "Update only product stock"
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}"]
+            },
+            "description": "Delete a product"
+          }
+        }
+      ],
+      "description": "Product management endpoints"
+    },
+    {
+      "name": "Banners",
+      "item": [
+        {
+          "name": "Get All Banners",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/banners?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "banners"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "is_active",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Filter by active status (true/false)"
+                }
+              ]
+            },
+            "description": "Get all banners ordered by order_index"
+          }
+        },
+        {
+          "name": "Get Active Banners",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/banners?is_active=true",
+              "host": ["{{base_url}}"],
+              "path": ["api", "banners"],
+              "query": [
+                {
+                  "key": "is_active",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Get only active banners"
+          }
+        },
+        {
+          "name": "Create Banner",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Yaz İndirimleri\",\n  \"image_url\": \"https://example.com/images/summer-sale-banner.jpg\",\n  \"link\": \"https://example.com/summer-sale\",\n  \"order_index\": 1,\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/banners",
+              "host": ["{{base_url}}"],
+              "path": ["api", "banners"]
+            },
+            "description": "Create a new banner"
+          }
+        },
+        {
+          "name": "Create Banner (Auto Order)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Yeni Ürünler\",\n  \"image_url\": \"https://example.com/images/new-products-banner.jpg\",\n  \"link\": \"https://example.com/new-products\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/banners",
+              "host": ["{{base_url}}"],
+              "path": ["api", "banners"]
+            },
+            "description": "Create banner with auto order_index and default active status"
+          }
+        },
+        {
+          "name": "Get Banner by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/banners/{{banner_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "banners", "{{banner_id}}"]
+            },
+            "description": "Get a specific banner by ID"
+          }
+        },
+        {
+          "name": "Update Banner",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Mega Yaz İndirimleri\",\n  \"is_active\": true,\n  \"order_index\": 0\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/banners/{{banner_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "banners", "{{banner_id}}"]
+            },
+            "description": "Update an existing banner"
+          }
+        },
+        {
+          "name": "Deactivate Banner",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"is_active\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/banners/{{banner_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "banners", "{{banner_id}}"]
+            },
+            "description": "Deactivate a banner"
+          }
+        },
+        {
+          "name": "Delete Banner",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/banners/{{banner_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "banners", "{{banner_id}}"]
+            },
+            "description": "Delete a banner"
+          }
+        }
+      ],
+      "description": "Banner management endpoints"
+    },
+    {
+      "name": "File Upload",
+      "item": [
+        {
+          "name": "Upload Image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Image file to upload"
+                },
+                {
+                  "key": "folder",
+                  "value": "products",
+                  "type": "text",
+                  "description": "Upload folder (products, banners, etc.)"
+                },
+                {
+                  "key": "bucket",
+                  "value": "images",
+                  "type": "text",
+                  "description": "Storage bucket name"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/upload",
+              "host": ["{{base_url}}"],
+              "path": ["api", "upload"]
+            },
+            "description": "Upload an image file to storage"
+          }
+        },
+        {
+          "name": "Upload Banner Image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Banner image file to upload"
+                },
+                {
+                  "key": "folder",
+                  "value": "banners",
+                  "type": "text"
+                },
+                {
+                  "key": "bucket",
+                  "value": "images",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/upload",
+              "host": ["{{base_url}}"],
+              "path": ["api", "upload"]
+            },
+            "description": "Upload a banner image"
+          }
+        },
+        {
+          "name": "Delete Image",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/upload?url=https://example.com/images/file.jpg&bucket=images",
+              "host": ["{{base_url}}"],
+              "path": ["api", "upload"],
+              "query": [
+                {
+                  "key": "url",
+                  "value": "https://example.com/images/file.jpg",
+                  "description": "Image URL to delete"
+                },
+                {
+                  "key": "bucket",
+                  "value": "images"
+                }
+              ]
+            },
+            "description": "Delete an image from storage"
+          }
+        }
+      ],
+      "description": "File upload and management endpoints"
+    },
+    {
+      "name": "Example Workflow",
+      "item": [
+        {
+          "name": "1. Create Brand (Bosch)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bosch\",\n  \"slug\": \"bosch\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/brands",
+              "host": ["{{base_url}}"],
+              "path": ["api", "brands"]
+            },
+            "description": "Step 1: Create Bosch brand"
+          }
+        },
+        {
+          "name": "2. Create Category (Power Tools)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Güç Aletleri\",\n  \"slug\": \"guc-aletleri\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories"]
+            },
+            "description": "Step 2: Create Power Tools category"
+          }
+        },
+        {
+          "name": "3. Create Subcategory (Drills)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Matkap\",\n  \"slug\": \"matkap\",\n  \"parent_id\": \"REPLACE_WITH_CATEGORY_ID_FROM_STEP_2\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories"]
+            },
+            "description": "Step 3: Create Drills subcategory"
+          }
+        },
+        {
+          "name": "4. Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Bosch Professional GSB 18V-55 Akülü Darbeli Matkap\",\n  \"slug\": \"bosch-professional-gsb-18v-55-akulu-darbeli-matkap\",\n  \"description\": \"18V Li-ion akülü darbeli matkap. Metal ve ahşap delme işlemleri için ideal. 13mm mandren kapasitesi.\",\n  \"price\": 899.99,\n  \"stock\": 25,\n  \"brand_id\": \"REPLACE_WITH_BRAND_ID_FROM_STEP_1\",\n  \"category_id\": \"REPLACE_WITH_SUBCATEGORY_ID_FROM_STEP_3\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"]
+            },
+            "description": "Step 4: Create product with brand and category"
+          }
+        },
+        {
+          "name": "5. Create Banner",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Bosch Professional Serisi İndirimi\",\n  \"image_url\": \"https://via.placeholder.com/1200x400/007bff/ffffff?text=Bosch+Professional+İndirim\",\n  \"link\": \"/brands/bosch\",\n  \"order_index\": 0,\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/banners",
+              "host": ["{{base_url}}"],
+              "path": ["api", "banners"]
+            },
+            "description": "Step 5: Create promotional banner"
+          }
+        }
+      ],
+      "description": "Complete workflow example from brand creation to product listing"
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "description": "Base URL for the API (change to your deployed URL)"
+    },
+    {
+      "key": "brand_id",
+      "value": "",
+      "description": "Brand ID for testing (copy from create brand response)"
+    },
+    {
+      "key": "category_id",
+      "value": "",
+      "description": "Category ID for testing (copy from create category response)"
+    },
+    {
+      "key": "product_id",
+      "value": "",
+      "description": "Product ID for testing (copy from create product response)"
+    },
+    {
+      "key": "banner_id",
+      "value": "",
+      "description": "Banner ID for testing (copy from create banner response)"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ]
+} 
