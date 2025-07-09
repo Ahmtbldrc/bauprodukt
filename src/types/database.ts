@@ -23,6 +23,7 @@ export interface Product {
   price: number
   discount_price: number | null
   stock: number
+  stock_code: string | null
   image_url: string | null
   brand_id: string | null
   category_id: string | null

@@ -10,6 +10,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const brand = searchParams.get('brand')
     const category = searchParams.get('category')
+    const stock_code = searchParams.get('stock_code')
 
     const from = (page - 1) * limit
     const to = from + limit - 1
@@ -39,6 +40,10 @@ export async function GET(request: NextRequest) {
 
     if (category) {
       query = query.eq('category_id', category)
+    }
+
+    if (stock_code) {
+      query = query.eq('stock_code', stock_code)
     }
 
     const { data, error, count } = await query
@@ -126,10 +131,23 @@ export async function POST(request: NextRequest) {
       
       // Handle unique constraint violations
       if (createError.code === '23505') {
-        return NextResponse.json(
-          { error: 'Product with this slug already exists' },
-          { status: 409 }
-        )
+        // Check which field caused the constraint violation
+        if (createError.message?.includes('products_slug_key')) {
+          return NextResponse.json(
+            { error: 'Product with this slug already exists' },
+            { status: 409 }
+          )
+        } else if (createError.message?.includes('products_stock_code_key')) {
+          return NextResponse.json(
+            { error: 'Product with this stock code already exists' },
+            { status: 409 }
+          )
+        } else {
+          return NextResponse.json(
+            { error: 'Product with this data already exists' },
+            { status: 409 }
+          )
+        }
       }
 
       return NextResponse.json(

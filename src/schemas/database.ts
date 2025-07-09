@@ -41,6 +41,7 @@ export const productSchema = z.object({
   price: z.number().min(0, 'Fiyat negatif olamaz'),
   discount_price: z.number().min(0, 'İndirimli fiyat negatif olamaz').nullable(),
   stock: z.number().int().min(0, 'Stok negatif olamaz'),
+  stock_code: z.string().nullable(),
   image_url: z.string().url().nullable(),
   brand_id: z.string().uuid().nullable(),
   category_id: z.string().uuid().nullable(),
@@ -54,6 +55,7 @@ const baseProductSchema = z.object({
   price: z.number().min(0, 'Fiyat negatif olamaz'),
   discount_price: z.number().min(0, 'İndirimli fiyat negatif olamaz').optional(),
   stock: z.number().int().min(0, 'Stok negatif olamaz'),
+  stock_code: z.string().max(100, 'Stok kodu çok uzun').optional(),
   image_url: z.string().url('Geçerli bir URL giriniz').optional(),
   brand_id: z.string().uuid('Geçerli bir marka seçiniz').optional(),
   category_id: z.string().uuid('Geçerli bir kategori seçiniz').optional()

@@ -115,10 +115,23 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
       // Handle unique constraint violations
       if (updateError.code === '23505') {
-        return NextResponse.json(
-          { error: 'Product with this slug already exists' },
-          { status: 409 }
-        )
+        // Check which field caused the constraint violation
+        if (updateError.message?.includes('products_slug_key')) {
+          return NextResponse.json(
+            { error: 'Product with this slug already exists' },
+            { status: 409 }
+          )
+        } else if (updateError.message?.includes('products_stock_code_key')) {
+          return NextResponse.json(
+            { error: 'Product with this stock code already exists' },
+            { status: 409 }
+          )
+        } else {
+          return NextResponse.json(
+            { error: 'Product with this data already exists' },
+            { status: 409 }
+          )
+        }
       }
 
       console.error('Product update error:', updateError)
