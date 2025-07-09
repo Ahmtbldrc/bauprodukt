@@ -19,7 +19,13 @@ export async function GET(request: NextRequest) {
       .select(`
         *,
         brand:brands(*),
-        category:categories(*)
+        category:categories(*),
+        product_images(
+          id,
+          image_url,
+          order_index,
+          is_cover
+        )
       `)
       .range(from, to)
       .order('created_at', { ascending: false })
@@ -47,8 +53,19 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Sort product images by order_index for each product
+    const productsWithSortedImages = data?.map(product => ({
+      ...product,
+      product_images: product.product_images?.sort((a: any, b: any) => {
+        // Cover image comes first, then sort by order_index
+        if (a.is_cover && !b.is_cover) return -1
+        if (!a.is_cover && b.is_cover) return 1
+        return a.order_index - b.order_index
+      }) || []
+    }))
+
     return NextResponse.json({
-      data,
+      data: productsWithSortedImages,
       pagination: {
         page,
         limit,

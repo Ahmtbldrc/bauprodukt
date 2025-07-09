@@ -17,7 +17,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .select(`
         *,
         brand:brands(*),
-        category:categories(*)
+        category:categories(*),
+        product_images(
+          id,
+          image_url,
+          order_index,
+          is_cover
+        )
       `)
       .eq('id', id)
       .single()
@@ -37,7 +43,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    return NextResponse.json(data)
+    // Sort product images by order_index
+    const productWithSortedImages = {
+      ...data,
+      product_images: data.product_images?.sort((a: any, b: any) => {
+        // Cover image comes first, then sort by order_index
+        if (a.is_cover && !b.is_cover) return -1
+        if (!a.is_cover && b.is_cover) return 1
+        return a.order_index - b.order_index
+      }) || []
+    }
+
+    return NextResponse.json(productWithSortedImages)
   } catch (error) {
     console.error('Product API error:', error)
     return NextResponse.json(
