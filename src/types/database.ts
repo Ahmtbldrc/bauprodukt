@@ -42,7 +42,21 @@ export interface ProductImage {
   id: string
   product_id: string
   image_url: string
+  order_index: number
+  is_cover: boolean
   created_at: string
+}
+
+// Bulk upload için helper types
+export interface ProductImageUpload {
+  file: File
+  order_index: number
+  is_cover: boolean
+}
+
+export interface BulkImageUploadRequest {
+  product_id: string
+  images: ProductImageUpload[]
 }
 
 // Relations for more complex queries

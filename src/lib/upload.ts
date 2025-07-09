@@ -57,15 +57,30 @@ export async function deleteFile(
   try {
     // Extract file path from URL
     const urlParts = url.split('/')
-    const bucketIndex = urlParts.findIndex(part => part === bucket)
-    if (bucketIndex === -1) {
+    
+    // Supabase public URL formatında filePath'i çıkar
+    // Format: https://your-project.supabase.co/storage/v1/object/public/bucket/folder/file.ext
+    const publicIndex = urlParts.findIndex(part => part === 'public')
+    if (publicIndex === -1 || publicIndex + 1 >= urlParts.length) {
       return {
         success: false,
-        error: 'Invalid file URL'
+        error: 'Invalid file URL format'
       }
     }
 
-    const filePath = urlParts.slice(bucketIndex + 1).join('/')
+    // public'dan sonraki kısmı al (bucket/folder/file.ext)
+    const pathAfterPublic = urlParts.slice(publicIndex + 1).join('/')
+    
+    // Bucket'ı çıkar ve dosya yolunu al
+    const pathParts = pathAfterPublic.split('/')
+    if (pathParts[0] !== bucket) {
+      return {
+        success: false,
+        error: 'Bucket mismatch in URL'
+      }
+    }
+    
+    const filePath = pathParts.slice(1).join('/')
 
     const { error } = await supabase.storage
       .from(bucket)

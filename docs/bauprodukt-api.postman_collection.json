@@ -590,6 +590,163 @@
       "description": "Product management endpoints"
     },
     {
+      "name": "Product Images",
+      "item": [
+        {
+          "name": "Get Product Images",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}/images",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}", "images"]
+            },
+            "description": "Get all images for a product, ordered by order_index"
+          }
+        },
+        {
+          "name": "Bulk Upload Product Images",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file_0",
+                  "type": "file",
+                  "src": "",
+                  "description": "First image file"
+                },
+                {
+                  "key": "order_0",
+                  "value": "0",
+                  "type": "text",
+                  "description": "Order index for first image"
+                },
+                {
+                  "key": "is_cover_0",
+                  "value": "true",
+                  "type": "text",
+                  "description": "Set as cover image"
+                },
+                {
+                  "key": "file_1",
+                  "type": "file",
+                  "src": "",
+                  "description": "Second image file",
+                  "disabled": true
+                },
+                {
+                  "key": "order_1",
+                  "value": "1",
+                  "type": "text",
+                  "description": "Order index for second image",
+                  "disabled": true
+                },
+                {
+                  "key": "is_cover_1",
+                  "value": "false",
+                  "type": "text",
+                  "description": "Not cover image",
+                  "disabled": true
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}/images/bulk",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}", "images", "bulk"]
+            },
+            "description": "Upload multiple images for a product in bulk. Only one image can be set as cover."
+          }
+        },
+        {
+          "name": "Reorder Product Images",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"imageOrders\": [\n    {\n      \"id\": \"{{image_id_1}}\",\n      \"order_index\": 0\n    },\n    {\n      \"id\": \"{{image_id_2}}\",\n      \"order_index\": 1\n    },\n    {\n      \"id\": \"{{image_id_3}}\",\n      \"order_index\": 2\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}/images/reorder",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}", "images", "reorder"]
+            },
+            "description": "Update the order of product images"
+          }
+        },
+        {
+          "name": "Set Cover Image",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}/images/{{image_id}}/cover",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}", "images", "{{image_id}}", "cover"]
+            },
+            "description": "Set a specific image as the cover image for the product"
+          }
+        },
+        {
+          "name": "Delete Single Image",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}/images/{{image_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}", "images", "{{image_id}}"]
+            },
+            "description": "Delete a single product image. If it's the cover image, another image will be automatically set as cover."
+          }
+        },
+        {
+          "name": "Delete All Product Images",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}/images",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}", "images"]
+            },
+            "description": "Delete all images for a product"
+          }
+        }
+      ],
+      "description": "Product image management endpoints with cover and ordering support"
+    },
+    {
       "name": "Banners",
       "item": [
         {
