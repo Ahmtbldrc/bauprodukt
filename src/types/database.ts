@@ -21,6 +21,7 @@ export interface Product {
   slug: string
   description: string | null
   price: number
+  discount_price: number | null
   stock: number
   image_url: string | null
   brand_id: string | null
@@ -72,6 +73,10 @@ export interface ProductWithRelations extends Product {
   brand: Brand | null
   category: Category | null
   product_images: ProductImage[]
+  effective_price?: number
+  has_active_discount?: boolean
+  discount_percentage_actual?: number
+  discount_amount?: number
 }
 
 export interface CategoryWithParent extends Category {

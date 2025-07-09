@@ -39,6 +39,7 @@ export const productSchema = z.object({
   slug: z.string().min(1, 'Slug gerekli'),
   description: z.string().nullable(),
   price: z.number().min(0, 'Fiyat negatif olamaz'),
+  discount_price: z.number().min(0, 'İndirimli fiyat negatif olamaz').nullable(),
   stock: z.number().int().min(0, 'Stok negatif olamaz'),
   image_url: z.string().url().nullable(),
   brand_id: z.string().uuid().nullable(),
@@ -46,18 +47,53 @@ export const productSchema = z.object({
   created_at: z.string()
 })
 
-export const createProductSchema = z.object({
+const baseProductSchema = z.object({
   name: z.string().min(1, 'Ürün adı gerekli').max(255, 'Ürün adı çok uzun'),
   slug: z.string().min(1, 'Slug gerekli').max(255, 'Slug çok uzun').regex(/^[a-z0-9-]+$/, 'Slug sadece küçük harf, rakam ve tire içerebilir'),
   description: z.string().max(2000, 'Açıklama çok uzun').optional(),
   price: z.number().min(0, 'Fiyat negatif olamaz'),
+  discount_price: z.number().min(0, 'İndirimli fiyat negatif olamaz').optional(),
   stock: z.number().int().min(0, 'Stok negatif olamaz'),
   image_url: z.string().url('Geçerli bir URL giriniz').optional(),
   brand_id: z.string().uuid('Geçerli bir marka seçiniz').optional(),
   category_id: z.string().uuid('Geçerli bir kategori seçiniz').optional()
 })
 
-export const updateProductSchema = createProductSchema.partial()
+export const createProductSchema = baseProductSchema.refine((data) => {
+  // İndirimli fiyat varsa, normal fiyattan küçük ve sıfırdan büyük olmalı
+  if (data.discount_price) {
+    if (data.discount_price <= 0) {
+      return false
+    }
+    if (data.discount_price >= data.price) {
+      return false
+    }
+  }
+  return true
+}, {
+  message: "İndirimli fiyat sıfırdan büyük ve normal fiyattan küçük olmalı",
+  path: ["discount_price"]
+})
+
+export const updateProductSchema = baseProductSchema.partial().refine((data) => {
+  // İndirimli fiyat varsa, geçerli olmalı
+  if (data.discount_price !== undefined) {
+    // Eğer discount_price null değilse kontrol et
+    if (data.discount_price !== null) {
+      if (data.discount_price <= 0) {
+        return false
+      }
+      // Eğer price da güncelleniyor veya mevcutsa kontrol et
+      if (data.price && data.discount_price >= data.price) {
+        return false
+      }
+    }
+  }
+  return true
+}, {
+  message: "İndirimli fiyat sıfırdan büyük ve normal fiyattan küçük olmalı",
+  path: ["discount_price"]
+})
 
 // Banner schemas
 export const bannerSchema = z.object({

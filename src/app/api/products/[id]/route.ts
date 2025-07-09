@@ -13,11 +13,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { id } = await params
 
     const { data, error } = await supabase
-      .from('products')
+      .from('products_with_relations')
       .select(`
         *,
-        brand:brands(*),
-        category:categories(*),
         product_images(
           id,
           image_url,
@@ -43,7 +41,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Sort product images by order_index
+    // Sort product images and prepare brand/category objects
     const productWithSortedImages = {
       ...data,
       product_images: data.product_images?.sort((a: any, b: any) => {
@@ -51,7 +49,21 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         if (a.is_cover && !b.is_cover) return -1
         if (!a.is_cover && b.is_cover) return 1
         return a.order_index - b.order_index
-      }) || []
+      }) || [],
+      // Brand ve category bilgileri view'dan geliyor ama nested object formatında değil
+      brand: data.brand_name ? {
+        id: data.brand_id,
+        name: data.brand_name,
+        slug: data.brand_slug,
+        created_at: ''
+      } : null,
+      category: data.category_name ? {
+        id: data.category_id,
+        name: data.category_name,
+        slug: data.category_slug,
+        parent_id: data.category_parent_id,
+        created_at: ''
+      } : null
     }
 
     return NextResponse.json(productWithSortedImages)
@@ -86,19 +98,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         .trim()
     }
 
-    const { data, error } = await supabase
+    const { data, error: updateError } = await supabase
       .from('products')
       .update(validation.data)
       .eq('id', id)
-      .select(`
-        *,
-        brand:brands(*),
-        category:categories(*)
-      `)
+      .select('*')
       .single()
 
-    if (error) {
-      if (error.code === 'PGRST116') {
+    if (updateError) {
+      if (updateError.code === 'PGRST116') {
         return NextResponse.json(
           { error: 'Product not found' },
           { status: 404 }
@@ -106,21 +114,52 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
 
       // Handle unique constraint violations
-      if (error.code === '23505') {
+      if (updateError.code === '23505') {
         return NextResponse.json(
           { error: 'Product with this slug already exists' },
           { status: 409 }
         )
       }
 
-      console.error('Product update error:', error)
+      console.error('Product update error:', updateError)
       return NextResponse.json(
         { error: 'Failed to update product' },
         { status: 500 }
       )
     }
 
-    return NextResponse.json(data)
+    // Fetch the updated product with relations
+    const { data: updatedProduct, error: fetchError } = await supabase
+      .from('products_with_relations')
+      .select('*')
+      .eq('id', id)
+      .single()
+
+    if (fetchError) {
+      console.error('Failed to fetch updated product:', fetchError)
+      // Return the basic updated product if fetching relations fails
+      return NextResponse.json(data)
+    }
+
+    // Transform the relations format
+    const productWithRelations = {
+      ...updatedProduct,
+      brand: updatedProduct.brand_name ? {
+        id: updatedProduct.brand_id,
+        name: updatedProduct.brand_name,
+        slug: updatedProduct.brand_slug,
+        created_at: ''
+      } : null,
+      category: updatedProduct.category_name ? {
+        id: updatedProduct.category_id,
+        name: updatedProduct.category_name,
+        slug: updatedProduct.category_slug,
+        parent_id: updatedProduct.category_parent_id,
+        created_at: ''
+      } : null
+    }
+
+    return NextResponse.json(productWithRelations)
   } catch (error) {
     console.error('Product update API error:', error)
     return NextResponse.json(
