@@ -20,6 +20,7 @@ export const categorySchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1, 'Kategori adı gerekli'),
   slug: z.string().min(1, 'Slug gerekli'),
+  emoji: z.string().max(10, 'Emoji çok uzun').nullable().optional(),
   parent_id: z.string().uuid().nullable(),
   created_at: z.string()
 })
@@ -27,6 +28,7 @@ export const categorySchema = z.object({
 export const createCategorySchema = z.object({
   name: z.string().min(1, 'Kategori adı gerekli').max(255, 'Kategori adı çok uzun'),
   slug: z.string().min(1, 'Slug gerekli').max(255, 'Slug çok uzun').regex(/^[a-z0-9-]+$/, 'Slug sadece küçük harf, rakam ve tire içerebilir'),
+  emoji: z.string().max(10, 'Emoji çok uzun').nullable().optional(),
   parent_id: z.string().uuid().nullable().optional()
 })
 

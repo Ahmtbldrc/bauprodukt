@@ -11,6 +11,7 @@ export interface Category {
   id: string
   name: string
   slug: string
+  emoji: string | null
   parent_id: string | null
   created_at: string
 }

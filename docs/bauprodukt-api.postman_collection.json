@@ -265,7 +265,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Güç Aletleri\",\n  \"slug\": \"guc-aletleri\"\n}"
+              "raw": "{\n  \"name\": \"Güç Aletleri\",\n  \"slug\": \"guc-aletleri\",\n  \"emoji\": \"🔧\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/categories",
@@ -287,7 +287,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Matkap\",\n  \"slug\": \"matkap\",\n  \"parent_id\": \"{{category_id}}\"\n}"
+              "raw": "{\n  \"name\": \"Matkap\",\n  \"slug\": \"matkap\",\n  \"emoji\": \"🔨\",\n  \"parent_id\": \"{{category_id}}\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/categories",
@@ -327,7 +327,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Professional Güç Aletleri\",\n  \"slug\": \"professional-guc-aletleri\"\n}"
+              "raw": "{\n  \"name\": \"Professional Güç Aletleri\",\n  \"slug\": \"professional-guc-aletleri\",\n  \"emoji\": \"⚙️\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/categories/{{category_id}}",
@@ -1142,7 +1142,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Güç Aletleri\",\n  \"slug\": \"guc-aletleri\"\n}"
+              "raw": "{\n  \"name\": \"Güç Aletleri\",\n  \"slug\": \"guc-aletleri\",\n  \"emoji\": \"🔧\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/categories",
@@ -1164,7 +1164,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Matkap\",\n  \"slug\": \"matkap\",\n  \"parent_id\": \"REPLACE_WITH_CATEGORY_ID_FROM_STEP_2\"\n}"
+              "raw": "{\n  \"name\": \"Matkap\",\n  \"slug\": \"matkap\",\n  \"emoji\": \"🔨\",\n  \"parent_id\": \"REPLACE_WITH_CATEGORY_ID_FROM_STEP_2\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/api/categories",
