@@ -16,7 +16,7 @@ export function RecommendedProducts() {
             <p className="text-gray-600">Speziell für Sie ausgewählte beliebte Produkte</p>
           </div>
           <Link 
-            href="/products" 
+            href="/recommended" 
             className="flex items-center space-x-2 px-6 py-3 rounded-lg font-semibold transition-all hover:opacity-80 border-2"
             style={{color: '#F39236', borderColor: '#F39236'}}
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#F3923615')}

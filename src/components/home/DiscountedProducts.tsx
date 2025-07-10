@@ -14,7 +14,7 @@ export function DiscountedProducts() {
             <p className="text-gray-600">Spezielle Angebote für ausgewählte Produkte</p>
           </div>
           <Link 
-            href="/products?filter=sale" 
+            href="/discounted" 
             className="inline-flex items-center px-6 py-3 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-colors"
           >
             Alle anzeigen

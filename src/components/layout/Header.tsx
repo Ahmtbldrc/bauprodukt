@@ -779,11 +779,11 @@ export function Header() {
                 <Star className="h-4 w-4 mr-1" />
                 Bestseller
               </Link>
-              <Link href="/discounts" className="flex items-center text-red-600 hover:text-red-700 font-medium whitespace-nowrap">
+              <Link href="/coupons" className="flex items-center text-red-600 hover:text-red-700 font-medium whitespace-nowrap">
                 <Tag className="h-4 w-4 mr-1" />
                 Rabattierte Produkte
               </Link>
-              <Link href="/campaigns" className="flex items-center text-purple-600 hover:text-purple-700 font-medium whitespace-nowrap">
+              <Link href="/discounted" className="flex items-center text-purple-600 hover:text-purple-700 font-medium whitespace-nowrap">
                 <Gift className="h-4 w-4 mr-1" />
                 Kampagnen
               </Link>

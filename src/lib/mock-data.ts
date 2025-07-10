@@ -296,4 +296,14 @@ export function getDiscountedProducts(): Product[] {
 export function getRecommendedProducts(): Product[] {
   // Mix of featured and high-rated products
   return mockProducts.filter(product => product.featured || product.bestseller).slice(0, 4)
+}
+
+export function getNewProducts(): Product[] {
+  // Return last 6 products as "new products"
+  return mockProducts.slice(-6).reverse()
+}
+
+export function getCouponProducts(): Product[] {
+  // Products that can be used with coupons (featured and in-stock products)
+  return mockProducts.filter(product => product.featured && product.inStock)
 } 
