@@ -1,12 +1,12 @@
 {
   "info": {
     "name": "Bauprodukt Demo API",
-    "description": "Complete API collection for testing Bauprodukt Demo application with sample data",
+    "description": "Complete API collection for testing Bauprodukt Demo application with sample data. Includes Cart management and Order processing endpoints for e-commerce functionality.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "bauprodukt-demo",
     "version": {
       "major": 1,
-      "minor": 1,
+      "minor": 2,
       "patch": 0
     }
   },
@@ -1106,6 +1106,458 @@
       "description": "File upload and management endpoints"
     },
     {
+      "name": "Cart",
+      "item": [
+        {
+          "name": "Get Cart",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cart/{{session_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "{{session_id}}"]
+            },
+            "description": "Get cart by session ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Cart",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cart/{{session_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "{{session_id}}"]
+            },
+            "description": "Create or get existing cart for session"
+          },
+          "response": []
+        },
+        {
+          "name": "Clear Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cart/{{session_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "{{session_id}}"]
+            },
+            "description": "Clear all items from cart"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Cart Items",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cart/{{session_id}}/items",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "{{session_id}}", "items"]
+            },
+            "description": "Get all items in cart"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Item to Cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.id) {",
+                  "        pm.environment.set('cart_item_id', response.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": \"{{product_id}}\",\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cart/{{session_id}}/items",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "{{session_id}}", "items"]
+            },
+            "description": "Add product to cart or update quantity if already exists"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Cart Item",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cart/{{session_id}}/items/{{cart_item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "{{session_id}}", "items", "{{cart_item_id}}"]
+            },
+            "description": "Get specific cart item details"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Cart Item Quantity",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cart/{{session_id}}/items/{{cart_item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "{{session_id}}", "items", "{{cart_item_id}}"]
+            },
+            "description": "Update quantity of cart item"
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Item from Cart",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cart/{{session_id}}/items/{{cart_item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "{{session_id}}", "items", "{{cart_item_id}}"]
+            },
+            "description": "Remove specific item from cart"
+          },
+          "response": []
+        }
+      ],
+      "description": "Shopping cart management endpoints"
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Get All Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders?page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number"
+                },
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Items per page"
+                },
+                {
+                  "key": "status",
+                  "value": "",
+                  "description": "Filter by order status",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Search by customer name, email, or phone",
+                  "disabled": true
+                },
+                {
+                  "key": "order_number",
+                  "value": "",
+                  "description": "Search by order number",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get all orders with pagination and filters"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Orders by Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders?status=pending&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Filter orders by status (pending, confirmed, processing, shipped, delivered, cancelled)"
+          },
+          "response": []
+        },
+        {
+          "name": "Search Orders by Customer",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders?search=john&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "john"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Search orders by customer name, email, or phone"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Order from Cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.id) {",
+                  "        pm.environment.set('order_id', response.id);",
+                  "    }",
+                  "    if (response.order_number) {",
+                  "        pm.environment.set('order_number', response.order_number);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_id\": \"{{session_id}}\",\n  \"customer_name\": \"John Doe\",\n  \"customer_email\": \"john.doe@example.com\",\n  \"customer_phone\": \"5551234567\",\n  \"shipping_province\": \"İstanbul\",\n  \"shipping_district\": \"Kadıköy\",\n  \"shipping_postal_code\": \"34710\",\n  \"shipping_address\": \"Moda Caddesi No:123 Daire:4 Kadıköy/İstanbul\",\n  \"billing_province\": \"İstanbul\",\n  \"billing_district\": \"Kadıköy\",\n  \"billing_postal_code\": \"34710\",\n  \"billing_address\": \"Moda Caddesi No:123 Daire:4 Kadıköy/İstanbul\",\n  \"notes\": \"Kapı zilini çalmayın, köpek var. Telefon açılmazsa kapıcıya bırakabilirsiniz.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders"]
+            },
+            "description": "Create order from cart items with customer information"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Order (Minimal)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_id\": \"{{session_id}}\",\n  \"customer_name\": \"Jane Smith\",\n  \"customer_email\": \"jane.smith@example.com\",\n  \"customer_phone\": \"5559876543\",\n  \"shipping_province\": \"Ankara\",\n  \"shipping_district\": \"Çankaya\",\n  \"shipping_postal_code\": \"06100\",\n  \"shipping_address\": \"Atatürk Bulvarı No:456 Çankaya/Ankara\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders"]
+            },
+            "description": "Create order with minimal required information (no billing address)"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "{{order_id}}"]
+            },
+            "description": "Get order details by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"confirmed\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "{{order_id}}"]
+            },
+            "description": "Update order status (pending, confirmed, processing, shipped, delivered, cancelled)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Order Details",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"processing\",\n  \"customer_name\": \"John Doe Jr.\",\n  \"customer_phone\": \"5551111111\",\n  \"notes\": \"Acil sipariş - hızlı gönderim talep ediliyor\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "{{order_id}}"]
+            },
+            "description": "Update multiple order fields"
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Order",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "{{order_id}}"]
+            },
+            "description": "Delete order (only pending or cancelled orders can be deleted)"
+          },
+          "response": []
+        }
+      ],
+      "description": "Order management endpoints"
+    },
+    {
       "name": "Example Workflow",
       "item": [
         {
@@ -1220,6 +1672,227 @@
         }
       ],
       "description": "Complete workflow example from brand creation to product listing"
+    },
+    {
+      "name": "Cart & Order Workflow",
+      "item": [
+        {
+          "name": "1. Create/Get Cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.cart_id) {",
+                  "        pm.environment.set('cart_id', response.cart_id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cart/{{session_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "{{session_id}}"]
+            },
+            "description": "Step 1: Create or get existing cart for the session"
+          }
+        },
+        {
+          "name": "2. Add Product to Cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.id) {",
+                  "        pm.environment.set('cart_item_id', response.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": \"{{product_id}}\",\n  \"quantity\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cart/{{session_id}}/items",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "{{session_id}}", "items"]
+            },
+            "description": "Step 2: Add product to cart (requires product_id from previous workflow)"
+          }
+        },
+        {
+          "name": "3. Add Another Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": \"{{product_id}}\",\n  \"quantity\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cart/{{session_id}}/items",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "{{session_id}}", "items"]
+            },
+            "description": "Step 3: Add same product again (will increase quantity)"
+          }
+        },
+        {
+          "name": "4. Update Cart Item Quantity",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cart/{{session_id}}/items/{{cart_item_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "{{session_id}}", "items", "{{cart_item_id}}"]
+            },
+            "description": "Step 4: Update item quantity in cart"
+          }
+        },
+        {
+          "name": "5. View Cart",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/cart/{{session_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "{{session_id}}"]
+            },
+            "description": "Step 5: View complete cart with totals"
+          }
+        },
+        {
+          "name": "6. Create Order from Cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.id) {",
+                  "        pm.environment.set('order_id', response.id);",
+                  "    }",
+                  "    if (response.order_number) {",
+                  "        pm.environment.set('order_number', response.order_number);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_id\": \"{{session_id}}\",\n  \"customer_name\": \"Workflow Test User\",\n  \"customer_email\": \"workflow@example.com\",\n  \"customer_phone\": \"5551234567\",\n  \"shipping_province\": \"İstanbul\",\n  \"shipping_district\": \"Kadıköy\",\n  \"shipping_postal_code\": \"34710\",\n  \"shipping_address\": \"Workflow Test Address, Kadıköy/İstanbul\",\n  \"notes\": \"This is a test order from Postman workflow\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders"]
+            },
+            "description": "Step 6: Create order from cart (cart will be cleared after successful order)"
+          }
+        },
+        {
+          "name": "7. View Created Order",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "{{order_id}}"]
+            },
+            "description": "Step 7: View the created order details"
+          }
+        },
+        {
+          "name": "8. Update Order Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"confirmed\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders/{{order_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "{{order_id}}"]
+            },
+            "description": "Step 8: Update order status to confirmed"
+          }
+        }
+      ],
+      "description": "Complete cart and order workflow from adding items to cart to order creation and management"
     }
   ],
   "variable": [
@@ -1247,6 +1920,31 @@
       "key": "banner_id",
       "value": "",
       "description": "Banner ID for testing (copy from create banner response)"
+    },
+    {
+      "key": "session_id",
+      "value": "test-session-123",
+      "description": "Session ID for cart testing"
+    },
+    {
+      "key": "cart_id",
+      "value": "",
+      "description": "Cart ID for testing (copy from cart response)"
+    },
+    {
+      "key": "cart_item_id",
+      "value": "",
+      "description": "Cart item ID for testing (copy from add item response)"
+    },
+    {
+      "key": "order_id",
+      "value": "",
+      "description": "Order ID for testing (copy from create order response)"
+    },
+    {
+      "key": "order_number",
+      "value": "",
+      "description": "Order number for testing (copy from create order response)"
     }
   ],
   "event": [

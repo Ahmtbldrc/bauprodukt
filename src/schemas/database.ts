@@ -135,16 +135,81 @@ export const createProductImageSchema = z.object({
 
 export const updateProductImageSchema = createProductImageSchema.partial()
 
+// Cart schemas
+export const cartItemSchema = z.object({
+  product_id: z.string().uuid('Geçerli bir ürün seçiniz'),
+  quantity: z.number().int().min(1, 'Miktar en az 1 olmalı').max(999, 'Miktar çok fazla')
+})
+
+export const updateCartItemSchema = z.object({
+  quantity: z.number().int().min(1, 'Miktar en az 1 olmalı').max(999, 'Miktar çok fazla')
+})
+
+// Order schemas
+export const orderStatusSchema = z.enum(['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'])
+
+export const createOrderSchema = z.object({
+  customer_name: z.string().min(2, 'Ad soyad en az 2 karakter olmalı').max(255, 'Ad soyad çok uzun'),
+  customer_email: z.string().email('Geçerli bir email adresi giriniz').max(255, 'Email çok uzun'),
+  customer_phone: z.string().min(10, 'Telefon numarası geçersiz').max(50, 'Telefon numarası çok uzun'),
+  
+  shipping_province: z.string().min(1, 'İl seçimi zorunlu').max(255, 'İl adı çok uzun'),
+  shipping_district: z.string().min(1, 'İlçe seçimi zorunlu').max(255, 'İlçe adı çok uzun'), 
+  shipping_postal_code: z.string().min(1, 'Posta kodu zorunlu').max(20, 'Posta kodu çok uzun'),
+  shipping_address: z.string().min(10, 'Açık adres en az 10 karakter olmalı').max(2000, 'Adres çok uzun'),
+  
+  billing_province: z.string().max(255, 'İl adı çok uzun').optional(),
+  billing_district: z.string().max(255, 'İlçe adı çok uzun').optional(),
+  billing_postal_code: z.string().max(20, 'Posta kodu çok uzun').optional(),
+  billing_address: z.string().max(2000, 'Adres çok uzun').optional(),
+  
+  notes: z.string().max(1000, 'Not çok uzun').optional(),
+  session_id: z.string().min(1, 'Session ID gerekli')
+})
+
+export const updateOrderStatusSchema = z.object({
+  status: orderStatusSchema
+})
+
+export const updateOrderSchema = z.object({
+  customer_name: z.string().min(2, 'Ad soyad en az 2 karakter olmalı').max(255, 'Ad soyad çok uzun').optional(),
+  customer_email: z.string().email('Geçerli bir email adresi giriniz').max(255, 'Email çok uzun').optional(),
+  customer_phone: z.string().min(10, 'Telefon numarası geçersiz').max(50, 'Telefon numarası çok uzun').optional(),
+  
+  shipping_province: z.string().min(1, 'İl seçimi zorunlu').max(255, 'İl adı çok uzun').optional(),
+  shipping_district: z.string().min(1, 'İlçe seçimi zorunlu').max(255, 'İlçe adı çok uzun').optional(), 
+  shipping_postal_code: z.string().min(1, 'Posta kodu zorunlu').max(20, 'Posta kodu çok uzun').optional(),
+  shipping_address: z.string().min(10, 'Açık adres en az 10 karakter olmalı').max(2000, 'Adres çok uzun').optional(),
+  
+  billing_province: z.string().max(255, 'İl adı çok uzun').optional(),
+  billing_district: z.string().max(255, 'İlçe adı çok uzun').optional(),
+  billing_postal_code: z.string().max(20, 'Posta kodu çok uzun').optional(),
+  billing_address: z.string().max(2000, 'Adres çok uzun').optional(),
+  
+  notes: z.string().max(1000, 'Not çok uzun').optional(),
+  status: orderStatusSchema.optional()
+})
+
 // Type exports
 export type BrandFormData = z.infer<typeof createBrandSchema>
 export type CategoryFormData = z.infer<typeof createCategorySchema>
 export type ProductFormData = z.infer<typeof createProductSchema>
 export type BannerFormData = z.infer<typeof createBannerSchema>
 export type ProductImageFormData = z.infer<typeof createProductImageSchema>
+export type CartItemFormData = z.infer<typeof cartItemSchema>
+export type UpdateCartItemFormData = z.infer<typeof updateCartItemSchema>
+export type CreateOrderFormData = z.infer<typeof createOrderSchema>
+export type UpdateOrderStatusFormData = z.infer<typeof updateOrderStatusSchema>
+export type UpdateOrderFormData = z.infer<typeof updateOrderSchema>
 
 // Validation helpers
 export const validateBrand = (data: unknown) => createBrandSchema.safeParse(data)
 export const validateCategory = (data: unknown) => createCategorySchema.safeParse(data)
 export const validateProduct = (data: unknown) => createProductSchema.safeParse(data)
 export const validateBanner = (data: unknown) => createBannerSchema.safeParse(data)
-export const validateProductImage = (data: unknown) => createProductImageSchema.safeParse(data) 
+export const validateProductImage = (data: unknown) => createProductImageSchema.safeParse(data)
+export const validateCartItem = (data: unknown) => cartItemSchema.safeParse(data)
+export const validateUpdateCartItem = (data: unknown) => updateCartItemSchema.safeParse(data)
+export const validateCreateOrder = (data: unknown) => createOrderSchema.safeParse(data)
+export const validateUpdateOrderStatus = (data: unknown) => updateOrderStatusSchema.safeParse(data)
+export const validateUpdateOrder = (data: unknown) => updateOrderSchema.safeParse(data) 
