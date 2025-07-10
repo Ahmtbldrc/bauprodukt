@@ -53,9 +53,11 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
+    // Handle only JSON requests
+    const bannerData = await request.json()
     
-    const validation = validateBanner(body)
+    // Validate banner data
+    const validation = validateBanner(bannerData)
     if (!validation.success) {
       return NextResponse.json(
         { error: 'Validation failed', details: validation.error.errors },
@@ -76,6 +78,7 @@ export async function POST(request: NextRequest) {
         : 0
     }
 
+    // Create banner
     const { data, error } = await supabase
       .from('banners')
       .insert([validation.data])

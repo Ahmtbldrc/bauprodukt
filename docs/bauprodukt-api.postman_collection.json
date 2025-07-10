@@ -892,7 +892,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "banners"]
             },
-            "description": "Create a new banner"
+            "description": "Create a new banner with image URL (JSON method)"
           }
         },
         {
@@ -914,8 +914,44 @@
               "host": ["{{base_url}}"],
               "path": ["api", "banners"]
             },
-            "description": "Create banner with auto order_index and default active status"
+            "description": "Create banner with auto order_index and default active status (JSON method)"
           }
+        },
+        {
+          "name": "Create Banner (No Image)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Özel Kampanya\",\n  \"link\": \"https://example.com/special-campaign\",\n  \"order_index\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/banners",
+              "host": ["{{base_url}}"],
+              "path": ["api", "banners"]
+            },
+            "description": "Create banner without image (image can be added later via upload endpoint)"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('banner_id', response.id);",
+                  "    console.log('Banner created with ID:', response.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Get Banner by ID",
@@ -996,9 +1032,113 @@
             },
             "description": "Delete a banner"
           }
+        },
+        {
+          "name": "Create Banner with File Upload",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "title",
+                  "value": "Kış İndirimleri",
+                  "type": "text",
+                  "description": "Banner title"
+                },
+                {
+                  "key": "link",
+                  "value": "https://example.com/winter-sale",
+                  "type": "text",
+                  "description": "Banner link URL"
+                },
+                {
+                  "key": "order_index",
+                  "value": "0",
+                  "type": "text",
+                  "description": "Banner order (optional)"
+                },
+                {
+                  "key": "is_active",
+                  "value": "true",
+                  "type": "text",
+                  "description": "Is banner active"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Banner image file (required)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/banners/upload",
+              "host": ["{{base_url}}"],
+              "path": ["api", "banners", "upload"]
+            },
+            "description": "Create a new banner with image upload (dedicated endpoint for multipart/form-data)"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('banner_id', response.id);",
+                  "    console.log('Banner created with ID:', response.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Upload Banner Image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Banner image file to upload"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/banners/{{banner_id}}/images",
+              "host": ["{{base_url}}"],
+              "path": ["api", "banners", "{{banner_id}}", "images"]
+            },
+            "description": "Upload or replace image for an existing banner"
+          }
+        },
+        {
+          "name": "Delete Banner Image",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/banners/{{banner_id}}/images",
+              "host": ["{{base_url}}"],
+              "path": ["api", "banners", "{{banner_id}}", "images"]
+            },
+            "description": "Delete the image from a banner (sets image_url to null)"
+          }
         }
       ],
-      "description": "Banner management endpoints"
+      "description": "Banner management endpoints. Use /api/banners for JSON requests (with image URLs) and /api/banners/upload for file uploads."
     },
     {
       "name": "File Upload",

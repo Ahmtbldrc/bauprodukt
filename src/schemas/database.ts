@@ -103,7 +103,7 @@ export const updateProductSchema = baseProductSchema.partial().refine((data) => 
 export const bannerSchema = z.object({
   id: z.string().uuid(),
   title: z.string().nullable(),
-  image_url: z.string().url(),
+  image_url: z.string().url().nullable(),
   link: z.string().url().nullable(),
   order_index: z.number().int().min(0),
   is_active: z.boolean(),
@@ -112,7 +112,7 @@ export const bannerSchema = z.object({
 
 export const createBannerSchema = z.object({
   title: z.string().max(255, 'Başlık çok uzun').optional(),
-  image_url: z.string().url('Geçerli bir resim URL\'i gerekli'),
+  image_url: z.string().url('Geçerli bir resim URL\'i gerekli').optional(),
   link: z.string().url('Geçerli bir URL giriniz').optional(),
   order_index: z.number().int().min(0, 'Sıra numarası negatif olamaz').default(0),
   is_active: z.boolean().default(true)

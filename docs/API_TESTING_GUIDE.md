@@ -1,6 +1,6 @@
-# 🧪 API Testing Guide - Cart & Order Management
+# 🧪 API Testing Guide - Cart, Order & Banner Management
 
-Bu rehber, yeni eklenen Cart ve Order API endpoint'lerini test etmek için Postman collection'ını nasıl kullanacağınızı gösterir.
+Bu rehber, Cart, Order ve Banner API endpoint'lerini test etmek için Postman collection'ını nasıl kullanacağınızı gösterir. Özellikle Banner image upload özellikleri dahil olmak üzere tüm API'lerin nasıl test edileceği açıklanmıştır.
 
 ## 📋 **Ön Hazırlık**
 
@@ -110,6 +110,74 @@ Body: {
 - `delivered`
 - `cancelled`
 
+## 🖼️ **Banner API Test Akışı**
+
+### **Yöntem 1: JSON ile Banner Oluştur (Klasik)**
+```
+POST {{base_url}}/api/banners
+Content-Type: application/json
+Body: {
+  "title": "Yaz İndirimleri",
+  "image_url": "https://example.com/banner.jpg",
+  "link": "https://example.com/sale",
+  "order_index": 1,
+  "is_active": true
+}
+```
+
+### **Yöntem 2: Resim ile Banner Oluştur (Ayrı Endpoint)**
+```
+POST {{base_url}}/api/banners/upload
+Content-Type: multipart/form-data
+Form Data:
+- title: "Kış İndirimleri"
+- link: "https://example.com/winter-sale"
+- order_index: 0
+- is_active: true
+- file: (resim dosyası seç - ZORUNLU)
+```
+
+### **Yöntem 3: Resim Olmadan Banner Oluştur + Sonra Resim Ekle**
+
+**Adım 1:** Banner oluştur
+```
+POST {{base_url}}/api/banners
+Body: {
+  "title": "Özel Kampanya",
+  "link": "https://example.com/special"
+}
+```
+
+**Adım 2:** Resim yükle
+```
+POST {{base_url}}/api/banners/{{banner_id}}/images
+Content-Type: multipart/form-data
+Form Data:
+- file: (resim dosyası seç)
+```
+
+### **Banner Resmi Güncelle**
+```
+POST {{base_url}}/api/banners/{{banner_id}}/images
+Content-Type: multipart/form-data
+Form Data:
+- file: (yeni resim dosyası)
+```
+⚠️ **Not:** Eski resim otomatik olarak silinir.
+
+### **Banner Resmini Sil**
+```
+DELETE {{base_url}}/api/banners/{{banner_id}}/images
+```
+Banner'ın `image_url` alanı `null` olur, dosya storage'dan silinir.
+
+### **Banner Listele ve Görüntüle**
+```
+GET {{base_url}}/api/banners?page=1&limit=10
+GET {{base_url}}/api/banners?is_active=true  # Sadece aktifler
+GET {{base_url}}/api/banners/{{banner_id}}   # Detay görüntüle
+```
+
 ## 🔄 **Complete Workflow Testi**
 
 Postman collection'ında "Cart & Order Workflow" section'ı tam bir test akışı içerir:
@@ -158,6 +226,49 @@ Body: {
 ```
 **Beklenen:** `400 Bad Request` - "Cart is empty"
 
+### **Banner Hata Senaryoları:**
+
+**Geçersiz dosya formatı:**
+```
+POST {{base_url}}/api/banners/upload
+Form Data:
+- title: "Test Banner"
+- file: (PDF veya TXT dosyası seç)
+```
+**Beklenen:** `400 Bad Request` - "Invalid file type"
+
+**Çok büyük dosya:**
+```
+POST {{base_url}}/api/banners/upload
+Form Data:
+- title: "Test Banner"  
+- file: (5MB'dan büyük resim)
+```
+**Beklenen:** `400 Bad Request` - "File size too large"
+
+**Resim olmadan upload endpoint'i kullanma:**
+```
+POST {{base_url}}/api/banners/upload
+Form Data:
+- title: "Test Banner"
+- (file yok)
+```
+**Beklenen:** `400 Bad Request` - "File is required for banner upload"
+
+**Olmayan banner'a resim yükleme:**
+```
+POST {{base_url}}/api/banners/invalid-uuid/images
+Form Data:
+- file: (geçerli resim)
+```
+**Beklenen:** `404 Not Found` - "Banner not found"
+
+**Resmi olmayan banner'ın resmini silme:**
+```
+DELETE {{base_url}}/api/banners/{{banner_id_without_image}}/images
+```
+**Beklenen:** `400 Bad Request` - "Banner has no image to delete"
+
 ## 📊 **Environment Variables**
 
 Collection otomatik olarak şu değişkenleri yönetir:
@@ -169,6 +280,7 @@ Collection otomatik olarak şu değişkenleri yönetir:
 | `cart_item_id` | Cart item ID | ✅ Response'dan |
 | `order_id` | Oluşturulan order ID | ✅ Response'dan |
 | `order_number` | Sipariş numarası | ✅ Response'dan |
+| `banner_id` | Oluşturulan banner ID | ✅ Response'dan |
 | `product_id` | Test için ürün ID | ❌ Manuel |
 
 ⚠️ **Önemli:** `product_id` değişkenini manuel olarak ayarlamanız gerekiyor. Bunun için önce "Example Workflow" section'ından ürün oluşturun.
@@ -177,7 +289,9 @@ Collection otomatik olarak şu değişkenleri yönetir:
 
 ### **1. Happy Path Test:**
 ```
-Cart & Order Workflow section'ını sırasıyla çalıştır
+# Önce Example Workflow ile temel data oluştur
+# Sonra Cart & Order Workflow'u çalıştır
+# Banner API'leri ile farklı yöntemleri test et
 ```
 
 ### **2. Edge Cases:**
@@ -185,11 +299,21 @@ Cart & Order Workflow section'ını sırasıyla çalıştır
 - Aşırı stok talebi
 - Geçersiz session ID
 - Geçersiz order status
+- Banner'a geçersiz dosya upload
+- Olmayan banner'a resim yükleme
 
 ### **3. Performance Test:**
 - Aynı anda çoklu cart item ekleme
 - Büyük sayfalama testleri
 - Concurrent order oluşturma
+- Çoklu banner resim upload
+
+### **4. Banner Specific Tests:**
+- JSON endpoint (/api/banners) testi
+- File upload endpoint (/api/banners/upload) testi  
+- Resim değiştirme workflow'u
+- File validation testleri
+- Storage cleanup testleri
 
 ## 🐛 **Debug İpuçları**
 
