@@ -1,6 +1,8 @@
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import Link from 'next/link'
+import { mockCategories } from '@/lib/mock-data'
+import { generateCategoryURL } from '@/lib/url-utils'
 
 export default function CategoriesPage() {
   return (
@@ -11,27 +13,24 @@ export default function CategoriesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Kategoriler</h1>
-            <p className="text-gray-600 mt-2">Tüm kategorilerimizi keşfedin</p>
+            <p className="text-gray-600 mt-2">Ürün kategorilerini keşfedin ({mockCategories.length} kategori)</p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              'İnşaat Malzemeleri',
-              'Elektrik Malzemeleri', 
-              'Tesisat Malzemeleri',
-              'Bahçe ve Peyzaj',
-              'Güvenlik Sistemleri',
-              'Isıtma ve Soğutma'
-            ].map((category, i) => (
-              <Link key={i} href={`/categories/kategori-${i + 1}`}>
-                <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-                  <div className="h-32 bg-gray-200 rounded mb-4"></div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    {category}
-                  </h3>
-                  <p className="text-gray-600">
-                    {(i + 1) * 25} ürün
-                  </p>
+            {mockCategories.map((category) => (
+              <Link key={category.id} href={generateCategoryURL(category.slug)}>
+                <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                  <div className="h-32 bg-gray-200 flex items-center justify-center">
+                    <span className="text-gray-500">Kategori Görseli</span>
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      {category.name}
+                    </h3>
+                    <p className="text-gray-600">
+                      {category.description}
+                    </p>
+                  </div>
                 </div>
               </Link>
             ))}

@@ -1,6 +1,10 @@
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import Link from 'next/link'
+import { getProductByBrandCategorySlug, getProductsByBrand } from '@/lib/mock-data'
+import { generateProductURLFromObject, formatPrice, generateBrandURL, generateCategoryURL } from '@/lib/url-utils'
+import { notFound } from 'next/navigation'
+import type { Metadata } from 'next'
 
 interface DynamicProductPageProps {
   params: {
@@ -10,8 +14,43 @@ interface DynamicProductPageProps {
   }
 }
 
+export async function generateMetadata({ params }: DynamicProductPageProps): Promise<Metadata> {
+  const product = getProductByBrandCategorySlug(params.brand, params.category, params.product)
+  
+  if (!product) {
+    return {
+      title: 'Ürün Bulunamadı'
+    }
+  }
+
+  const canonicalURL = `/${params.brand}/${params.category}/${params.product}`
+  
+  return {
+    title: `${product.name} - ${product.brand.name} | Bauprodukt Demo`,
+    description: product.description,
+    alternates: {
+      canonical: canonicalURL
+    },
+    openGraph: {
+      title: product.name,
+      description: product.description,
+      type: 'website',
+      url: canonicalURL
+    }
+  }
+}
+
 export default function DynamicProductPage({ params }: DynamicProductPageProps) {
-  const { brand, category, product } = params
+  const product = getProductByBrandCategorySlug(params.brand, params.category, params.product)
+  
+  if (!product) {
+    notFound()
+  }
+
+  // Get related products from same brand (excluding current product)
+  const relatedProducts = getProductsByBrand(params.brand)
+    .filter(p => p.id !== product.id)
+    .slice(0, 4)
   
   return (
     <div className="min-h-screen flex flex-col">
@@ -25,51 +64,53 @@ export default function DynamicProductPage({ params }: DynamicProductPageProps) 
             <span className="mx-2 text-gray-400">/</span>
             <Link href="/brands" className="text-gray-500 hover:text-gray-700">Markalar</Link>
             <span className="mx-2 text-gray-400">/</span>
-            <Link href={`/brands/${brand}`} className="text-gray-500 hover:text-gray-700 capitalize">
-              {brand.replace('-', ' ')}
+            <Link href={generateBrandURL(product.brand.slug)} className="text-gray-500 hover:text-gray-700">
+              {product.brand.name}
             </Link>
             <span className="mx-2 text-gray-400">/</span>
-            <Link href={`/categories/${category}`} className="text-gray-500 hover:text-gray-700 capitalize">
-              {category.replace('-', ' ')}
+            <Link href={generateCategoryURL(product.category.slug)} className="text-gray-500 hover:text-gray-700">
+              {product.category.name}
             </Link>
             <span className="mx-2 text-gray-400">/</span>
-            <span className="text-gray-900 capitalize">{product.replace('-', ' ')}</span>
+            <span className="text-gray-900">{product.name}</span>
           </nav>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
             {/* Product Images */}
             <div>
-              <div className="aspect-square bg-gray-200 rounded-lg mb-4"></div>
+              <div className="aspect-square bg-gray-200 rounded-lg mb-4 flex items-center justify-center">
+                <span className="text-gray-500">Ana Ürün Görseli</span>
+              </div>
               <div className="grid grid-cols-4 gap-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="aspect-square bg-gray-200 rounded cursor-pointer"></div>
+                  <div key={i} className="aspect-square bg-gray-200 rounded cursor-pointer flex items-center justify-center">
+                    <span className="text-xs text-gray-400">{i}</span>
+                  </div>
                 ))}
               </div>
             </div>
             
             {/* Product Info */}
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-4 capitalize">
-                {product.replace('-', ' ')}
+              <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                {product.name}
               </h1>
               
               <div className="mb-4">
-                <Link href={`/brands/${brand}`} className="text-blue-600 hover:underline capitalize">
-                  {brand.replace('-', ' ')}
+                <Link href={generateBrandURL(product.brand.slug)} className="text-blue-600 hover:underline">
+                  {product.brand.name}
                 </Link>
                 <span className="mx-2 text-gray-400">•</span>
-                <Link href={`/categories/${category}`} className="text-blue-600 hover:underline capitalize">
-                  {category.replace('-', ' ')}
+                <Link href={generateCategoryURL(product.category.slug)} className="text-blue-600 hover:underline">
+                  {product.category.name}
                 </Link>
               </div>
               
-              <p className="text-3xl font-bold text-blue-600 mb-6">₺2,499</p>
+              <p className="text-3xl font-bold text-blue-600 mb-6">{formatPrice(product.price)}</p>
               
               <div className="mb-6">
                 <p className="text-gray-600 leading-relaxed">
-                  {brand.replace('-', ' ')} markasının {category.replace('-', ' ')} kategorisindeki 
-                  bu ürün, yüksek kalitesi ve dayanıklılığı ile öne çıkıyor. Modern tasarımı ve 
-                  işlevselliği bir arada sunuyor.
+                  {product.description}
                 </p>
               </div>
               
@@ -85,18 +126,39 @@ export default function DynamicProductPage({ params }: DynamicProductPageProps) 
               </div>
               
               <div className="mb-6 p-4 bg-green-50 rounded-lg">
-                <p className="text-green-700 font-semibold flex items-center">
-                  <span className="mr-2">✓</span>
-                  Stokta mevcut - Hemen kargo
-                </p>
-                <p className="text-green-600 text-sm mt-1">
-                  Bugün sipariş verirseniz yarın kargoda
-                </p>
+                {product.inStock ? (
+                  <>
+                    <p className="text-green-700 font-semibold flex items-center">
+                      <span className="mr-2">✓</span>
+                      Stokta mevcut - Hemen kargo
+                    </p>
+                    <p className="text-green-600 text-sm mt-1">
+                      Bugün sipariş verirseniz yarın kargoda
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-red-700 font-semibold flex items-center">
+                      <span className="mr-2">✗</span>
+                      Stokta yok
+                    </p>
+                    <p className="text-red-600 text-sm mt-1">
+                      Tedarikçi ile iletişime geçiyoruz
+                    </p>
+                  </>
+                )}
               </div>
               
               <div className="flex space-x-4">
-                <button className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-                  Sepete Ekle
+                <button 
+                  className={`flex-1 px-6 py-3 rounded-lg font-semibold transition-colors ${
+                    product.inStock 
+                      ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  }`}
+                  disabled={!product.inStock}
+                >
+                  {product.inStock ? 'Sepete Ekle' : 'Stokta Yok'}
                 </button>
                 <button className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
                   ♡ Favorilere Ekle
@@ -125,8 +187,8 @@ export default function DynamicProductPage({ params }: DynamicProductPageProps) 
               <div className="prose max-w-none">
                 <h3>Ürün Açıklaması</h3>
                 <p>
-                  Bu ürün, {brand.replace('-', ' ')} markasının en yeni teknolojileri ile üretilmiştir. 
-                  {category.replace('-', ' ')} kategorisinde lider konumda olan bu ürün, 
+                  Bu ürün, {product.brand.name} markasının en yeni teknolojileri ile üretilmiştir. 
+                  {product.category.name} kategorisinde lider konumda olan bu ürün, 
                   kullanıcı deneyimini ön planda tutarak tasarlanmıştır.
                 </p>
                 
@@ -142,30 +204,36 @@ export default function DynamicProductPage({ params }: DynamicProductPageProps) 
           </div>
           
           {/* Related Products */}
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              {brand.replace('-', ' ')} - Diğer Ürünler
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[1, 2, 3, 4].map((i) => (
-                <Link key={i} href={`/${brand}/diger-kategori/diger-urun-${i}`}>
-                  <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="h-48 bg-gray-200"></div>
-                    <div className="p-4">
-                      <h3 className="font-semibold text-gray-900 mb-2">
-                        Diğer Ürün {i}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-2 capitalize">
-                        {brand.replace('-', ' ')}
-                      </p>
-                      <p className="text-lg font-bold text-blue-600">₺{1999 + i * 200}</p>
+          {relatedProducts.length > 0 && (
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                {product.brand.name} - Diğer Ürünler
+              </h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {relatedProducts.map((relatedProduct) => (
+                  <Link key={relatedProduct.id} href={generateProductURLFromObject(relatedProduct)}>
+                    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                      <div className="h-48 bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-500 text-sm">Ürün Görseli</span>
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                          {relatedProduct.name}
+                        </h3>
+                        <p className="text-sm text-gray-600 mb-2">
+                          {relatedProduct.category.name}
+                        </p>
+                        <p className="text-lg font-bold text-blue-600">
+                          {formatPrice(relatedProduct.price)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </main>
       
