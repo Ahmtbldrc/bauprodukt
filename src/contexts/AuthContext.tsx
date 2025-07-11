@@ -127,6 +127,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Check for stored auth on mount
   useEffect(() => {
     const checkStoredAuth = () => {
+      // Skip during SSR
+      if (typeof window === 'undefined') {
+        dispatch({ type: 'SET_LOADING', payload: false })
+        return
+      }
+
       try {
         const storedUser = localStorage.getItem(STORAGE_KEYS.USER)
         const storedToken = localStorage.getItem(STORAGE_KEYS.TOKEN)
@@ -172,8 +178,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Success - store auth data
       const mockToken = `mock_token_${user.id}_${Date.now()}`
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user))
-      localStorage.setItem(STORAGE_KEYS.TOKEN, mockToken)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user))
+        localStorage.setItem(STORAGE_KEYS.TOKEN, mockToken)
+      }
       
       dispatch({ type: 'LOGIN_SUCCESS', payload: user })
     } catch (error) {
@@ -211,8 +219,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       // Mock API success - store auth data
       const mockToken = `mock_token_${newUser.id}_${Date.now()}`
-      localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(newUser))
-      localStorage.setItem(STORAGE_KEYS.TOKEN, mockToken)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(newUser))
+        localStorage.setItem(STORAGE_KEYS.TOKEN, mockToken)
+      }
       
       // Yeni kullanıcıyı mock verilere ekle (session boyunca)
       MOCK_USERS.push(newUser)
@@ -228,8 +238,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Logout function
   const logout = (): void => {
     // Clear stored auth data
-    localStorage.removeItem(STORAGE_KEYS.USER)
-    localStorage.removeItem(STORAGE_KEYS.TOKEN)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(STORAGE_KEYS.USER)
+      localStorage.removeItem(STORAGE_KEYS.TOKEN)
+    }
     
     dispatch({ type: 'LOGOUT' })
   }
