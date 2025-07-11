@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import url('https://fonts.googleapis.com/css2?family=Blinker:wght@100;200;300;400;600;700;800;900&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
@@ -8,6 +9,7 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-blinker: 'Blinker', sans-serif;
   --color-bauprodukt-orange: #F39236;
   --color-bauprodukt-orange-hover: #E8832B;
   --color-bauprodukt-orange-light: #FDF5E6;
