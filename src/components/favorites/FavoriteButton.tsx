@@ -1,0 +1,119 @@
+'use client'
+
+import React, { useState, useEffect } from 'react'
+import { Heart } from 'lucide-react'
+import { useFavorites } from '@/contexts/FavoritesContext'
+
+interface FavoriteButtonProps {
+  productId: string
+  className?: string
+  size?: 'sm' | 'md' | 'lg'
+  showText?: boolean
+}
+
+export function FavoriteButton({ 
+  productId, 
+  className = '', 
+  size = 'md', 
+  showText = false 
+}: FavoriteButtonProps) {
+  const { isFavorite, addToFavorites, removeFromFavorites, isLoading } = useFavorites()
+  const [mounted, setMounted] = useState(false)
+  const favorite = isFavorite(productId)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.preventDefault() // Prevent navigation if used within a link
+    e.stopPropagation()
+
+    try {
+      if (favorite) {
+        await removeFromFavorites(productId)
+      } else {
+        await addToFavorites(productId)
+      }
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error)
+    }
+  }
+
+  const sizeClasses = {
+    sm: 'h-4 w-4',
+    md: 'h-5 w-5',
+    lg: 'h-6 w-6'
+  }
+
+  const buttonSizeClasses = {
+    sm: 'p-1.5',
+    md: 'p-2',
+    lg: 'p-2.5'
+  }
+
+  // Prevent hydration mismatch by not rendering interactive state on server
+  if (!mounted) {
+    return (
+      <button
+        className={`
+          ${buttonSizeClasses[size]}
+          rounded-full 
+          transition-all 
+          duration-200 
+          hover:bg-gray-100 
+          text-gray-400 hover:text-red-500
+          ${showText ? 'flex items-center gap-2 px-3 py-2' : ''}
+          ${className}
+        `}
+        disabled
+      >
+        <Heart className={`${sizeClasses[size]}`} />
+        {showText && (
+          <span className="text-sm font-medium">
+            Favorilere Ekle
+          </span>
+        )}
+      </button>
+    )
+  }
+
+  return (
+    <button
+      onClick={handleToggleFavorite}
+      disabled={isLoading}
+      className={`
+        ${buttonSizeClasses[size]}
+        rounded-full 
+        transition-all 
+        duration-200 
+        hover:bg-gray-100 
+        disabled:opacity-50 
+        disabled:cursor-not-allowed
+        ${showText ? 'flex items-center gap-2 px-3 py-2' : ''}
+        ${favorite 
+          ? 'text-red-500 hover:text-red-600' 
+          : 'text-gray-400 hover:text-red-500'
+        }
+        ${className}
+      `}
+      title={favorite ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+    >
+      {isLoading ? (
+        <div 
+          className={`animate-spin rounded-full border-b-2 ${sizeClasses[size]}`}
+          style={{borderBottomColor: '#F39236'}}
+        />
+      ) : (
+        <Heart 
+          className={`${sizeClasses[size]} ${favorite ? 'fill-current' : ''}`} 
+        />
+      )}
+      {showText && (
+        <span className="text-sm font-medium">
+          {favorite ? 'In Favoriten' : 'Zu Favoriten hinzufügen'}
+        </span>
+      )}
+    </button>
+  )
+} 

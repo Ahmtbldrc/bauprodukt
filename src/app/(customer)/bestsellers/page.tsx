@@ -3,6 +3,7 @@ import { Footer } from '@/components/layout/Footer'
 import Link from 'next/link'
 import { getBestsellerProducts, mockBrands, mockCategories } from '@/lib/mock-data'
 import { generateProductURLFromObject, formatPrice } from '@/lib/url-utils'
+import { FavoriteButton } from '@/components/favorites'
 
 export default function BestsellersPage() {
   // Get bestseller products
@@ -65,8 +66,13 @@ export default function BestsellersPage() {
           {/* Products Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {products.map((product) => (
-              <Link key={product.id} href={generateProductURLFromObject(product)}>
-                <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+              <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow relative">
+                {/* Favorite Button */}
+                <div className="absolute top-2 right-2 z-10">
+                  <FavoriteButton productId={product.id} size="sm" className="bg-white shadow-md hover:bg-gray-50" />
+                </div>
+                
+                <Link href={generateProductURLFromObject(product)}>
                   <div className="h-48 bg-gray-200 flex items-center justify-center relative">
                     <span className="text-gray-500 text-sm">Ürün Görseli</span>
                     <span className="absolute top-2 left-2 inline-block px-2 py-1 bg-purple-500 text-white text-xs rounded">
@@ -104,8 +110,8 @@ export default function BestsellersPage() {
                       )}
                     </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </div>
             ))}
           </div>
           
