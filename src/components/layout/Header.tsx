@@ -57,7 +57,7 @@ export function Header() {
   const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false)
   const [isBrandMenuOpen, setIsBrandMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
-  const [selectedLocation, setSelectedLocation] = useState('Chur, Schweiz')
+  const [selectedLocation] = useState('Chur, Schweiz')
   const [categoryButtonPosition, setCategoryButtonPosition] = useState({ top: 0, left: 0 })
   const [brandButtonPosition, setBrandButtonPosition] = useState({ top: 0, left: 0 })
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)

@@ -8,6 +8,8 @@ import { useProducts } from '@/hooks/useProducts'
 import { useCategories } from '@/hooks/useCategories'
 import { useBrands } from '@/hooks/useBrands'
 import { formatPrice } from '@/lib/url-utils'
+import { ProductWithRelations } from '@/types/database'
+import { Brand, Category } from '@/types/product'
 
 export default function RecommendedProductsPage() {
   const [search, setSearch] = useState('')
@@ -27,7 +29,7 @@ export default function RecommendedProductsPage() {
   const { data: brandsResponse, isLoading: brandsLoading } = useBrands()
 
   // Shuffle function to randomize products
-  const shuffleArray = (array: any[]) => {
+  const shuffleArray = (array: ProductWithRelations[]) => {
     const shuffled = [...array]
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
@@ -37,37 +39,36 @@ export default function RecommendedProductsPage() {
   }
 
   // Process products for recommendations (randomize them)
-  let products = productsResponse?.data || []
+  let products: ProductWithRelations[] = (productsResponse?.data as ProductWithRelations[]) || []
   
   // Sort products if sortBy is selected
   if (sortBy === 'price_asc') {
     products = [...products].sort((a, b) => {
-      const priceA = a.discount_price || a.price
-      const priceB = b.discount_price || b.price
+      const priceA = (a.discount_price ?? a.price)
+      const priceB = (b.discount_price ?? b.price)
       return priceA - priceB
-    }).slice(0, 4) // Only get first 4 after sorting
+    }).slice(0, 4)
   } else if (sortBy === 'price_desc') {
     products = [...products].sort((a, b) => {
-      const priceA = a.discount_price || a.price
-      const priceB = b.discount_price || b.price
+      const priceA = (a.discount_price ?? a.price)
+      const priceB = (b.discount_price ?? b.price)
       return priceB - priceA
-    }).slice(0, 4) // Only get first 4 after sorting
+    }).slice(0, 4)
   } else {
-    // Default: randomize for recommendations and take only 4
     products = shuffleArray(products).slice(0, 4)
   }
 
-  const hasDiscount = (product: any) => {
-    return product.discount_price && product.discount_price < product.price
+  const hasDiscount = (product: ProductWithRelations) => {
+    return product.discount_price !== null && product.discount_price < product.price
   }
 
-  const getDiscountPercentage = (product: any) => {
-    if (!hasDiscount(product)) return 0
+  const getDiscountPercentage = (product: ProductWithRelations) => {
+    if (!hasDiscount(product) || product.discount_price === null) return 0
     const discount = ((product.price - product.discount_price) / product.price) * 100
     return Math.round(discount)
   }
 
-  const generateProductURL = (product: any) => {
+  const generateProductURL = (product: ProductWithRelations) => {
     if (product.brand?.slug && product.category?.slug) {
       return `/${product.brand.slug}/${product.category.slug}/${product.slug}`
     }
@@ -94,7 +95,7 @@ export default function RecommendedProductsPage() {
               disabled={categoriesLoading}
             >
               <option value="">Alle Kategorien</option>
-              {categoriesResponse?.data?.map((category: any) => (
+              {categoriesResponse?.data?.map((category: Category) => (
                 <option key={category.id} value={category.id}>
                   {category.name}
                 </option>
@@ -108,7 +109,7 @@ export default function RecommendedProductsPage() {
               disabled={brandsLoading}
             >
               <option value="">Alle Marken</option>
-              {brandsResponse?.data?.map((brand: any) => (
+              {brandsResponse?.data?.map((brand: Brand) => (
                 <option key={brand.id} value={brand.id}>
                   {brand.name}
                 </option>
@@ -200,7 +201,7 @@ export default function RecommendedProductsPage() {
           {/* Products Grid */}
           {!productsLoading && !productsError && products.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {products.map((product: any) => (
+              {products.map((product) => (
                 <Link key={product.id} href={generateProductURL(product)}>
                   <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                     <div className="h-48 bg-gray-100 overflow-hidden relative">

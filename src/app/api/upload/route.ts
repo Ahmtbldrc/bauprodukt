@@ -51,7 +51,6 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const url = searchParams.get('url')
-    const bucket = searchParams.get('bucket') || 'images'
 
     if (!url) {
       return NextResponse.json(

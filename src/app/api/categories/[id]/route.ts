@@ -77,7 +77,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         )
       }
 
-      const { data: parentCategory, error: parentError } = await supabase
+      const { error: parentError } = await supabase
         .from('categories')
         .select('id')
         .eq('id', validation.data.parent_id)
