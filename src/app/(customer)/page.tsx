@@ -1,6 +1,6 @@
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
-import { HeroBanner } from '@/components/home/HeroBanner'
+import HeroBanner from '@/components/home/HeroBanner'
 import { RecommendedProducts } from '@/components/home/RecommendedProducts'
 import { BrandsSection } from '@/components/home/BrandsSection'
 import { BestsellerProducts } from '@/components/home/BestsellerProducts'

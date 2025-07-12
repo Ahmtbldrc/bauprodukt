@@ -71,4 +71,17 @@ export function useAllBrands() {
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   })
+}
+
+// Helper hook to get brand by slug
+export function useBrandBySlug(slug: string) {
+  const { data: brandsResponse, ...rest } = useAllBrands()
+  
+  const brand = brandsResponse?.data?.find(brand => brand.slug === slug)
+  
+  return {
+    ...rest,
+    data: brand,
+    isFound: !!brand && !rest.isLoading
+  }
 } 

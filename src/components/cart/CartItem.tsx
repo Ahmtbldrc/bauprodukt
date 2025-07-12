@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useCart } from '@/contexts/MockCartContext'
+import { useCart } from '@/contexts/CartContext'
 import { CartItem as CartItemType } from '@/types/cart'
 import { Minus, Plus, Trash2 } from 'lucide-react'
 

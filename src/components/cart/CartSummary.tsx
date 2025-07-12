@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { useCart } from '@/contexts/MockCartContext'
+import { useCart } from '@/contexts/CartContext'
 
 // Simple Button component
 const Button: React.FC<{

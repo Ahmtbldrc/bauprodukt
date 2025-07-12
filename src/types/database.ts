@@ -34,7 +34,7 @@ export interface Product {
 export interface Banner {
   id: string
   title: string | null
-  image_url: string
+  image_url: string | null
   link: string | null
   order_index: number
   is_active: boolean

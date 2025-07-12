@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
-import { useCart } from '@/contexts/MockCartContext'
+import { useCart } from '@/contexts/CartContext'
 import { Minus, Plus, ShoppingCart } from 'lucide-react'
 
 // Simple Button component

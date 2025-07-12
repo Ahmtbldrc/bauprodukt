@@ -2,7 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { useCart } from '@/contexts/MockCartContext'
+import { useCart } from '@/contexts/CartContext'
 import { ShoppingCart } from 'lucide-react'
 
 interface CartIconProps {

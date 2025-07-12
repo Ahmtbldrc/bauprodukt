@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { useCart } from '@/contexts/MockCartContext'
+import { useCart } from '@/contexts/CartContext'
 import { CartItem, CartSummary } from '@/components/cart'
 import { ShoppingBag, ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react'
 
