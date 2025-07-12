@@ -1,5 +1,10 @@
 import Link from 'next/link'
-export default async function Page({ params }: { params: { id: string } }) {
+
+type PageProps = {
+  params: { id: string }
+}
+
+export default function Page({ params }: PageProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-4">
