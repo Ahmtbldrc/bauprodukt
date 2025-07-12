@@ -85,16 +85,16 @@ export function BestsellerProducts() {
           
           <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
             <h3 className="text-lg font-semibold text-red-800 mb-2">
-              Bestseller Ürünler Yüklenemedi
+              Bestseller-Produkte konnten nicht geladen werden
             </h3>
             <p className="text-red-600 mb-4">
-              Bestseller ürünler yüklenirken bir hata oluştu.
+              Beim Laden der Bestseller-Produkte ist ein Fehler aufgetreten.
             </p>
             <button
               onClick={() => refetch()}
               className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
             >
-              Tekrar Dene
+              Erneut versuchen
             </button>
           </div>
         </div>
@@ -115,7 +115,7 @@ export function BestsellerProducts() {
           </div>
           
           <div className="text-center py-12">
-            <p className="text-gray-500">Henüz bestseller ürün bulunmamaktadır.</p>
+            <p className="text-gray-500">Es sind noch keine Bestseller-Produkte vorhanden.</p>
           </div>
         </div>
       </section>
@@ -128,7 +128,7 @@ export function BestsellerProducts() {
         <div className="flex justify-between items-start mb-12">
           <div>
             <h2 className="text-3xl font-bold text-gray-900 mb-4">Bestseller</h2>
-            <p className="text-gray-600">Meistverkaufte und Kundenfavoriten ({products.length} ürün)</p>
+            <p className="text-gray-600">Meistverkaufte und Kundenfavoriten ({products.length} Produkte)</p>
           </div>
           <Link 
             href="/bestsellers" 
@@ -180,7 +180,7 @@ export function BestsellerProducts() {
                     )}
                     {product.stock <= 5 && product.stock > 0 && (
                       <span className="px-2 py-1 bg-orange-500 text-white text-xs rounded font-semibold">
-                        Az Stok
+                        Geringer Bestand
                       </span>
                     )}
                   </div>
@@ -221,15 +221,15 @@ export function BestsellerProducts() {
                     <div className="flex-1">
                       {product.stock <= 0 ? (
                         <span className="inline-block px-2 py-1 bg-red-100 text-red-800 text-xs rounded">
-                          Stokta Yok
+                          Nicht auf Lager
                         </span>
                       ) : product.stock <= 5 ? (
                         <span className="inline-block px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded">
-                          Az Stok ({product.stock} adet)
+                          Geringer Bestand ({product.stock} Stück)
                         </span>
                       ) : (
                         <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
-                          Stokta Var
+                          Auf Lager
                         </span>
                       )}
                     </div>
