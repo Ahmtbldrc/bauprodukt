@@ -2,13 +2,13 @@ import { getProductBySlug } from '@/lib/mock-data'
 import { generateProductURLFromObject } from '@/lib/url-utils'
 import { redirect, notFound } from 'next/navigation'
 
-interface ProductPageProps {
+type PageProps = {
   params: {
     slug: string
   }
 }
 
-export default function ProductPage({ params }: ProductPageProps) {
+export default function Page({ params }: PageProps) {
   const product = getProductBySlug(params.slug)
   
   if (!product) {
