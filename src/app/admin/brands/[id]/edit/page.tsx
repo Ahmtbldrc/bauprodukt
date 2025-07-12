@@ -1,11 +1,4 @@
 import Link from 'next/link'
-
-type PageProps = {
-  params: {
-    id: string
-  }
-}
-
 export default async function Page({ params }: { params: { id: string } }) {
   return (
     <div className="space-y-6">
