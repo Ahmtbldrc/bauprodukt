@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { useCart } from '@/contexts/CartContext'
 import { CartItem as CartItemType } from '@/types/cart'
 import { Minus, Plus, Trash2 } from 'lucide-react'
+import { useProductById } from '@/hooks'
 
 // Simple Button component
 const Button: React.FC<{
@@ -56,6 +57,9 @@ export const CartItem: React.FC<CartItemProps> = ({
   const { updateCartItem, removeFromCart, isLoading } = useCart()
   const [actionLoading, setActionLoading] = useState(false)
 
+  // Fetch full product details for dynamic routing
+  const { data: fullProduct } = useProductById(item.product.id)
+
   const loading = isLoading || actionLoading
 
   const handleQuantityChange = async (newQuantity: number) => {
@@ -92,7 +96,7 @@ export const CartItem: React.FC<CartItemProps> = ({
     <div className="flex items-center gap-4 py-4 border-b border-gray-200">
       {/* Product Image */}
       <div className="flex-shrink-0">
-        <Link href={`/products/${item.product.slug}`}>
+        <Link href={fullProduct ? `/${fullProduct.brand?.slug}/${fullProduct.category?.slug}/${fullProduct.slug}` : '#'}>
           <div className="w-16 h-16 bg-gray-200 rounded-md overflow-hidden">
             {item.product.image_url ? (
               <Image
@@ -113,7 +117,7 @@ export const CartItem: React.FC<CartItemProps> = ({
 
       {/* Product Details */}
       <div className="flex-grow">
-        <Link href={`/products/${item.product.slug}`}>
+        <Link href={fullProduct ? `/${fullProduct.brand?.slug}/${fullProduct.category?.slug}/${fullProduct.slug}` : '#'}>
           <h3 
             className="font-medium text-gray-900 transition-colors hover:opacity-80"
             onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#F39236'}

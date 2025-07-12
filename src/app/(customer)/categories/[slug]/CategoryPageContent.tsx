@@ -159,7 +159,7 @@ export function CategoryPageContent({ slug }: CategoryPageContentProps) {
         {!productsLoading && !productsError && products.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {products.map((product) => (
-              <Link key={product.id} href={`/products/${product.slug}`}>
+              <Link key={product.id} href={`/${product.brand?.slug}/${product.category?.slug}/${product.slug}`}>
                 <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="h-48 bg-gray-200 flex items-center justify-center">
                     {product.product_images && product.product_images.length > 0 ? (
