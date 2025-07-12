@@ -12,6 +12,8 @@ export interface Category {
   slug: string
   description?: string
   image?: string
+  parent_id?: string | null
+  emoji?: string
 }
 
 export interface Product {

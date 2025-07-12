@@ -7,6 +7,8 @@ import { useCart } from '@/contexts/CartContext'
 import { useFavorites } from '@/contexts/FavoritesContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAllBrands } from '@/hooks/useBrands'
+import { useAllCategories } from '@/hooks/useCategories'
+import type { Category } from '@/types/product'
 
 import { 
   ShoppingCart, 
@@ -29,6 +31,21 @@ import {
   Mail
 } from 'lucide-react'
 
+// Helper: Build category tree from flat array
+function buildCategoryTree(categories: Category[]): (Category & { children: Category[] })[] {
+  const map = new Map<string, Category & { children: Category[] }>();
+  categories.forEach((cat) => map.set(cat.id, { ...cat, children: [] }));
+  const tree: (Category & { children: Category[] })[] = [];
+  categories.forEach((cat) => {
+    if (cat.parent_id) {
+      map.get(cat.parent_id)?.children.push(map.get(cat.id)!);
+    } else {
+      tree.push(map.get(cat.id)!);
+    }
+  });
+  return tree;
+}
+
 export function Header() {
   const { getTotalItems } = useCart()
   const { getFavoritesCount } = useFavorites()
@@ -44,8 +61,7 @@ export function Header() {
   const [selectedLocation, setSelectedLocation] = useState('Chur, Schweiz')
   const [categoryButtonPosition, setCategoryButtonPosition] = useState({ top: 0, left: 0 })
   const [brandButtonPosition, setBrandButtonPosition] = useState({ top: 0, left: 0 })
-  const [selectedCategory, setSelectedCategory] = useState(0) // İlk kategori default seçili
-  const [selectedSubcategory, setSelectedSubcategory] = useState(0) // İlk alt kategori default seçili
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   
   const categoryButtonRef = useRef<HTMLButtonElement>(null)
   const brandButtonRef = useRef<HTMLButtonElement>(null)
@@ -92,192 +108,9 @@ export function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isCategoryMenuOpen, isBrandMenuOpen, isUserMenuOpen])
 
-  const mainCategories = [
-    { 
-      name: 'Yapı Malzemeleri', 
-      icon: '🏗️', 
-      href: '/categories/yapi-malzemeleri',
-      subcategories: [
-        { 
-          name: 'Banyo', 
-          href: '/categories/banyo',
-          items: [
-            { name: 'Küvet', href: '/categories/banyo/kuvet' },
-            { name: 'Duş Bölmesi', href: '/categories/banyo/dus-bolmesi' },
-            { name: 'Lavabo', href: '/categories/banyo/lavabo' },
-            { name: 'Klozet', href: '/categories/banyo/klozet' },
-            { name: 'Banyo Mobilyası', href: '/categories/banyo/mobilya' },
-            { name: 'Banyo Aksesuarları', href: '/categories/banyo/aksesuarlar' }
-          ]
-        },
-        { 
-          name: 'Mutfak', 
-          href: '/categories/mutfak',
-          items: [
-            { name: 'Mutfak Tezgahı', href: '/categories/mutfak/tezgah' },
-            { name: 'Mutfak Dolapları', href: '/categories/mutfak/dolap' },
-            { name: 'Mutfak Evyesi', href: '/categories/mutfak/evye' },
-            { name: 'Mutfak Armatürleri', href: '/categories/mutfak/armatur' },
-            { name: 'Ankastre Ürünler', href: '/categories/mutfak/ankastre' },
-            { name: 'Mutfak Aksesuarları', href: '/categories/mutfak/aksesuarlar' }
-          ]
-        },
-        { 
-          name: 'Yapı Kimyasalları', 
-          href: '/categories/yapi-kimyasallari',
-          items: [
-            { name: 'Çimento', href: '/categories/yapi-kimyasallari/cimento' },
-            { name: 'Betonit', href: '/categories/yapi-kimyasallari/betonit' },
-            { name: 'Yapıştırıcılar', href: '/categories/yapi-kimyasallari/yapistiriciler' },
-            { name: 'Su Yalıtımı', href: '/categories/yapi-kimyasallari/su-yalitimi' },
-            { name: 'Isı Yalıtımı', href: '/categories/yapi-kimyasallari/isi-yalitimi' },
-            { name: 'Derz Dolguları', href: '/categories/yapi-kimyasallari/derz-dolgu' }
-          ]
-        },
-        { 
-          name: 'Yapı Elemanları', 
-          href: '/categories/yapi-elemanlari',
-          items: [
-            { name: 'Tuğla', href: '/categories/yapi-elemanlari/tugla' },
-            { name: 'Blok', href: '/categories/yapi-elemanlari/blok' },
-            { name: 'Briket', href: '/categories/yapi-elemanlari/briket' },
-            { name: 'Çatı Kiremidi', href: '/categories/yapi-elemanlari/kiremit' },
-            { name: 'Çatı Aksesuarları', href: '/categories/yapi-elemanlari/cati-aksesuarlar' },
-            { name: 'Bacalar', href: '/categories/yapi-elemanlari/baca' }
-          ]
-        }
-      ]
-    },
-    { 
-      name: 'Elektrik & Aydınlatma', 
-      icon: '💡', 
-      href: '/categories/elektrik',
-      subcategories: [
-        { 
-          name: 'Aydınlatma', 
-          href: '/categories/aydinlatma',
-          items: [
-            { name: 'LED Ampuller', href: '/categories/aydinlatma/led-ampul' },
-            { name: 'Avizeler', href: '/categories/aydinlatma/avize' },
-            { name: 'Spot Aydınlatma', href: '/categories/aydinlatma/spot' },
-            { name: 'Dış Mekan Aydınlatma', href: '/categories/aydinlatma/dis-mekan' },
-            { name: 'Dekoratif Aydınlatma', href: '/categories/aydinlatma/dekoratif' },
-            { name: 'Acil Durum Aydınlatma', href: '/categories/aydinlatma/acil-durum' }
-          ]
-        },
-        { 
-          name: 'Elektrik Tesisatı', 
-          href: '/categories/elektrik-tesisat',
-          items: [
-            { name: 'Kablolar', href: '/categories/elektrik-tesisat/kablo' },
-            { name: 'Priz ve Anahtarlar', href: '/categories/elektrik-tesisat/priz-anahtar' },
-            { name: 'Elektrik Panoları', href: '/categories/elektrik-tesisat/pano' },
-            { name: 'Sigorta ve Röleler', href: '/categories/elektrik-tesisat/sigorta-role' },
-            { name: 'Kablo Kanalları', href: '/categories/elektrik-tesisat/kablo-kanal' },
-            { name: 'Elektrik Kutuları', href: '/categories/elektrik-tesisat/elektrik-kutu' }
-          ]
-        },
-        { 
-          name: 'Güvenlik Sistemleri', 
-          href: '/categories/guvenlik',
-          items: [
-            { name: 'Güvenlik Kameraları', href: '/categories/guvenlik/kamera' },
-            { name: 'Alarm Sistemleri', href: '/categories/guvenlik/alarm' },
-            { name: 'Kapı Zili & İnterkom', href: '/categories/guvenlik/kapi-zili' },
-            { name: 'Acil Durum Sistemleri', href: '/categories/guvenlik/acil-durum' },
-            { name: 'Erişim Kontrolü', href: '/categories/guvenlik/erisim-kontrol' },
-            { name: 'Yangın Güvenliği', href: '/categories/guvenlik/yangin' }
-          ]
-        }
-      ]
-    },
-    { 
-      name: 'El Aletleri', 
-      icon: '🔧', 
-      href: '/categories/el-aletleri',
-      subcategories: [
-        { 
-          name: 'Vidalama Aletleri', 
-          href: '/categories/vidalama',
-          items: [
-            { name: 'Tornavida Setleri', href: '/categories/vidalama/tornavida-set' },
-            { name: 'Bits Setleri', href: '/categories/vidalama/bits' },
-            { name: 'Ratchet Tornavidalar', href: '/categories/vidalama/ratchet' },
-            { name: 'Elektrikçi Tornavidaları', href: '/categories/vidalama/elektrikci' },
-            { name: 'Hassas Tornavidalar', href: '/categories/vidalama/hassas' },
-            { name: 'Güç Tornavidaları', href: '/categories/vidalama/guc-tornavida' }
-          ]
-        },
-        { 
-          name: 'Ölçüm Aletleri', 
-          href: '/categories/olcum',
-          items: [
-            { name: 'Mezura', href: '/categories/olcum/mezura' },
-            { name: 'Gönye', href: '/categories/olcum/gonye' },
-            { name: 'Su Terazisi', href: '/categories/olcum/su-terazisi' },
-            { name: 'Kaliper', href: '/categories/olcum/kaliper' },
-            { name: 'Lazer Ölçüm', href: '/categories/olcum/lazer' },
-            { name: 'Dijital Ölçüm', href: '/categories/olcum/dijital' }
-          ]
-        },
-        { 
-          name: 'Kesim Aletleri', 
-          href: '/categories/kesim',
-          items: [
-            { name: 'El Testereleri', href: '/categories/kesim/el-testere' },
-            { name: 'Utility Bıçaklar', href: '/categories/kesim/utility-bicak' },
-            { name: 'Makas', href: '/categories/kesim/makas' },
-            { name: 'Pense', href: '/categories/kesim/pense' },
-            { name: 'Kargaburun', href: '/categories/kesim/kargaburun' },
-            { name: 'Tel Kesici', href: '/categories/kesim/tel-kesici' }
-          ]
-        }
-      ]
-    },
-    { 
-      name: 'Makine & Power Tools', 
-      icon: '⚡', 
-      href: '/categories/makineler',
-      subcategories: [
-        { 
-          name: 'Delme & Vidalama', 
-          href: '/categories/delme-vidalama',
-          items: [
-            { name: 'Akülü Matkap', href: '/categories/delme-vidalama/akulu-matkap' },
-            { name: 'Darbeli Matkap', href: '/categories/delme-vidalama/darbeli-matkap' },
-            { name: 'Kırıcı Delici', href: '/categories/delme-vidalama/kirici-delici' },
-            { name: 'Akülü Vidalama', href: '/categories/delme-vidalama/akulu-vidalama' },
-            { name: 'Matkap Uçları', href: '/categories/delme-vidalama/matkap-ucu' },
-            { name: 'Vidalama Uçları', href: '/categories/delme-vidalama/vidalama-ucu' }
-          ]
-        },
-        { 
-          name: 'Kesim Makineleri', 
-          href: '/categories/kesim-makineleri',
-          items: [
-            { name: 'Dairesel Testere', href: '/categories/kesim-makineleri/dairesel-testere' },
-            { name: 'Jigsaws', href: '/categories/kesim-makineleri/jigsaw' },
-            { name: 'Açı Taşlama', href: '/categories/kesim-makineleri/aci-taslama' },
-            { name: 'Metal Kesim', href: '/categories/kesim-makineleri/metal-kesim' },
-            { name: 'Testere Ağızları', href: '/categories/kesim-makineleri/testere-agzi' },
-            { name: 'Kesim Diskleri', href: '/categories/kesim-makineleri/kesim-disk' }
-          ]
-        },
-        { 
-          name: 'Zımpara & Polisaj', 
-          href: '/categories/zimpara-polisaj',
-          items: [
-            { name: 'Orbital Zımpara', href: '/categories/zimpara-polisaj/orbital' },
-            { name: 'Delta Zımpara', href: '/categories/zimpara-polisaj/delta' },
-            { name: 'Bant Zımpara', href: '/categories/zimpara-polisaj/bant' },
-            { name: 'Polisaj Makinesi', href: '/categories/zimpara-polisaj/polisaj' },
-            { name: 'Zımpara Kağıtları', href: '/categories/zimpara-polisaj/zimpara-kagit' },
-            { name: 'Polisaj Bezleri', href: '/categories/zimpara-polisaj/polisaj-bez' }
-          ]
-        }
-      ]
-    }
-  ]
+  const { data: categoriesResponse, isLoading: categoriesLoading } = useAllCategories();
+  const liveCategories = categoriesResponse?.data || [];
+  const categoryTree = buildCategoryTree(liveCategories);
 
   const { data: brandsResponse, isLoading: brandsLoading } = useAllBrands();
   const brands = brandsResponse?.data || [];
@@ -580,127 +413,65 @@ export function Header() {
                           Hauptkategorien
                         </h3>
                         <div className="space-y-1">
-                          {mainCategories.map((category, index) => (
-                            <div
-                              key={category.href}
-                              onMouseEnter={() => {
-                                setSelectedCategory(index)
-                              }}
-                              className={`flex items-center p-3 rounded-lg transition-all duration-200 cursor-pointer group ${
-                                selectedCategory === index 
-                                  ? 'bg-gradient-to-r from-orange-50 to-orange-100 border-l-4 border-orange-500' 
-                                  : 'hover:bg-gray-50'
-                              }`}
-                            >
-                              <span className="text-xl mr-3">{category.icon}</span>
-                              <div className="flex-1">
-                                <span className={`text-sm font-medium transition-colors ${
-                                  selectedCategory === index 
-                                    ? 'text-orange-700' 
-                                    : 'text-gray-700 group-hover:text-gray-800'
-                                }`}>
-                                  {category.name}
+                          {categoriesLoading ? (
+                            <div className="text-center py-4 text-gray-400">Kategorien werden geladen...</div>
+                          ) : (
+                            categoryTree.map((category) => (
+                              <div
+                                key={category.id}
+                                onMouseEnter={() => setSelectedCategory(category.id)}
+                                className={`flex items-center p-3 rounded-lg transition-all duration-200 cursor-pointer group ${selectedCategory === category.id ? 'bg-gradient-to-r from-orange-50 to-orange-100 border-l-4 border-orange-500' : 'hover:bg-gray-50'}`}
+                              >
+                                <span className="text-xl mr-3">
+                                  {category.emoji
+                                    ? category.emoji
+                                    : category.image
+                                      ? <img src={category.image} alt={category.name} className="inline w-6 h-6 rounded" />
+                                      : '📦'}
                                 </span>
-                                <div className={`text-xs mt-0.5 transition-colors ${
-                                  selectedCategory === index 
-                                    ? 'text-orange-600' 
-                                    : 'text-gray-500'
-                                }`}>
-                                  {category.subcategories.length} Kategorien
+                                <div className="flex-1">
+                                  <span className={`text-sm font-medium transition-colors ${selectedCategory === category.id ? 'text-orange-700' : 'text-gray-700 group-hover:text-gray-800'}`}>{category.name}</span>
                                 </div>
                               </div>
-                              <ChevronDown className={`h-4 w-4 transition-all duration-200 ${
-                                selectedCategory === index 
-                                  ? 'text-orange-500 -rotate-90' 
-                                  : 'text-gray-400 -rotate-90'
-                              }`} />
-                            </div>
-                          ))}
+                            ))
+                          )}
                         </div>
                       </div>
 
-                      {/* Sağ Panel - Alt Kategoriler ve Items */}
+                      {/* Sağ Panel - Alt Kategoriler und Items */}
                       <div className="w-2/3 p-4">
                         <div className="flex items-center justify-between mb-4">
                           <h3 className="text-lg font-semibold text-gray-800">
-                            {mainCategories[selectedCategory]?.name}
+                            {categoryTree.find(cat => cat.id === selectedCategory)?.name || 'Kategorie wählen'}
                           </h3>
-                          <Link 
-                            href={mainCategories[selectedCategory]?.href}
-                            onClick={() => setIsCategoryMenuOpen(false)}
-                            className="text-sm text-orange-600 hover:text-orange-700 font-medium transition-colors"
-                          >
-                            Alle anzeigen →
-                          </Link>
+                          {selectedCategory && (
+                            <Link 
+                              href={`/categories/${categoryTree.find(cat => cat.id === selectedCategory)?.slug}`}
+                              onClick={() => setIsCategoryMenuOpen(false)}
+                              className="text-sm text-orange-600 hover:text-orange-700 font-medium transition-colors"
+                            >
+                              Alle anzeigen →
+                            </Link>
+                          )}
                         </div>
                         
-                        <div className="space-y-4 max-h-80 overflow-y-auto">
-                          {mainCategories[selectedCategory]?.subcategories.map((subcategory, subIndex) => (
-                            <div key={subcategory.href} className="border-b border-gray-100 last:border-b-0 pb-4 last:pb-0">
-                              {/* Kategori Başlığı */}
-                              <div className="flex items-center justify-between mb-3">
-                                <Link 
-                                  href={subcategory.href}
-                                  onClick={() => setIsCategoryMenuOpen(false)}
-                                  className="flex items-center group"
-                                >
-                                  <div 
-                                    className="w-3 h-3 rounded-full mr-3 transition-colors"
-                                    style={{backgroundColor: '#A63F35'}}
-                                  ></div>
-                                  <h4 
-                                    className="text-sm font-semibold transition-colors group-hover:text-opacity-80"
-                                    style={{color: '#A63F35'}}
-                                  >
-                                    {subcategory.name}
-                                  </h4>
-                                </Link>
-                                <Link 
-                                  href={subcategory.href}
-                                  onClick={() => setIsCategoryMenuOpen(false)}
-                                  className="text-xs font-medium transition-colors hover:text-opacity-80"
-                                  style={{color: '#A63F35'}}
-                                >
-                                  Alle →
-                                </Link>
-                              </div>
-                              
-                              {/* Items Grid */}
-                              <div className="grid grid-cols-2 gap-2 ml-6">
-                                {subcategory.items.map((item) => (
-                                  <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    onClick={() => setIsCategoryMenuOpen(false)}
-                                    className="flex items-center p-2 rounded-lg transition-all duration-200 group"
-                                    onMouseEnter={(e) => {
-                                      e.currentTarget.style.backgroundColor = '#A63F3515'
-                                    }}
-                                    onMouseLeave={(e) => {
-                                      e.currentTarget.style.backgroundColor = 'transparent'
-                                    }}
-                                  >
-                                    <div 
-                                      className="w-1.5 h-1.5 rounded-full mr-3 transition-colors"
-                                      style={{
-                                        backgroundColor: '#A63F3550'
-                                      }}
-                                    ></div>
-                                    <span 
-                                      className="text-sm text-gray-700 transition-colors"
-                                      onMouseEnter={(e) => {
-                                        e.currentTarget.style.color = '#A63F35'
-                                      }}
-                                      onMouseLeave={(e) => {
-                                        e.currentTarget.style.color = '#374151'
-                                      }}
-                                    >
-                                      {item.name}
-                                    </span>
-                                  </Link>
-                                ))}
-                              </div>
-                            </div>
+                        {/* Subcategories (children) if any */}
+                        <div className="space-y-2 max-h-80 overflow-y-auto">
+                          {categoryTree.find(cat => cat.id === selectedCategory)?.children?.map((subcat: any) => (
+                            <Link
+                              key={subcat.id}
+                              href={`/categories/${subcat.slug}`}
+                              onClick={() => setIsCategoryMenuOpen(false)}
+                              className="flex items-center px-3 py-2 rounded-lg hover:bg-orange-50 transition-colors"
+                            >
+                              <span className="text-sm text-gray-700">
+                                {subcat.emoji
+                                  ? subcat.emoji
+                                  : subcat.image
+                                    ? <img src={subcat.image} alt={subcat.name} className="inline w-5 h-5 rounded mr-2" />
+                                    : '📂'} {subcat.name}
+                              </span>
+                            </Link>
                           ))}
                         </div>
 
@@ -822,42 +593,37 @@ export function Header() {
             {/* Categories */}
             <div className="py-4 border-b border-gray-100">
               <h3 className="font-semibold text-gray-900 mb-3">Kategorien</h3>
-              <div className="grid grid-cols-1 gap-3">
-                {mainCategories.slice(0, 3).map((category) => (
-                  <div key={category.href} className="bg-gray-50 rounded-lg p-3">
-                    <Link
-                      href={category.href}
-                      className="flex items-center mb-2 hover:text-orange-600 transition-colors"
-                    >
-                      <span className="text-lg mr-2">{category.icon}</span>
-                      <span className="text-sm font-medium text-gray-800">{category.name}</span>
-                    </Link>
-                    <div className="ml-6 space-y-1">
-                      {category.subcategories.slice(0, 2).map((subcategory) => (
-                        <div key={subcategory.href} className="border-l-2 border-gray-200 pl-3">
-                          <Link
-                            href={subcategory.href}
-                            className="text-xs text-gray-700 hover:text-blue-600 font-medium transition-colors block mb-1"
-                          >
-                            {subcategory.name}
-                          </Link>
-                          <div className="grid grid-cols-2 gap-1">
-                            {subcategory.items.slice(0, 4).map((item) => (
+              {categoriesLoading ? (
+                <div className="text-center py-4 text-gray-400">Kategorien werden geladen...</div>
+              ) : (
+                <div className="grid grid-cols-1 gap-3">
+                  {categoryTree.slice(0, 6).map((category) => (
+                    <div key={category.id} className="bg-gray-50 rounded-lg p-3">
+                      <Link
+                        href={`/categories/${category.slug}`}
+                        className="flex items-center mb-2 hover:text-orange-600 transition-colors"
+                      >
+                        <span className="text-lg mr-2">{category.emoji || category.image ? <img src={category.image} alt={category.name} className="inline w-6 h-6 rounded" /> : '📦'}</span>
+                        <span className="text-sm font-medium text-gray-800">{category.name}</span>
+                      </Link>
+                        {/* Subcategories in mobile menu */}
+                        {category.children && category.children.length > 0 && (
+                          <div className="ml-6 mt-1 space-y-1">
+                            {category.children.slice(0, 3).map((subcat: any) => (
                               <Link
-                                key={item.href}
-                                href={item.href}
-                                className="text-xs text-gray-500 hover:text-blue-600 py-0.5 transition-colors"
+                                key={subcat.id}
+                                href={`/categories/${subcat.slug}`}
+                                className="text-xs text-gray-700 hover:text-blue-600 font-medium transition-colors block mb-1"
                               >
-                                {item.name}
+                                {subcat.name}
                               </Link>
                             ))}
                           </div>
-                        </div>
-                      ))}
+                        )}
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Brands */}
