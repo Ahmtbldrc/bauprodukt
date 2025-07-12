@@ -16,6 +16,7 @@ import Image from 'next/image'
 import { Lens } from '@/components/magicui/lens'
 // @ts-ignore
 import ReactImageMagnify from 'react-image-magnify';
+import { FavoriteButton } from '@/components/favorites'
 
 interface ProductPageContentProps {
   brandSlug: string
@@ -309,9 +310,9 @@ export default function ProductPageContent({
                 disabled={!!(product?.stock === 0)}
                 className="flex-1"
               />
-              <button className="h-12 w-12 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-red-500 transition-colors flex items-center justify-center">
-                <Heart className="h-5 w-5" />
-              </button>
+              {product && (
+                <FavoriteButton product={product} size="lg" className="h-12 w-12 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-red-500 flex items-center justify-center" />
+              )}
             </div>
           </div>
         </div>

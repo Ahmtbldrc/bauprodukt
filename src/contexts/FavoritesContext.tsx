@@ -35,34 +35,18 @@ const favoritesReducer = (state: FavoriteProduct[], action: FavoritesAction): Fa
     case 'SET_FAVORITES':
       return action.payload || []
     case 'ADD_FAVORITE': {
-      const { productId } = action.payload
-      const product = mockProducts.find(p => p.id === productId)
-      if (!product) return state
-
+      const { product } = action.payload;
       // Check if already in favorites
-      if (state.some(fav => fav.id === productId)) {
-        return state
+      if (state.some(fav => fav.id === product.id)) {
+        return state;
       }
-
       const favoriteProduct: FavoriteProduct = {
-        id: product.id,
-        name: product.name,
-        slug: product.slug,
-        description: product.description,
-        price: product.price,
-        originalPrice: product.originalPrice,
-        image: product.image,
-        brand: product.brand,
-        category: product.category,
-        inStock: product.inStock,
-        onSale: product.onSale,
-        discountPercentage: product.discountPercentage,
+        ...product,
         addedAt: new Date().toISOString()
-      }
-
-      const newFavorites = [...state, favoriteProduct]
-      saveFavoritesToStorage(newFavorites)
-      return newFavorites
+      };
+      const newFavorites = [...state, favoriteProduct];
+      saveFavoritesToStorage(newFavorites);
+      return newFavorites;
     }
     case 'REMOVE_FAVORITE': {
       const { productId } = action.payload
@@ -123,23 +107,15 @@ export const FavoritesProvider: React.FC<FavoritesProviderProps> = ({ children }
   }
 
   // Add item to favorites
-  const addToFavorites = async (productId: string) => {
+  const addToFavorites = async (product: FavoriteProduct) => {
     try {
       setIsLoading(true)
       setError(null)
-
-      // Check if product exists
-      const product = mockProducts.find(p => p.id === productId)
-      if (!product) {
-        throw new Error('Product not found')
-      }
-
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 200))
-
       dispatch({ 
         type: 'ADD_FAVORITE', 
-        payload: { productId } 
+        payload: { product } 
       })
     } catch (err) {
       console.error('Failed to add to favorites:', err)

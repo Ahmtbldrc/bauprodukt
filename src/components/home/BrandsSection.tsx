@@ -83,7 +83,7 @@ export function BrandsSection() {
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
           {brands.slice(0, 5).map((brand) => (
-            <Link key={brand.id} href={generateBrandURL(brand.slug)}>
+            <Link key={brand.id} href={{ pathname: '/products', query: { brand: brand.id } }}>
               <div className="bg-white rounded-lg shadow-md p-6 text-center hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group">
                 <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center mx-auto mb-4 transition-colors group-hover:bg-gray-100">
                   <span className="text-sm font-medium text-gray-600 transition-colors group-hover:text-gray-800">

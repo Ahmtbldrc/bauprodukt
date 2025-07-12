@@ -5,21 +5,21 @@ import { Heart } from 'lucide-react'
 import { useFavorites } from '@/contexts/FavoritesContext'
 
 interface FavoriteButtonProps {
-  productId: string
+  product: any // Accept Product or FavoriteProduct
   className?: string
   size?: 'sm' | 'md' | 'lg'
   showText?: boolean
 }
 
 export function FavoriteButton({ 
-  productId, 
+  product, 
   className = '', 
   size = 'md', 
   showText = false 
 }: FavoriteButtonProps) {
   const { isFavorite, addToFavorites, removeFromFavorites, isLoading } = useFavorites()
   const [mounted, setMounted] = useState(false)
-  const favorite = isFavorite(productId)
+  const favorite = isFavorite(product.id)
 
   useEffect(() => {
     setMounted(true)
@@ -31,9 +31,9 @@ export function FavoriteButton({
 
     try {
       if (favorite) {
-        await removeFromFavorites(productId)
+        await removeFromFavorites(product.id)
       } else {
-        await addToFavorites(productId)
+        await addToFavorites(product)
       }
     } catch (error) {
       console.error('Failed to toggle favorite:', error)

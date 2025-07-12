@@ -8,12 +8,19 @@ import { Footer } from '@/components/layout/Footer'
 import { Heart, ArrowLeft, Trash2, ShoppingBag } from 'lucide-react'
 import { generateProductURLFromObject, formatPrice } from '@/lib/url-utils'
 import { ConfirmDialog } from '@/components/ui'
+import { useProductById } from '@/hooks/useProducts'
 
 export default function FavoritesPage() {
-  const { favorites, isLoading, error, removeFromFavorites, clearFavorites } = useFavorites()
+  const { favorites, isLoading: favoritesLoading, error, removeFromFavorites, clearFavorites } = useFavorites()
   const [localLoading, setLocalLoading] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
+
+  // Fetch live product data for each favorite
+  const productResults = favorites.map(fav => useProductById(fav.id))
+  const liveProducts = productResults.map(r => r.data).filter(Boolean)
+  const productsLoading = productResults.some(r => r.isLoading)
+  const productsError = productResults.find(r => r.error)?.error
 
   useEffect(() => {
     setMounted(true)
@@ -46,7 +53,7 @@ export default function FavoritesPage() {
     }
   }
 
-  if (!mounted || (isLoading && favorites.length === 0)) {
+  if (!mounted || (favoritesLoading && favorites.length === 0) || productsLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -68,14 +75,14 @@ export default function FavoritesPage() {
     )
   }
 
-  if (error) {
+  if (error || productsError) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1">
           <div className="container mx-auto px-4 py-8">
             <div className="text-center">
-              <p className="text-red-600 mb-4">Fehler beim Laden der Favoriten: {error}</p>
+              <p className="text-red-600 mb-4">Fehler beim Laden der Favoriten: {String(error || productsError || '')}</p>
               <Link href="/" className="hover:underline" style={{color: '#F39236'}}>
                 Zur Startseite
               </Link>
@@ -87,7 +94,7 @@ export default function FavoritesPage() {
     )
   }
 
-  const isEmpty = favorites.length === 0
+  const isEmpty = favorites.length === 0 || liveProducts.length === 0
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -158,7 +165,8 @@ export default function FavoritesPage() {
           ) : (
             /* Favorites Grid */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {favorites.map((product) => (
+              {liveProducts.map((product) => (
+                product ? (
                 <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow relative">
                   {/* Remove from favorites button */}
                   <button
@@ -177,68 +185,67 @@ export default function FavoritesPage() {
                     )}
                   </button>
 
-                                     <Link href={generateProductURLFromObject(product)}>
-                     <div className="h-48 bg-gray-200 flex items-center justify-center relative">
-                       <span className="text-gray-500 text-sm">Produktbild</span>
-                                             {product.onSale && (
-                         <span className="absolute top-2 left-2 inline-block px-2 py-1 bg-red-500 text-white text-xs rounded">
-                           {product.discountPercentage}% RABATT
-                         </span>
-                       )}
+                  <Link href={`/${product.brand?.slug || 'marke'}/${product.category?.slug || 'kategorie'}/${product.slug}`}>
+                    <div className="h-48 bg-gray-200 flex items-center justify-center relative">
+                      {product.image_url ? (
+                        <img src={product.image_url} alt={product.name} className="w-full h-full object-contain" />
+                      ) : (
+                        <span className="text-gray-500 text-sm">Produktbild</span>
+                      )}
+                      {product.discount_price && product.discount_price < product.price && (
+                        <span className="absolute top-2 left-2 inline-block px-2 py-1 bg-red-500 text-white text-xs rounded">
+                          {Math.round(((product.price - product.discount_price) / product.price) * 100)}% RABATT
+                        </span>
+                      )}
                     </div>
                     <div className="p-4">
                       <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
                         {product.name}
                       </h3>
                       <p className="text-sm text-gray-600 mb-1">
-                        {product.brand.name}
+                        {product.brand?.name}
                       </p>
                       <p className="text-xs text-gray-500 mb-2">
-                        {product.category.name}
+                        {product.category?.name}
                       </p>
-                      
                       <div className="flex items-center gap-2 mb-2">
                         <p className="text-lg font-bold" style={{color: '#F39236'}}>
-                          {formatPrice(product.price)}
+                          {formatPrice(product.discount_price != null ? product.discount_price : product.price)}
                         </p>
-                        {product.originalPrice && (
+                        {product.discount_price != null && (
                           <p className="text-sm text-gray-500 line-through">
-                            {formatPrice(product.originalPrice)}
+                            {formatPrice(product.price)}
                           </p>
                         )}
                       </div>
-                      
-                                             <div className="flex flex-wrap gap-1 mb-3">
-                         {!product.inStock && (
-                           <span className="inline-block px-2 py-1 bg-red-100 text-red-800 text-xs rounded">
-                             Nicht vorrätig
-                           </span>
-                         )}
-                         {product.onSale && (
-                           <span className="inline-block px-2 py-1 bg-red-100 text-red-800 text-xs rounded">
-                             Reduziert
-                           </span>
-                         )}
-                       </div>
-
-                                             <p className="text-xs text-gray-400 mb-3">
-                         Zu Favoriten hinzugefügt: {new Date(product.addedAt).toLocaleDateString('de-DE')}
-                       </p>
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {product.stock <= 0 && (
+                          <span className="inline-block px-2 py-1 bg-red-100 text-red-800 text-xs rounded">
+                            Nicht vorrätig
+                          </span>
+                        )}
+                        {product.discount_price && product.discount_price < product.price && (
+                          <span className="inline-block px-2 py-1 bg-red-100 text-red-800 text-xs rounded">
+                            Reduziert
+                          </span>
+                        )}
+                      </div>
+                      {/* Favorilere eklenme tarihi gösterilmiyor, çünkü canlı veriyle eşleşmiyor */}
                     </div>
                   </Link>
-
                   {/* Add to cart button */}
                   <div className="px-4 pb-4">
-                                         <button 
-                       className="w-full flex items-center justify-center gap-2 px-4 py-2 text-white font-medium rounded-md transition-colors hover:opacity-90"
-                       style={{backgroundColor: '#F39236'}}
-                       disabled={!product.inStock}
-                     >
-                       <ShoppingBag className="h-4 w-4" />
-                       {product.inStock ? 'In den Warenkorb' : 'Nicht vorrätig'}
-                     </button>
+                    <button 
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2 text-white font-medium rounded-md transition-colors hover:opacity-90"
+                      style={{backgroundColor: '#F39236'}}
+                      disabled={product.stock <= 0}
+                    >
+                      <ShoppingBag className="h-4 w-4" />
+                      {product.stock > 0 ? 'In den Warenkorb' : 'Nicht vorrätig'}
+                    </button>
                   </div>
                 </div>
+                ) : null
               ))}
             </div>
           )}

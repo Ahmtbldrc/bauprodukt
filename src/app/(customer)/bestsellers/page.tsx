@@ -181,7 +181,7 @@ export default function BestsellersPage() {
                 <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow relative">
                   {/* Favorite Button */}
                   <div className="absolute top-2 right-2 z-10">
-                    <FavoriteButton productId={product.id} size="sm" className="bg-white shadow-md hover:bg-gray-50" />
+                    <FavoriteButton product={product} size="sm" className="bg-white shadow-md hover:bg-gray-50" />
                   </div>
                   <Link href={generateProductURL(product)}>
                     <div className="h-48 bg-gray-200 flex items-center justify-center relative">
