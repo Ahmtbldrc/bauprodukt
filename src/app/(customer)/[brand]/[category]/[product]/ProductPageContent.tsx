@@ -2,9 +2,8 @@
 
 import { AddToCartButton } from '@/components/cart'
 import Link from 'next/link'
-import { notFound } from 'next/navigation'
 import { useState, useEffect } from 'react'
-import { Heart, RefreshCw, ChevronUp, ChevronDown } from 'lucide-react'
+import { ChevronUp, ChevronDown } from 'lucide-react'
 import { 
   useBrandBySlug, 
   useCategoryBySlug, 
@@ -14,8 +13,6 @@ import {
 import { formatPrice, generateBrandURL, generateCategoryURL } from '@/lib/url-utils'
 import Image from 'next/image'
 import { Lens } from '@/components/magicui/lens'
-// @ts-ignore
-import ReactImageMagnify from 'react-image-magnify';
 import { FavoriteButton } from '@/components/favorites'
 
 interface ProductPageContentProps {
@@ -34,13 +31,10 @@ export default function ProductPageContent({
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0)
 
   // Fetch brand, category and product data
-  const { data: brand, isLoading: brandLoading, error: brandError } = useBrandBySlug(brandSlug)
-  const { data: category, isLoading: categoryLoading, error: categoryError } = useCategoryBySlug(categorySlug)
+  const { data: brand } = useBrandBySlug(brandSlug)
+  const { data: category } = useCategoryBySlug(categorySlug)
   const { 
     data: product, 
-    isLoading: productLoading, 
-    error: productError,
-    refetch: refetchProduct 
   } = useProductByBrandCategorySlug(brand?.id, category?.id, productSlug)
 
   // Fetch related products from same brand

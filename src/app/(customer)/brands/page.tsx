@@ -1,6 +1,5 @@
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
-import Link from 'next/link'
 import BrandsPageContent from './BrandsPageContent'
 
 export default function BrandsPage() {

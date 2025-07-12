@@ -1,7 +1,6 @@
 "use client"
 
 import { useAllBrands } from '@/hooks/useBrands'
-import { generateBrandURL } from '@/lib/url-utils'
 import Link from 'next/link'
 
 export default function BrandsPageContent() {
