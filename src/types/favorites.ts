@@ -28,7 +28,7 @@ export interface FavoritesContextType {
   error: string | null
   
   // Actions
-  addToFavorites: (productId: string) => Promise<void>
+  addToFavorites: (product: FavoriteProduct) => Promise<void>
   removeFromFavorites: (productId: string) => Promise<void>
   clearFavorites: () => Promise<void>
   refreshFavorites: () => Promise<void>
