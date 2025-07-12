@@ -1,9 +1,94 @@
+"use client"
+
 import Link from 'next/link'
-import { getDiscountedProducts } from '@/lib/mock-data'
-import { generateProductURLFromObject, formatPrice, hasDiscount } from '@/lib/url-utils'
+import { useProducts } from '@/hooks/useProducts'
+import { formatPrice } from '@/lib/url-utils'
+import type { ProductWithRelations } from '@/types/database'
 
 export function DiscountedProducts() {
-  const products = getDiscountedProducts()
+  // Fetch products (get more to ensure we have at least 4 discounted)
+  const { data: productsResponse, isLoading, error, refetch } = useProducts({ limit: 24 })
+
+  // Defensive: cast to ProductWithRelations[] for downstream usage
+  const products: ProductWithRelations[] = (productsResponse?.data as ProductWithRelations[]) || []
+  const discountedProducts = products
+    .filter((product) => product.discount_price !== null && product.discount_price < product.price && product.brand && product.category)
+    .slice(0, 4)
+
+  // Helper for product URL
+  const generateProductURL = (product: ProductWithRelations) => {
+    if (product.brand?.slug && product.category?.slug) {
+      return `/${product.brand.slug}/${product.category.slug}/${product.slug}`
+    }
+    return `/products/${product.slug}`
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-12">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Reduzierte Produkte</h2>
+              <p className="text-gray-600">Spezielle Angebote für ausgewählte Produkte</p>
+            </div>
+            <div className="w-32 h-8 bg-gray-200 rounded animate-pulse" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white rounded-xl shadow-sm border border-gray-200 h-64 animate-pulse" />
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-12">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Reduzierte Produkte</h2>
+              <p className="text-gray-600">Spezielle Angebote für ausgewählte Produkte</p>
+            </div>
+          </div>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
+            <h3 className="text-lg font-semibold text-red-800 mb-2">Fehler beim Laden der Produkte</h3>
+            <p className="text-red-600 mb-4">Beim Laden der reduzierten Produkte ist ein Fehler aufgetreten.</p>
+            <button
+              onClick={() => refetch()}
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+            >
+              Erneut versuchen
+            </button>
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  // Empty state
+  if (!discountedProducts || discountedProducts.length === 0) {
+    return (
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-12">
+            <div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Reduzierte Produkte</h2>
+              <p className="text-gray-600">Spezielle Angebote für ausgewählte Produkte</p>
+            </div>
+          </div>
+          <div className="text-center py-12">
+            <p className="text-gray-500">Zurzeit sind keine reduzierten Produkte verfügbar.</p>
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="py-16 bg-gray-50">
@@ -23,68 +108,70 @@ export function DiscountedProducts() {
             </svg>
           </Link>
         </div>
-        
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.map((product) => (
-            <Link key={product.id} href={generateProductURLFromObject(product)}>
-              <div className="group bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg hover:border-gray-300 transition-all duration-300">
-                <div className="relative">
-                  <div className="aspect-square bg-gray-100 flex items-center justify-center">
-                    <span className="text-gray-400 text-sm">Produktbild</span>
-                  </div>
-                  
-                  {/* Simple discount badge */}
-                  {product.discountPercentage && (
-                    <div className="absolute top-3 left-3">
-                                             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                         %{product.discountPercentage} Rabatt
-                       </span>
+          {discountedProducts.map((product) => {
+            const discountPercent = product.discount_price !== null ? Math.round(((product.price - product.discount_price) / product.price) * 100) : 0
+            return (
+              <Link key={product.id} href={generateProductURL(product)}>
+                <div className="group bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg hover:border-gray-300 transition-all duration-300 flex flex-col h-[540px]">
+                  <div className="relative w-full h-72 flex-shrink-0">
+                    <div className="w-full h-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                      {product.product_images && product.product_images.length > 0 ? (
+                        <img
+                          src={product.product_images[0].image_url}
+                          alt={product.name}
+                          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+                          style={{ maxHeight: '260px', minHeight: '160px' }}
+                        />
+                      ) : (
+                        <span className="text-gray-400 text-sm">Produktbild</span>
+                      )}
                     </div>
-                  )}
-                </div>
-                
-                <div className="p-5">
-                  <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2 leading-5">
-                    {product.name}
-                  </h3>
-                  
-                  <p className="text-sm text-gray-500 mb-3">
-                    {product.brand.name}
-                  </p>
-                  
-                  {/* Clean price section */}
-                  <div className="space-y-1 mb-4">
-                    {product.originalPrice && (
+                    {/* Discount badge */}
+                    <div className="absolute top-3 left-3">
+                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                        %{discountPercent} Rabatt
+                      </span>
+                    </div>
+                  </div>
+                  <div className="py-6 px-5 pb-8 flex flex-col flex-1 min-h-[240px] gap-3">
+                    <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2 leading-5 min-h-[40px]">
+                      {product.name}
+                    </h3>
+                    <p className="text-sm text-gray-500 mb-3 min-h-[20px]">
+                      {product.brand?.name}
+                    </p>
+                    {/* Price section */}
+                    <div className="space-y-1 mb-4">
                       <div className="flex items-center space-x-2">
                         <span className="text-sm text-gray-400 line-through">
-                          {formatPrice(product.originalPrice)}
+                          {formatPrice(product.price)}
                         </span>
-                                                 <span className="text-xs text-red-600 font-medium">
-                           {formatPrice(product.originalPrice - product.price)} Ersparnis
-                         </span>
+                        <span className="text-xs text-red-600 font-medium">
+                          {formatPrice(product.discount_price !== null ? product.price - product.discount_price : 0)} Ersparnis
+                        </span>
                       </div>
-                    )}
-                    <div className="text-lg font-bold text-gray-900">
-                      {formatPrice(product.price)}
+                      <div className="text-lg font-bold text-gray-900">
+                        {formatPrice(product.discount_price !== null ? product.discount_price : product.price)}
+                      </div>
+                    </div>
+                    {/* Stock status */}
+                    <div className="flex items-center justify-between mt-0 mb-4">
+                      {product.stock <= 0 ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600">
+                          Nicht auf Lager
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-700">
+                          Auf Lager
+                        </span>
+                      )}
                     </div>
                   </div>
-                  
-                  {/* Stock status */}
-                  <div className="flex items-center justify-between">
-                                         {!product.inStock ? (
-                       <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600">
-                         Nicht auf Lager
-                       </span>
-                     ) : (
-                       <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-700">
-                         Auf Lager
-                       </span>
-                     )}
-                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            )
+          })}
         </div>
       </div>
     </section>

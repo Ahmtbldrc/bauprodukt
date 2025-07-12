@@ -86,16 +86,16 @@ export default function HeroBanner() {
           <div className="relative h-80 lg:h-96 w-full rounded-2xl bg-red-50 border border-red-200 overflow-hidden">
             <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
               <h3 className="text-xl font-semibold text-red-800 mb-2">
-                Banner Yüklenemedi
+                Banner konnte nicht geladen werden
               </h3>
               <p className="text-red-600 mb-4">
-                Banner bilgileri yüklenirken bir hata oluştu.
+                Beim Laden der Bannerinformationen ist ein Fehler aufgetreten.
               </p>
               <button
                 onClick={() => refetch()}
                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
               >
-                Tekrar Dene
+                Erneut versuchen
               </button>
             </div>
           </div>
@@ -112,8 +112,8 @@ export default function HeroBanner() {
           <div className="relative h-80 lg:h-96 w-full rounded-2xl bg-gradient-to-r from-blue-500 to-purple-600 overflow-hidden">
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center text-white">
-                <h2 className="text-3xl md:text-5xl font-bold mb-4">Bauprodukt'a Hoş Geldiniz</h2>
-                <p className="text-xl">Kaliteli yapı malzemeleri için doğru adres</p>
+                <h2 className="text-3xl md:text-5xl font-bold mb-4">Willkommen bei Bauprodukt</h2>
+                <p className="text-xl">Die richtige Adresse für hochwertige Baumaterialien</p>
               </div>
             </div>
           </div>
@@ -153,7 +153,7 @@ export default function HeroBanner() {
                       href={currentBanner.link}
                       className="bg-white text-gray-900 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors inline-block shadow-lg"
                     >
-                      Detayları Gör
+                      Details anzeigen
                     </a>
                   </div>
                 )}

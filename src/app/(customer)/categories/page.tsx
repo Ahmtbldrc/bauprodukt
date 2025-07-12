@@ -18,14 +18,14 @@ export default function CategoriesPage() {
       <main className="flex-1 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Kategoriler</h1>
+            <h1 className="text-3xl font-bold text-gray-900">Kategorien</h1>
             <p className="text-gray-600 mt-2">
               {isLoading ? (
-                'Kategoriler yükleniyor...'
+                'Kategorien werden geladen...'
               ) : error ? (
-                'Kategoriler yüklenirken hata oluştu'
+                'Fehler beim Laden der Kategorien'
               ) : (
-                `Ürün kategorilerini keşfedin (${categories.length} kategori)`
+                `Entdecken Sie unsere Produktkategorien (${categories.length} Kategorien)`
               )}
             </p>
           </div>
@@ -51,14 +51,14 @@ export default function CategoriesPage() {
                 <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <h2 className="text-xl font-semibold mb-2">Kategoriler Yüklenemedi</h2>
-                <p className="text-gray-600 mb-4">Kategoriler yüklenirken bir hata oluştu. Lütfen tekrar deneyin.</p>
+                <h2 className="text-xl font-semibold mb-2">Kategorien konnten nicht geladen werden</h2>
+                <p className="text-gray-600 mb-4">Beim Laden der Kategorien ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut.</p>
               </div>
               <button 
                 onClick={() => window.location.reload()} 
                 className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
               >
-                Sayfayı Yenile
+                Seite neu laden
               </button>
             </div>
           )}
@@ -69,8 +69,8 @@ export default function CategoriesPage() {
                 <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
-                <h2 className="text-xl font-semibold mb-2">Henüz Kategori Bulunmuyor</h2>
-                <p className="text-gray-600">Yakında kategoriler eklenecek. Lütfen daha sonra tekrar kontrol edin.</p>
+                <h2 className="text-xl font-semibold mb-2">Noch keine Kategorien vorhanden</h2>
+                <p className="text-gray-600">Bald werden Kategorien hinzugefügt. Bitte schauen Sie später noch einmal vorbei.</p>
               </div>
             </div>
           )}
@@ -92,7 +92,7 @@ export default function CategoriesPage() {
                       {category.name}
                     </h3>
                     <p className="text-gray-600">
-                        {category.description || 'Bu kategoride çeşitli ürünler bulabilirsiniz.'}
+                        {category.description || 'In dieser Kategorie finden Sie verschiedene Produkte.'}
                     </p>
                   </div>
                 </div>

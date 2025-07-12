@@ -20,11 +20,13 @@ export function CategoriesSection() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
             {[...Array(5)].map((_, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
-                <div className="h-32 bg-gray-200"></div>
-                <div className="p-4 text-center">
-                  <div className="h-4 bg-gray-200 rounded w-20 mx-auto mb-2"></div>
-                  <div className="h-3 bg-gray-200 rounded w-16 mx-auto mb-2"></div>
+              <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse flex flex-col h-64">
+                <div className="h-32 bg-gray-200 flex items-center justify-center"></div>
+                <div className="p-4 text-center flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="h-4 bg-gray-200 rounded w-20 mx-auto mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-16 mx-auto mb-2"></div>
+                  </div>
                   <div className="h-3 bg-gray-200 rounded w-12 mx-auto"></div>
                 </div>
               </div>
@@ -52,7 +54,7 @@ export function CategoriesSection() {
               onClick={() => window.location.reload()} 
               className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
             >
-              Erneut versuchen
+              Nochmals versuchen
             </button>
           </div>
         </div>
@@ -87,23 +89,25 @@ export function CategoriesSection() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {categories.slice(0, 5).map((category) => (
               <Link key={category.id} href={generateCategoryURL(category.slug)}>
-                <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group">
+                <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group flex flex-col h-64">
                   <div className="h-32 flex items-center justify-center transition-all" style={{background: 'linear-gradient(to bottom right, #F3923620, #F3923640)'}}>
                     <div className="text-center">
-                    <span className="text-4xl" style={{color: '#F39236'}}>
-                      {category.emoji || '🔧'}
-                    </span>
+                      <span className="text-4xl" style={{color: '#F39236'}}>
+                        {category.emoji || '🔧'}
+                      </span>
                     </div>
                   </div>
-                  <div className="p-4 text-center">
-                    <h3 className="font-semibold text-gray-900 mb-2 transition-colors group-hover:text-gray-800">
-                      {category.name}
-                    </h3>
-                    <p className="text-xs text-gray-500 mb-2 line-clamp-2">
-                      {category.description}
-                    </p>
+                  <div className="p-4 text-center flex-1 flex flex-col justify-between">
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-2 transition-colors group-hover:text-gray-800">
+                        {category.name}
+                      </h3>
+                      <p className="text-xs text-gray-500 mb-2 line-clamp-2">
+                        {category.description}
+                      </p>
+                    </div>
                     <div className="text-sm font-medium" style={{color: '#F39236'}}>
-                    Ürünleri Keşfet
+                      Produkte entdecken
                     </div>
                   </div>
                 </div>
