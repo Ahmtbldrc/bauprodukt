@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { deleteFile, uploadFile, validateFile } from '@/lib/upload'
 
 interface RouteParams {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 // Ürün resimlerini listele

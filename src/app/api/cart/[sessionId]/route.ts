@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
 interface RouteParams {
-  params: {
-    sessionId: string
-  }
+  params: Promise<{ sessionId: string }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {

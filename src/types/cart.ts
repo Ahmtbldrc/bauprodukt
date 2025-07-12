@@ -53,16 +53,11 @@ export interface CartContextType {
   getTotalAmount: () => number
 }
 
-export type CartActionType = 
-  | 'SET_LOADING'
-  | 'SET_ERROR'
-  | 'SET_CART'
-  | 'ADD_ITEM'
-  | 'UPDATE_ITEM'
-  | 'REMOVE_ITEM'
-  | 'CLEAR_CART'
-
-export interface CartAction {
-  type: CartActionType
-  payload?: unknown
-} 
+export type CartAction = 
+  | { type: 'SET_CART'; payload: Cart | null }
+  | { type: 'CLEAR_CART' }
+  | { type: 'SET_LOADING'; payload: boolean }
+  | { type: 'SET_ERROR'; payload: string | null }
+  | { type: 'ADD_ITEM'; payload: { productId: string; quantity: number } }
+  | { type: 'UPDATE_ITEM'; payload: { itemId: string; quantity: number } }
+  | { type: 'REMOVE_ITEM'; payload: { itemId: string } } 

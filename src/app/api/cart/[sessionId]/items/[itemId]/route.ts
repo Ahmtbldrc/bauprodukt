@@ -3,10 +3,10 @@ import { supabase } from '@/lib/supabase'
 import { validateUpdateCartItem } from '@/schemas/database'
 
 interface RouteParams {
-  params: {
+  params: Promise<{
     sessionId: string
     itemId: string
-  }
+  }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {

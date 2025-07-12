@@ -3,9 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { updateBannerSchema } from '@/schemas/database'
 
 interface RouteParams {
-  params: {
-    id: string
-  }
+  params: Promise<{ id: string }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {

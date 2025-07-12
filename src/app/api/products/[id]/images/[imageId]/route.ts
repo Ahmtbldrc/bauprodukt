@@ -3,10 +3,10 @@ import { supabase } from '@/lib/supabase'
 import { deleteFile } from '@/lib/upload'
 
 interface RouteParams {
-  params: { 
+  params: Promise<{ 
     id: string
     imageId: string 
-  }
+  }>
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {

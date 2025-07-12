@@ -3,9 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { validateUpdateOrder } from '@/schemas/database'
 
 interface RouteParams {
-  params: {
-    orderId: string
-  }
+  params: Promise<{ orderId: string }>
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {

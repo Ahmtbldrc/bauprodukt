@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 
 interface RouteParams {
-  params: { 
+  params: Promise<{
     id: string
-    imageId: string 
-  }
+    imageId: string
+  }>
 }
 
 export async function PUT(request: NextRequest, { params }: RouteParams) {

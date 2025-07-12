@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { uploadFile, validateFile } from '@/lib/upload'
 
 interface RouteParams {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
