@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useCart } from '@/contexts/CartContext'
 import { useFavorites } from '@/contexts/FavoritesContext'
 import { useAuth } from '@/contexts/AuthContext'
+import { useAllBrands } from '@/hooks/useBrands'
 
 import { 
   ShoppingCart, 
@@ -278,20 +279,8 @@ export function Header() {
     }
   ]
 
-  const popularBrands = [
-    { name: 'Bosch', href: '/brands/bosch' },
-    { name: 'Makita', href: '/brands/makita' },
-    { name: 'DeWalt', href: '/brands/dewalt' },
-    { name: 'Black & Decker', href: '/brands/black-decker' },
-    { name: 'Hilti', href: '/brands/hilti' },
-    { name: 'Festool', href: '/brands/festool' },
-    { name: 'Würth', href: '/brands/wurth' },
-    { name: 'Fischer', href: '/brands/fischer' },
-    { name: 'Stihl', href: '/brands/stihl' },
-    { name: 'Karcher', href: '/brands/karcher' },
-    { name: 'Leifheit', href: '/brands/leifheit' },
-    { name: 'Gardena', href: '/brands/gardena' }
-  ]
+  const { data: brandsResponse, isLoading: brandsLoading } = useAllBrands();
+  const brands = brandsResponse?.data || [];
 
   return (
     <div className="sticky top-0 z-50">
@@ -759,21 +748,25 @@ export function Header() {
                   >
                     <div className="p-4">
                       <h3 className="text-lg font-semibold text-gray-900 mb-3">Beliebte Marken</h3>
-                      <div className="grid grid-cols-3 gap-2">
-                        {popularBrands.map((brand) => (
-                          <Link
-                            key={brand.href}
-                            href={brand.href}
-                            onClick={() => setIsBrandMenuOpen(false)}
-                            className="flex items-center p-3 rounded-lg hover:bg-gradient-to-r hover:from-[#C74A40]/10 hover:to-[#A63F35]/10 transition-all duration-200 group"
-                          >
-                            <div className="w-2 h-2 bg-[#C74A40] rounded-full mr-3 group-hover:bg-[#A63F35] transition-colors"></div>
-                            <span className="text-sm font-medium text-gray-700 group-hover:text-[#C74A40]">
-                              {brand.name}
-                            </span>
-                          </Link>
-                        ))}
-                      </div>
+                      {brandsLoading ? (
+                        <div className="text-center py-4 text-gray-400">Marken werden geladen...</div>
+                      ) : (
+                        <div className="grid grid-cols-3 gap-2">
+                          {brands.slice(0, 12).map((brand) => (
+                            <Link
+                              key={brand.id}
+                              href={{ pathname: '/products', query: { brand: brand.id } }}
+                              onClick={() => setIsBrandMenuOpen(false)}
+                              className="flex items-center p-3 rounded-lg hover:bg-gradient-to-r hover:from-[#C74A40]/10 hover:to-[#A63F35]/10 transition-all duration-200 group"
+                            >
+                              <div className="w-2 h-2 bg-[#C74A40] rounded-full mr-3 group-hover:bg-[#A63F35] transition-colors"></div>
+                              <span className="text-sm font-medium text-gray-700 group-hover:text-[#C74A40]">
+                                {brand.name}
+                              </span>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
                       <div className="mt-4 pt-4 border-t border-gray-100">
                         <Link 
                           href="/brands"
@@ -870,18 +863,22 @@ export function Header() {
             {/* Brands */}
             <div className="py-4 border-b border-gray-100">
               <h3 className="font-semibold text-gray-900 mb-3">Beliebte Marken</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {popularBrands.slice(0, 6).map((brand) => (
-                  <Link
-                    key={brand.href}
-                    href={brand.href}
-                    className="flex items-center p-2 bg-gray-50 rounded-lg hover:bg-gradient-to-r hover:from-[#C74A40]/10 hover:to-[#A63F35]/10 transition-all duration-200"
-                  >
-                    <div className="w-1.5 h-1.5 bg-[#C74A40] rounded-full mr-2"></div>
-                    <span className="text-sm text-gray-700">{brand.name}</span>
-                  </Link>
-                ))}
-              </div>
+              {brandsLoading ? (
+                <div className="text-center py-4 text-gray-400">Marken werden geladen...</div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {brands.slice(0, 6).map((brand) => (
+                    <Link
+                      key={brand.id}
+                      href={{ pathname: '/products', query: { brand: brand.id } }}
+                      className="flex items-center p-2 bg-gray-50 rounded-lg hover:bg-gradient-to-r hover:from-[#C74A40]/10 hover:to-[#A63F35]/10 transition-all duration-200"
+                    >
+                      <div className="w-1.5 h-1.5 bg-[#C74A40] rounded-full mr-2"></div>
+                      <span className="text-sm text-gray-700">{brand.name}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Quick Links */}
