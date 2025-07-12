@@ -2,7 +2,6 @@
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react'
 import { FavoriteProduct, FavoritesContextType, FavoritesAction } from '@/types/favorites'
-import { mockProducts } from '@/lib/mock-data'
 
 // Get favorites from localStorage
 const getFavoritesFromStorage = (): FavoriteProduct[] => {

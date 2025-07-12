@@ -181,7 +181,33 @@ export default function BestsellersPage() {
                 <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow relative">
                   {/* Favorite Button */}
                   <div className="absolute top-2 right-2 z-10">
-                    <FavoriteButton product={product} size="sm" className="bg-white shadow-md hover:bg-gray-50" />
+                    <FavoriteButton 
+                      product={{
+                        id: product.id,
+                        name: product.name,
+                        slug: product.slug,
+                        description: product.description ?? '',
+                        price: product.price,
+                        originalPrice: product.discount_price ?? undefined,
+                        image: product.image_url ?? undefined,
+                        brand: {
+                          id: product.brand?.id ?? '',
+                          name: product.brand?.name ?? '',
+                          slug: product.brand?.slug ?? '',
+                        },
+                        category: {
+                          id: product.category?.id ?? '',
+                          name: product.category?.name ?? '',
+                          slug: product.category?.slug ?? '',
+                        },
+                        inStock: product.stock > 0,
+                        onSale: !!product.discount_price,
+                        discountPercentage: product.discount_percentage_actual ?? undefined,
+                        addedAt: '', // Set as needed
+                      }}
+                      size="sm"
+                      className="bg-white shadow-md hover:bg-gray-50"
+                    />
                   </div>
                   <Link href={generateProductURL(product)}>
                     <div className="h-48 bg-gray-200 flex items-center justify-center relative">
@@ -222,7 +248,7 @@ export default function BestsellersPage() {
                             Nicht auf Lager
                           </span>
                         )}
-                        {(product as any)?.featured ? (
+                        {product.featured ? (
                           <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
                             Empfohlen
                           </span>

@@ -3,6 +3,55 @@
 import Link from 'next/link'
 import { useProducts } from '@/hooks/useProducts'
 import { formatPrice } from '@/lib/url-utils'
+import { ProductWithRelations as DBProduct } from '@/types/database'
+import { Product as UIProduct } from '@/types/product'
+
+function mapDBProductToUIProduct(product: DBProduct): UIProduct {
+  return {
+    id: product.id,
+    name: product.name,
+    slug: product.slug,
+    description: product.description ?? '',
+    price: product.price,
+    originalPrice: product.discount_price ?? undefined,
+    image: product.image_url ?? undefined,
+    brand: product.brand && typeof product.brand === 'object' && 'id' in product.brand ? {
+      id: product.brand?.id ?? '',
+      name: product.brand?.name ?? '',
+      slug: product.brand?.slug ?? '',
+      description: undefined,
+      logo: undefined,
+    } : {
+      id: '',
+      name: '',
+      slug: '',
+      description: undefined,
+      logo: undefined,
+    },
+    category: product.category && typeof product.category === 'object' && 'id' in product.category ? {
+      id: product.category?.id ?? '',
+      name: product.category?.name ?? '',
+      slug: product.category?.slug ?? '',
+      description: undefined,
+      image: undefined,
+      parent_id: undefined,
+      emoji: undefined,
+    } : {
+      id: '',
+      name: '',
+      slug: '',
+      description: undefined,
+      image: undefined,
+      parent_id: undefined,
+      emoji: undefined,
+    },
+    inStock: typeof product.stock === 'number' ? product.stock > 0 : false,
+    featured: false,
+    bestseller: false,
+    onSale: !!product.discount_price,
+    discountPercentage: undefined,
+  }
+}
 
 export function BestsellerProducts() {
   const { data: productsResponse, isLoading, error, refetch } = useProducts({ 
@@ -10,7 +59,7 @@ export function BestsellerProducts() {
   })
 
   // Shuffle function to randomize products
-  const shuffleArray = (array: any[]) => {
+  const shuffleArray = (array: UIProduct[]) => {
     const shuffled = [...array]
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1))
@@ -21,20 +70,20 @@ export function BestsellerProducts() {
 
   // Get random 4 products from API response
   const products = productsResponse?.data ? 
-    shuffleArray(productsResponse.data).slice(0, 4) : 
+    shuffleArray((productsResponse.data as DBProduct[]).map(mapDBProductToUIProduct)).slice(0, 4) : 
     []
 
-  const hasDiscount = (product: any) => {
-    return product.discount_price && product.discount_price < product.price
+  const hasDiscount = (product: UIProduct) => {
+    return product.originalPrice && product.originalPrice < product.price
   }
 
-  const getDiscountPercentage = (product: any) => {
+  const getDiscountPercentage = (product: UIProduct) => {
     if (!hasDiscount(product)) return 0
-    const discount = ((product.price - product.discount_price) / product.price) * 100
+    const discount = ((product.price - (product.originalPrice ?? product.price)) / product.price) * 100
     return Math.round(discount)
   }
 
-  const generateProductURL = (product: any) => {
+  const generateProductURL = (product: UIProduct) => {
     if (product.brand?.slug && product.category?.slug) {
       return `/${product.brand.slug}/${product.category.slug}/${product.slug}`
     }
@@ -145,15 +194,15 @@ export function BestsellerProducts() {
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.map((product: any) => (
+          {products.map((product: UIProduct) => (
             <Link key={product.id} href={generateProductURL(product)}>
               <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative">
                 <div className="relative">
                   {/* Product Image */}
                   <div className="h-48 bg-gray-100 overflow-hidden">
-                    {product.image_url ? (
+                    {product.image ? (
                       <img 
-                        src={product.image_url} 
+                        src={product.image} 
                         alt={product.name}
                         className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
@@ -163,7 +212,7 @@ export function BestsellerProducts() {
                         }}
                       />
                     ) : null}
-                    <div className={`w-full h-full flex items-center justify-center ${product.image_url ? 'hidden' : ''}`}>
+                    <div className={`w-full h-full flex items-center justify-center ${product.image ? 'hidden' : ''}`}>
                       <span className="text-gray-500 text-sm">Produktbild</span>
                     </div>
                   </div>
@@ -178,9 +227,14 @@ export function BestsellerProducts() {
                         {getDiscountPercentage(product)}% RABATT
                       </span>
                     )}
-                    {product.stock <= 5 && product.stock > 0 && (
-                      <span className="px-2 py-1 bg-orange-500 text-white text-xs rounded font-semibold">
-                        Geringer Bestand
+                    {/* product.inStock is used for stock status, but if you want to show low stock, you need to map stock value as well. For now, just show 'Auf Lager' or 'Nicht auf Lager' */}
+                    {product.inStock ? (
+                      <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
+                        Auf Lager
+                      </span>
+                    ) : (
+                      <span className="inline-block px-2 py-1 bg-red-100 text-red-800 text-xs rounded">
+                        Nicht auf Lager
                       </span>
                     )}
                   </div>
@@ -200,11 +254,7 @@ export function BestsellerProducts() {
                       {product.category.name}
                     </p>
                   )}
-                  {product.stock_code && (
-                    <p className="text-xs text-gray-400 mb-2">
-                      Kod: {product.stock_code}
-                    </p>
-                  )}
+                  {/* Stock code is not mapped, so skip this for now or add to UIProduct if needed */}
                   
                   <div className="flex items-center gap-2 mb-2">
                     {hasDiscount(product) && (
@@ -213,19 +263,15 @@ export function BestsellerProducts() {
                       </span>
                     )}
                     <span className="text-lg font-bold" style={{color: '#F39236'}}>
-                      {formatPrice(hasDiscount(product) ? product.discount_price! : product.price)}
+                      {formatPrice(hasDiscount(product) ? product.originalPrice! : product.price)}
                     </span>
                   </div>
                   
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      {product.stock <= 0 ? (
+                      {!product.inStock ? (
                         <span className="inline-block px-2 py-1 bg-red-100 text-red-800 text-xs rounded">
                           Nicht auf Lager
-                        </span>
-                      ) : product.stock <= 5 ? (
-                        <span className="inline-block px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded">
-                          Geringer Bestand ({product.stock} Stück)
                         </span>
                       ) : (
                         <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded">

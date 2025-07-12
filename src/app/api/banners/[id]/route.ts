@@ -93,7 +93,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { id } = await params
 
     // Check if banner exists before deletion
-    const { data: existingBanner, error: fetchError } = await supabase
+    const { error: fetchError } = await supabase
       .from('banners')
       .select('id')
       .eq('id', id)

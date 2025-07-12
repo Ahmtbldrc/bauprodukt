@@ -44,7 +44,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Sort product images and prepare brand/category objects
     const productWithSortedImages = {
       ...data,
-      product_images: data.product_images?.sort((a: any, b: any) => {
+      product_images: data.product_images?.sort((a: { order_index: number; is_cover: boolean }, b: { order_index: number; is_cover: boolean }) => {
         // Cover image comes first, then sort by order_index
         if (a.is_cover && !b.is_cover) return -1
         if (!a.is_cover && b.is_cover) return 1
@@ -187,7 +187,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { id } = await params
 
     // Check if product exists before deletion
-    const { data: existingProduct, error: fetchError } = await supabase
+    const { error: fetchError } = await supabase
       .from('products')
       .select('id')
       .eq('id', id)

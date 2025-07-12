@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useAllBrands } from '@/hooks/useBrands'
-import { generateBrandURL } from '@/lib/url-utils'
 
 export function BrandsSection() {
   const { data: brandsResponse, isLoading, error } = useAllBrands()

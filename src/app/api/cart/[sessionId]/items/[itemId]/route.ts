@@ -190,7 +190,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Önce item'ın bu session'a ait olduğunu kontrol et
-    const { data: cartItem, error: fetchError } = await supabase
+    const { error: fetchError } = await supabase
       .from('cart_details')
       .select('cart_id, item_id')
       .eq('session_id', sessionId)

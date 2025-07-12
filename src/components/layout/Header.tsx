@@ -26,7 +26,6 @@ import {
   Tag,
   Package,
   Zap,
-  Crown,
   Phone,
   Mail
 } from 'lucide-react'
@@ -457,7 +456,7 @@ export function Header() {
                         
                         {/* Subcategories (children) if any */}
                         <div className="space-y-2 max-h-80 overflow-y-auto">
-                          {categoryTree.find(cat => cat.id === selectedCategory)?.children?.map((subcat: any) => (
+                          {categoryTree.find(cat => cat.id === selectedCategory)?.children?.map((subcat: Category) => (
                             <Link
                               key={subcat.id}
                               href={`/categories/${subcat.slug}`}
@@ -609,7 +608,7 @@ export function Header() {
                         {/* Subcategories in mobile menu */}
                         {category.children && category.children.length > 0 && (
                           <div className="ml-6 mt-1 space-y-1">
-                            {category.children.slice(0, 3).map((subcat: any) => (
+                            {category.children.slice(0, 3).map((subcat: Category) => (
                               <Link
                                 key={subcat.id}
                                 href={`/categories/${subcat.slug}`}

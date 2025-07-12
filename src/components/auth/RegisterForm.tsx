@@ -144,7 +144,7 @@ export function RegisterForm() {
                         ? 'border-red-300 bg-red-50' 
                         : 'border-gray-300 bg-white'
                     }`}
-                    style={{ '--tw-ring-color': '#F3923620' } as any}
+                    style={{ '--tw-ring-color': '#F3923620' } as React.CSSProperties}
                     onFocus={(e) => !validationErrors.firstName && (e.target.style.borderColor = '#F39236')}
                     onBlur={(e) => !validationErrors.firstName && (e.target.style.borderColor = '#d1d5db')}
                     placeholder="Ihr Vorname"
@@ -171,7 +171,7 @@ export function RegisterForm() {
                       ? 'border-red-300 bg-red-50' 
                       : 'border-gray-300 bg-white'
                   }`}
-                  style={{ '--tw-ring-color': '#F3923620' } as any}
+                  style={{ '--tw-ring-color': '#F3923620' } as React.CSSProperties}
                   onFocus={(e) => !validationErrors.lastName && (e.target.style.borderColor = '#F39236')}
                   onBlur={(e) => !validationErrors.lastName && (e.target.style.borderColor = '#d1d5db')}
                   placeholder="Ihr Nachname"
@@ -202,7 +202,7 @@ export function RegisterForm() {
                     ? 'border-red-300 bg-red-50' 
                     : 'border-gray-300 bg-white'
                 }`}
-                style={{ '--tw-ring-color': '#F3923620' } as any}
+                style={{ '--tw-ring-color': '#F3923620' } as React.CSSProperties}
                 onFocus={(e) => !validationErrors.email && (e.target.style.borderColor = '#F39236')}
                 onBlur={(e) => !validationErrors.email && (e.target.style.borderColor = '#d1d5db')}
                 placeholder="beispiel@email.com"
@@ -233,7 +233,7 @@ export function RegisterForm() {
                     ? 'border-red-300 bg-red-50' 
                     : 'border-gray-300 bg-white'
                 }`}
-                style={{ '--tw-ring-color': '#F3923620' } as any}
+                style={{ '--tw-ring-color': '#F3923620' } as React.CSSProperties}
                 onFocus={(e) => !validationErrors.phone && (e.target.style.borderColor = '#F39236')}
                 onBlur={(e) => !validationErrors.phone && (e.target.style.borderColor = '#d1d5db')}
                 placeholder="+41 79 123 45 67"
@@ -266,7 +266,7 @@ export function RegisterForm() {
                       ? 'border-red-300 bg-red-50' 
                       : 'border-gray-300 bg-white'
                   }`}
-                  style={{ '--tw-ring-color': '#F3923620' } as any}
+                  style={{ '--tw-ring-color': '#F3923620' } as React.CSSProperties}
                   onFocus={(e) => !validationErrors.password && (e.target.style.borderColor = '#F39236')}
                   onBlur={(e) => !validationErrors.password && (e.target.style.borderColor = '#d1d5db')}
                   placeholder="Mindestens 6 Zeichen"
@@ -309,7 +309,7 @@ export function RegisterForm() {
                       ? 'border-red-300 bg-red-50' 
                       : 'border-gray-300 bg-white'
                   }`}
-                  style={{ '--tw-ring-color': '#F3923620' } as any}
+                  style={{ '--tw-ring-color': '#F3923620' } as React.CSSProperties}
                   onFocus={(e) => !validationErrors.confirmPassword && (e.target.style.borderColor = '#F39236')}
                   onBlur={(e) => !validationErrors.confirmPassword && (e.target.style.borderColor = '#d1d5db')}
                   placeholder="Passwort wiederholen"
@@ -402,7 +402,7 @@ export function RegisterForm() {
             style={{
               backgroundColor: '#F39236',
               '--tw-ring-color': '#F3923620',
-            } as any}
+            } as React.CSSProperties}
             onMouseEnter={(e) => {
               if (!isLoading) {
                 e.currentTarget.style.backgroundColor = '#E8832B'

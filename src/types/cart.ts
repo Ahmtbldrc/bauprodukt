@@ -64,5 +64,5 @@ export type CartActionType =
 
 export interface CartAction {
   type: CartActionType
-  payload?: any
+  payload?: unknown
 } 

@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
     // Sort product images and prepare discount information for each product
     const productsWithSortedImages = data?.map(product => ({
       ...product,
-      product_images: product.product_images?.sort((a: any, b: any) => {
+      product_images: product.product_images?.sort((a: { order_index: number; is_cover: boolean }, b: { order_index: number; is_cover: boolean }) => {
         // Cover image comes first, then sort by order_index
         if (a.is_cover && !b.is_cover) return -1
         if (!a.is_cover && b.is_cover) return 1

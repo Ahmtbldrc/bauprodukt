@@ -46,7 +46,8 @@ export type FavoritesActionType =
   | 'REMOVE_FAVORITE'
   | 'CLEAR_FAVORITES'
 
-export interface FavoritesAction {
-  type: FavoritesActionType
-  payload?: any
-} 
+export type FavoritesAction =
+  | { type: 'SET_FAVORITES'; payload: FavoriteProduct[] }
+  | { type: 'ADD_FAVORITE'; payload: { product: FavoriteProduct } }
+  | { type: 'REMOVE_FAVORITE'; payload: { productId: string } }
+  | { type: 'CLEAR_FAVORITES' }; 

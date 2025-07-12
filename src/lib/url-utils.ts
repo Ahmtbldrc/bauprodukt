@@ -1,4 +1,4 @@
-import { Product, Brand, Category } from '@/types/product'
+import { Product } from '@/types/product'
 
 /**
  * Generates hierarchical product URL: /[brand]/[category]/[product]

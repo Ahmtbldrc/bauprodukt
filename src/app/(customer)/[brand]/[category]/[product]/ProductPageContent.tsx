@@ -96,11 +96,13 @@ export default function ProductPageContent({
   }, [selectedImageIndex, thumbnailStartIndex, maxVisibleThumbnails])
 
   // Calculate discount information
-  const hasDiscount = product?.discount_price && product?.discount_price < product?.price
-  const discountPercentage = hasDiscount 
-    ? Math.round(((product?.price - product?.discount_price!) / product?.price) * 100)
-    : 0
-  const displayPrice = hasDiscount ? product?.discount_price! : product?.price
+  const hasDiscount = product?.discount_price !== undefined && product?.discount_price < product?.price;
+  const discountPercentage = hasDiscount && product?.price && product.discount_price !== undefined
+    ? Math.round(((product.price - product.discount_price) / product.price) * 100)
+    : 0;
+  const displayPrice = hasDiscount && product?.discount_price !== undefined
+    ? product.discount_price
+    : product?.price;
 
   // Get related products (excluding current product)
   const relatedProducts = relatedProductsResponse?.data?.filter(p => p.id !== product?.id)?.slice(0, 4) || []
@@ -305,7 +307,33 @@ export default function ProductPageContent({
                 className="flex-1"
               />
               {product && (
-                <FavoriteButton product={product} size="lg" className="h-12 w-12 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-red-500 flex items-center justify-center" />
+                <FavoriteButton
+                  product={{
+                    id: product.id,
+                    name: product.name,
+                    slug: product.slug,
+                    description: product.description ?? '',
+                    price: product.price,
+                    originalPrice: product.discount_price ?? undefined,
+                    image: product.image_url ?? undefined,
+                    brand: {
+                      id: product.brand?.id ?? '',
+                      name: product.brand?.name ?? '',
+                      slug: product.brand?.slug ?? '',
+                    },
+                    category: {
+                      id: product.category?.id ?? '',
+                      name: product.category?.name ?? '',
+                      slug: product.category?.slug ?? '',
+                    },
+                    inStock: product.stock > 0,
+                    onSale: !!product.discount_price,
+                    discountPercentage: undefined,
+                    addedAt: '', // Set as needed
+                  }}
+                  size="lg"
+                  className="h-12 w-12 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-red-500 flex items-center justify-center"
+                />
               )}
             </div>
           </div>

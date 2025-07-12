@@ -353,7 +353,7 @@ export default function AdminDashboard() {
           </div>
 
           <div className="space-y-2 max-h-60 overflow-y-auto">
-            {topProducts.slice(0, 3).map((product, index) => (
+            {topProducts.slice(0, 3).map((product) => (
               <div key={product.id} className="flex items-center justify-between py-2 px-2 hover:bg-gray-50 rounded-lg transition-colors">
                 <div className="flex-1 min-w-0">
                   <h4 className="text-xs font-medium text-gray-900 truncate">{product.name}</h4>

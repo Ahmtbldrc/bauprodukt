@@ -3,11 +3,12 @@
 import React, { useState, useEffect } from 'react'
 import { Heart } from 'lucide-react'
 import { useFavorites } from '@/contexts/FavoritesContext'
+import { FavoriteProduct } from '@/types/favorites'
 
 interface FavoriteButtonProps {
-  product: any // Accept Product or FavoriteProduct
-  className?: string
+  product: FavoriteProduct
   size?: 'sm' | 'md' | 'lg'
+  className?: string
   showText?: boolean
 }
 

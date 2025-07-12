@@ -137,7 +137,7 @@ export function LoginForm() {
                 style={{
                   '--tw-ring-color': '#F3923620',
                   borderColor: validationErrors.email ? undefined : undefined,
-                } as any}
+                } as React.CSSProperties}
                 onFocus={(e) => !validationErrors.email && (e.target.style.borderColor = '#F39236')}
                 onBlur={(e) => !validationErrors.email && (e.target.style.borderColor = '#d1d5db')}
                 placeholder="beispiel@email.com"
@@ -170,7 +170,7 @@ export function LoginForm() {
                 }`}
                 style={{
                   '--tw-ring-color': '#F3923620',
-                } as any}
+                } as React.CSSProperties}
                 onFocus={(e) => !validationErrors.password && (e.target.style.borderColor = '#F39236')}
                 onBlur={(e) => !validationErrors.password && (e.target.style.borderColor = '#d1d5db')}
                 placeholder="Geben Sie Ihr Passwort ein"
@@ -241,7 +241,7 @@ export function LoginForm() {
             style={{
               backgroundColor: '#F39236',
               '--tw-ring-color': '#F3923620',
-            } as any}
+            } as React.CSSProperties}
             onMouseEnter={(e) => {
               if (!isLoading) {
                 e.currentTarget.style.backgroundColor = '#E8832B'

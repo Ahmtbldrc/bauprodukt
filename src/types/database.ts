@@ -79,6 +79,7 @@ export interface ProductWithRelations extends Product {
   has_active_discount?: boolean
   discount_percentage_actual?: number
   discount_amount?: number
+  featured?: boolean
 }
 
 export interface CategoryWithParent extends Category {

@@ -183,7 +183,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if category exists before deletion
-    const { data: existingCategory, error: fetchError } = await supabase
+    const { error: fetchError } = await supabase
       .from('categories')
       .select('id')
       .eq('id', id)

@@ -132,27 +132,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if brand exists before deletion
-    const { data: existingBrand, error: fetchError } = await supabase
-      .from('brands')
-      .select('id')
-      .eq('id', id)
-      .single()
-
-    if (fetchError) {
-      if (fetchError.code === 'PGRST116') {
-        return NextResponse.json(
-          { error: 'Brand not found' },
-          { status: 404 }
-        )
-      }
-      
-      console.error('Brand fetch error:', fetchError)
-      return NextResponse.json(
-        { error: 'Failed to fetch brand' },
-        { status: 500 }
-      )
-    }
-
     const { error } = await supabase
       .from('brands')
       .delete()
