@@ -63,14 +63,14 @@ export function CategoryPageContent({ slug }: CategoryPageContentProps) {
             <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <h2 className="text-xl font-semibold mb-2">Kategori Yüklenemedi</h2>
-            <p className="text-gray-600 mb-4">Kategori bilgileri yüklenirken bir hata oluştu.</p>
+            <h2 className="text-xl font-semibold mb-2">Kategorie konnte nicht geladen werden</h2>
+            <p className="text-gray-600 mb-4">Beim Laden der Kategoriedaten ist ein Fehler aufgetreten.</p>
           </div>
           <button 
             onClick={() => window.location.reload()} 
             className="px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
           >
-            Sayfayı Yenile
+            Seite neu laden
           </button>
         </div>
       </div>
@@ -81,9 +81,9 @@ export function CategoryPageContent({ slug }: CategoryPageContentProps) {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Breadcrumb */}
       <nav className="mb-6 text-sm">
-        <Link href="/" className="text-gray-500 hover:text-gray-700">Ana Sayfa</Link>
+        <Link href="/" className="text-gray-500 hover:text-gray-700">Startseite</Link>
         <span className="mx-2 text-gray-400">/</span>
-        <Link href="/categories" className="text-gray-500 hover:text-gray-700">Kategoriler</Link>
+        <Link href="/categories" className="text-gray-500 hover:text-gray-700">Kategorien</Link>
         <span className="mx-2 text-gray-400">/</span>
         <span className="text-gray-900">{category?.name}</span>
       </nav>
@@ -104,31 +104,29 @@ export function CategoryPageContent({ slug }: CategoryPageContentProps) {
       {/* Filters */}
       <div className="mb-6 flex flex-wrap gap-4">
         <select className="px-4 py-2 border border-gray-300 rounded-lg">
-          <option>Tüm Markalar</option>
+          <option>Alle Marken</option>
           <option>Bosch</option>
           <option>Makita</option>
           <option>DeWalt</option>
           <option>Karcher</option>
           <option>Hilti</option>
         </select>
-        
         <select className="px-4 py-2 border border-gray-300 rounded-lg">
-          <option>Fiyat Sıralaması</option>
-          <option>Düşükten Yükseğe</option>
-          <option>Yüksekten Düşüğe</option>
+          <option>Preis sortieren</option>
+          <option>Preis: aufsteigend</option>
+          <option>Preis: absteigend</option>
         </select>
-        
         <select className="px-4 py-2 border border-gray-300 rounded-lg">
-          <option>Stok Durumu</option>
-          <option>Stokta Var</option>
-          <option>Stokta Yok</option>
+          <option>Lagerstatus</option>
+          <option>Auf Lager</option>
+          <option>Nicht auf Lager</option>
         </select>
       </div>
       
       {/* Products */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-6">
-          {category?.name} Ürünleri ({products.length})
+          {category?.name} Produkte ({products.length})
         </h2>
         
         {productsLoading && (
@@ -148,12 +146,12 @@ export function CategoryPageContent({ slug }: CategoryPageContentProps) {
 
         {productsError && (
           <div className="text-center py-12">
-            <p className="text-red-600 mb-4">Ürünler yüklenirken hata oluştu.</p>
+            <p className="text-red-600 mb-4">Fehler beim Laden der Produkte.</p>
             <button 
               onClick={() => window.location.reload()} 
               className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
             >
-              Tekrar Dene
+              Erneut versuchen
             </button>
           </div>
         )}
@@ -179,7 +177,7 @@ export function CategoryPageContent({ slug }: CategoryPageContentProps) {
                       {product.name}
                     </h3>
                     <p className="text-sm text-gray-600 mb-2">
-                      {product.brand?.name || 'Marka Belirtilmemiş'}
+                      {product.brand?.name || 'Marke nicht angegeben'}
                     </p>
                     <div className="flex items-center gap-2 mb-2">
                       {product.discount_price ? (
@@ -200,17 +198,17 @@ export function CategoryPageContent({ slug }: CategoryPageContentProps) {
                     <div className="flex flex-wrap gap-1">
                       {product.stock <= 0 && (
                         <span className="inline-block px-2 py-1 bg-red-100 text-red-800 text-xs rounded">
-                          Stokta Yok
+                          Nicht auf Lager
                         </span>
                       )}
                       {product.stock > 0 && product.stock <= 5 && (
                         <span className="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
-                          Son {product.stock} Adet
+                          Nur noch {product.stock} Stück
                         </span>
                       )}
                       {product.discount_price && (
                         <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
-                          İndirimli
+                          Reduziert
                         </span>
                       )}
                     </div>
@@ -227,8 +225,8 @@ export function CategoryPageContent({ slug }: CategoryPageContentProps) {
               <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
               </svg>
-              <h3 className="text-lg font-semibold mb-2">Bu kategoride henüz ürün bulunmuyor</h3>
-              <p className="text-gray-600">Yakında bu kategoriye ürünler eklenecek.</p>
+              <h3 className="text-lg font-semibold mb-2">In dieser Kategorie sind noch keine Produkte vorhanden</h3>
+              <p className="text-gray-600">Bald werden Produkte zu dieser Kategorie hinzugefügt.</p>
             </div>
           </div>
         )}
