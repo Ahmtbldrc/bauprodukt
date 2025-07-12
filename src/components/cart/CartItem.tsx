@@ -123,7 +123,7 @@ export const CartItem: React.FC<CartItemProps> = ({
           </h3>
         </Link>
         <p className="text-sm text-gray-500 mt-1">
-          ₺{item.price.toFixed(2)} / Stück
+          CHF {item.price.toFixed(2)} / Stück
         </p>
         {item.product.stock < 10 && (
           <p className="text-sm text-orange-600 mt-1">
@@ -162,7 +162,7 @@ export const CartItem: React.FC<CartItemProps> = ({
       {/* Total Price */}
       <div className="text-right min-w-[80px]">
         <p className="font-semibold text-gray-900">
-          ₺{item.total_price.toFixed(2)}
+          CHF {item.total_price.toFixed(2)}
         </p>
       </div>
 

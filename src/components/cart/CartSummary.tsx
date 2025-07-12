@@ -86,7 +86,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
         
         <div className="flex justify-between">
           <span className="text-gray-600">Zwischensumme:</span>
-          <span className="font-medium">₺{totalAmount.toFixed(2)}</span>
+          <span className="font-medium">CHF {totalAmount.toFixed(2)}</span>
         </div>
         
         <div className="flex justify-between">
@@ -98,7 +98,7 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
         
         <div className="flex justify-between text-lg font-semibold">
           <span>Gesamtsumme:</span>
-          <span>₺{totalAmount.toFixed(2)}</span>
+          <span>CHF {totalAmount.toFixed(2)}</span>
         </div>
       </div>
       
