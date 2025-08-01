@@ -199,6 +199,48 @@ export interface OrderSummary {
   products_summary: string | null
 }
 
+// Role Types
+export interface Role {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  permissions: Record<string, unknown>
+  is_active: boolean
+  created_at: string
+}
+
+// Profile Types
+export interface Profile {
+  id: string
+  user_id: string
+  first_name: string
+  last_name: string
+  phone: string | null
+  birth_date: string | null
+  avatar_url: string | null
+  role_id: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+// Profile Relations
+export interface ProfileWithRole extends Profile {
+  role: Role
+}
+
+export interface ProfileDetails extends Profile {
+  role: Role
+  full_name: string
+}
+
+export interface RoleWithProfiles extends Role {
+  profiles: Profile[]
+  profile_count: number
+  active_profile_count: number
+}
+
 // Database interface for Supabase typing
 export interface Database {
   public: {
@@ -247,6 +289,16 @@ export interface Database {
         Row: OrderItem
         Insert: Omit<OrderItem, 'id' | 'created_at'>
         Update: Partial<Omit<OrderItem, 'id' | 'created_at'>>
+      }
+      roles: {
+        Row: Role
+        Insert: Omit<Role, 'id' | 'created_at'>
+        Update: Partial<Omit<Role, 'id' | 'created_at'>>
+      }
+      profiles: {
+        Row: Profile
+        Insert: Omit<Profile, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<Profile, 'id' | 'created_at'>>
       }
     }
     Views: {
