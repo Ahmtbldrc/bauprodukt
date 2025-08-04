@@ -138,6 +138,7 @@ export const updateProductImageSchema = createProductImageSchema.partial()
 // Cart schemas
 export const cartItemSchema = z.object({
   product_id: z.string().uuid('Geçerli bir ürün seçiniz'),
+  variant_id: z.string().uuid('Geçerli bir variant seçiniz').nullable().optional(),
   quantity: z.number().int().min(1, 'Miktar en az 1 olmalı').max(999, 'Miktar çok fazla')
 })
 

@@ -122,6 +122,17 @@ export interface VariantAttribute {
   sort_order: number
 }
 
+export interface SyntheticVariant {
+  id: string
+  sku: string
+  price: number
+  compare_at_price: number | null
+  stock_quantity: number
+  is_default: boolean
+  is_synthetic: boolean
+  attributes: VariantAttribute[]
+}
+
 export interface ProductVariantDetailed extends ProductVariant {
   product_name: string
   product_slug: string
@@ -144,6 +155,9 @@ export interface ProductWithDefaultVariant extends Product {
   variant_stock: number | null
   variant_track_inventory: boolean | null
   variant_continue_selling: boolean | null
+  has_variants: boolean
+  effective_variant_id: string
+  effective_sku: string
   selected_variant?: ProductVariantDetailed
   available_variants?: ProductVariantDetailed[]
 }

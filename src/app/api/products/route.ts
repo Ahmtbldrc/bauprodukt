@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { validateProduct } from '@/schemas/database'
+import type { Database } from '@/types/database'
+
+type ProductWithDefaultVariant = Database['public']['Views']['products_with_default_variants']['Row']
 
 export async function GET(request: NextRequest) {
   try {
@@ -84,7 +87,7 @@ export async function GET(request: NextRequest) {
 
     // Process products with variant information
     const processedProducts = await Promise.all(
-      (filteredData || []).map(async (product: any) => {
+      (filteredData || []).map(async (product: ProductWithDefaultVariant & { product_images?: Array<{ id: string; image_url: string; order_index: number; is_cover: boolean }> }) => {
         // If specific variant requested, get that variant's details
         let selectedVariant = null
         if (variant) {
@@ -106,14 +109,16 @@ export async function GET(request: NextRequest) {
             if (!a.is_cover && b.is_cover) return 1
             return a.order_index - b.order_index
           }) || [],
-          // Default variant information (from view)
+          // Enhanced variant information with fallback handling
+          has_variants: product.has_variants,
           selected_variant: selectedVariant || {
-            id: product.default_variant_id,
-            sku: product.default_variant_sku,
-            price: product.variant_price || product.price,
-            compare_at_price: product.variant_compare_at_price || product.discount_price,
-            stock_quantity: product.variant_stock || product.stock,
+            id: product.has_variants ? product.default_variant_id : product.effective_variant_id,
+            sku: product.has_variants ? product.default_variant_sku : product.effective_sku,
+            price: product.price, // Always available via COALESCE
+            compare_at_price: product.discount_price,
+            stock_quantity: product.stock, // Always available via COALESCE
             is_default: !selectedVariant,
+            is_synthetic: !product.has_variants, // Indicates fallback variant
             attributes: selectedVariant?.attributes || []
           },
           // Brand ve category bilgileri view'dan geliyor ama nested object formatında değil

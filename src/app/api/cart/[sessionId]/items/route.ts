@@ -193,16 +193,19 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       cart = newCart
     }
 
-    // Aynı ürün-variant kombinasyonu sepette var mı kontrol et
+    // Enhanced existing item check for variant-optional products
     let existingItemQuery = supabase
       .from('cart_items')
       .select('*')
       .eq('cart_id', cart.id)
       .eq('product_id', product_id)
 
+    // Smart variant matching logic
     if (variant_id) {
+      // Specific variant requested
       existingItemQuery = existingItemQuery.eq('variant_id', variant_id)
     } else {
+      // No variant requested - match null variant_id items
       existingItemQuery = existingItemQuery.is('variant_id', null)
     }
 

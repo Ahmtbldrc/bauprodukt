@@ -6,7 +6,7 @@
     "_exporter_id": "bauprodukt-demo",
     "version": {
       "major": 1,
-      "minor": 2,
+      "minor": 3,
       "patch": 0
     }
   },
@@ -493,6 +493,31 @@
           }
         },
         {
+          "name": "Filter Products by Variant ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products?variant={{variant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"],
+              "query": [
+                {
+                  "key": "variant",
+                  "value": "{{variant_id}}",
+                  "description": "Filter products that have this specific variant"
+                }
+              ]
+            },
+            "description": "Filter products that have a specific variant ID"
+          }
+        },
+        {
           "name": "Create Product",
           "request": {
             "method": "POST",
@@ -549,9 +574,42 @@
             "url": {
               "raw": "{{base_url}}/api/products/{{product_id}}",
               "host": ["{{base_url}}"],
-              "path": ["api", "products", "{{product_id}}"]
+              "path": ["api", "products", "{{product_id}}"],
+              "query": [
+                {
+                  "key": "variant",
+                  "value": "",
+                  "disabled": true,
+                  "description": "Get product with specific variant selected"
+                }
+              ]
             },
-            "description": "Get a specific product by ID with brand and category info"
+            "description": "Get a specific product by ID with brand, category, and variant info"
+          }
+        },
+        {
+          "name": "Get Product with Specific Variant",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}?variant={{variant_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}"],
+              "query": [
+                {
+                  "key": "variant",
+                  "value": "{{variant_id}}",
+                  "description": "Specific variant to select"
+                }
+              ]
+            },
+            "description": "Get product with a specific variant selected, includes variant attributes and available variants"
           }
         },
         {
@@ -617,7 +675,53 @@
           }
         }
       ],
-      "description": "Product management endpoints"
+      "description": "Product management endpoints with variant support. Products can have variants with attributes like color, size, etc. If no variants are defined, the system uses synthetic variants with product pricing and stock."
+    },
+    {
+      "name": "Product Variants",
+      "item": [
+        {
+          "name": "Get Product Variants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}/variants",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}", "variants"]
+            },
+            "description": "Get all variants for a product with their attributes"
+          }
+        },
+        {
+          "name": "Create Product Variant",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sku\": \"BSH-GSB18V55-RED-L\",\n  \"title\": \"Red Large\",\n  \"price\": 899.99,\n  \"compare_at_price\": 999.99,\n  \"stock_quantity\": 15,\n  \"track_inventory\": true,\n  \"continue_selling_when_out_of_stock\": false,\n  \"is_active\": true,\n  \"position\": 0,\n  \"attribute_values\": [\n    \"{{color_red_value_id}}\",\n    \"{{size_large_value_id}}\"\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}/variants",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}", "variants"]
+            },
+            "description": "Create a new variant for a product with attribute values"
+          }
+        }
+      ],
+      "description": "Product variant management endpoints. Variants represent different combinations of product attributes (color, size, material, etc.) with their own pricing and inventory."
     },
     {
       "name": "Product Images",
@@ -768,7 +872,14 @@
             "url": {
               "raw": "{{base_url}}/api/products/{{product_id}}/images/{{image_id}}/cover",
               "host": ["{{base_url}}"],
-              "path": ["api", "products", "{{product_id}}", "images", "{{image_id}}", "cover"]
+              "path": [
+                "api",
+                "products",
+                "{{product_id}}",
+                "images",
+                "{{image_id}}",
+                "cover"
+              ]
             },
             "description": "Set a specific image as the cover image for the product"
           }
@@ -786,7 +897,13 @@
             "url": {
               "raw": "{{base_url}}/api/products/{{product_id}}/images/{{image_id}}",
               "host": ["{{base_url}}"],
-              "path": ["api", "products", "{{product_id}}", "images", "{{image_id}}"]
+              "path": [
+                "api",
+                "products",
+                "{{product_id}}",
+                "images",
+                "{{image_id}}"
+              ]
             },
             "description": "Delete a single product image. If it's the cover image, another image will be automatically set as cover."
           }
@@ -1359,7 +1476,45 @@
               "host": ["{{base_url}}"],
               "path": ["api", "cart", "{{session_id}}", "items"]
             },
-            "description": "Add product to cart or update quantity if already exists"
+            "description": "Add product to cart or update quantity if already exists. For products without variants, omit variant_id. For products with variants, include variant_id."
+          }
+        },
+        {
+          "name": "Add Product Variant to Cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201 || pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.id) {",
+                  "        pm.environment.set('cart_item_id', response.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"product_id\": \"{{product_id}}\",\n  \"variant_id\": \"{{variant_id}}\",\n  \"quantity\": 1\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/cart/{{session_id}}/items",
+              "host": ["{{base_url}}"],
+              "path": ["api", "cart", "{{session_id}}", "items"]
+            },
+            "description": "Add specific product variant to cart with variant_id. Uses variant pricing and stock information."
           },
           "response": []
         },
@@ -1376,7 +1531,13 @@
             "url": {
               "raw": "{{base_url}}/api/cart/{{session_id}}/items/{{cart_item_id}}",
               "host": ["{{base_url}}"],
-              "path": ["api", "cart", "{{session_id}}", "items", "{{cart_item_id}}"]
+              "path": [
+                "api",
+                "cart",
+                "{{session_id}}",
+                "items",
+                "{{cart_item_id}}"
+              ]
             },
             "description": "Get specific cart item details"
           },
@@ -1399,7 +1560,13 @@
             "url": {
               "raw": "{{base_url}}/api/cart/{{session_id}}/items/{{cart_item_id}}",
               "host": ["{{base_url}}"],
-              "path": ["api", "cart", "{{session_id}}", "items", "{{cart_item_id}}"]
+              "path": [
+                "api",
+                "cart",
+                "{{session_id}}",
+                "items",
+                "{{cart_item_id}}"
+              ]
             },
             "description": "Update quantity of cart item"
           },
@@ -1418,7 +1585,13 @@
             "url": {
               "raw": "{{base_url}}/api/cart/{{session_id}}/items/{{cart_item_id}}",
               "host": ["{{base_url}}"],
-              "path": ["api", "cart", "{{session_id}}", "items", "{{cart_item_id}}"]
+              "path": [
+                "api",
+                "cart",
+                "{{session_id}}",
+                "items",
+                "{{cart_item_id}}"
+              ]
             },
             "description": "Remove specific item from cart"
           },
@@ -1927,7 +2100,13 @@
             "url": {
               "raw": "{{base_url}}/api/cart/{{session_id}}/items/{{cart_item_id}}",
               "host": ["{{base_url}}"],
-              "path": ["api", "cart", "{{session_id}}", "items", "{{cart_item_id}}"]
+              "path": [
+                "api",
+                "cart",
+                "{{session_id}}",
+                "items",
+                "{{cart_item_id}}"
+              ]
             },
             "description": "Step 4: Update item quantity in cart"
           }
@@ -2085,6 +2264,21 @@
       "key": "order_number",
       "value": "",
       "description": "Order number for testing (copy from create order response)"
+    },
+    {
+      "key": "variant_id",
+      "value": "",
+      "description": "Product variant ID for testing (copy from create variant response)"
+    },
+    {
+      "key": "color_red_value_id",
+      "value": "",
+      "description": "Red color attribute value ID for variant testing"
+    },
+    {
+      "key": "size_large_value_id",
+      "value": "",
+      "description": "Large size attribute value ID for variant testing"
     }
   ],
   "event": [
@@ -2092,19 +2286,15 @@
       "listen": "prerequest",
       "script": {
         "type": "text/javascript",
-        "exec": [
-          ""
-        ]
+        "exec": [""]
       }
     },
     {
       "listen": "test",
       "script": {
         "type": "text/javascript",
-        "exec": [
-          ""
-        ]
+        "exec": [""]
       }
     }
   ]
-} 
+}

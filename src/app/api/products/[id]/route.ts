@@ -84,20 +84,22 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         if (!a.is_cover && b.is_cover) return 1
         return a.order_index - b.order_index
       }) || [],
-      // Selected variant (specific or default)
+      // Enhanced variant handling with fallback support
+      has_variants: data.has_variants,
       selected_variant: selectedVariant || {
-        id: data.default_variant_id,
-        sku: data.default_variant_sku,
-        price: data.variant_price || data.price,
-        compare_at_price: data.variant_compare_at_price || data.discount_price,
-        stock_quantity: data.variant_stock || data.stock,
+        id: data.has_variants ? data.default_variant_id : data.effective_variant_id,
+        sku: data.has_variants ? data.default_variant_sku : data.effective_sku,
+        price: data.price, // Always available via COALESCE
+        compare_at_price: data.discount_price,
+        stock_quantity: data.stock, // Always available via COALESCE
         is_default: !selectedVariant,
+        is_synthetic: !data.has_variants, // Indicates fallback variant
         attributes: []
       },
-      // All available variants for selection
-      available_variants: availableVariants,
-      // Variant attributes for selection UI
-      variant_attributes: attributesSummary?.attributes || [],
+      // All available variants for selection (empty if no variants)
+      available_variants: data.has_variants ? availableVariants : [],
+      // Variant attributes for selection UI (empty if no variants)
+      variant_attributes: data.has_variants ? (attributesSummary?.attributes || []) : [],
       // Brand ve category bilgileri view'dan geliyor ama nested object formatında değil
       brand: data.brand_name ? {
         id: data.brand_id,

@@ -108,7 +108,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if product exists
-    const { data: product, error: productError } = await supabase
+    const { error: productError } = await supabase
       .from('products')
       .select('id')
       .eq('id', id)

@@ -239,7 +239,6 @@ SELECT
     p.description,
     p.image_url,
     p.brand_id,
-    p.category_id,
     p.created_at,
     p.stock_code,
     
@@ -252,7 +251,12 @@ SELECT
     pv.track_inventory as variant_track_inventory,
     pv.continue_selling_when_out_of_stock as variant_continue_selling,
     
-    -- Backward compatibility fields
+    -- NEW: Variant status and synthetic variant handling
+    CASE WHEN pv.id IS NOT NULL THEN true ELSE false END as has_variants,
+    COALESCE(pv.id::text, CONCAT(p.id::text, '-default')) as effective_variant_id,
+    COALESCE(pv.sku, p.stock_code, CONCAT('PROD-', SUBSTRING(p.id::text, 1, 8))) as effective_sku,
+    
+    -- Backward compatibility fields with robust fallbacks
     COALESCE(pv.price, p.price) as price,
     COALESCE(pv.compare_at_price, p.discount_price) as discount_price,
     COALESCE(pv.stock_quantity, p.stock) as stock,
