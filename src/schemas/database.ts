@@ -190,6 +190,55 @@ export const updateOrderSchema = z.object({
   status: orderStatusSchema.optional()
 })
 
+// Role schemas
+export const roleSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1, 'Rol adı gerekli'),
+  slug: z.string().min(1, 'Slug gerekli'),
+  description: z.string().nullable(),
+  permissions: z.record(z.any()),
+  is_active: z.boolean(),
+  created_at: z.string()
+})
+
+export const createRoleSchema = z.object({
+  name: z.string().min(1, 'Rol adı gerekli').max(255, 'Rol adı çok uzun'),
+  slug: z.string().min(1, 'Slug gerekli').max(255, 'Slug çok uzun').regex(/^[a-z0-9-]+$/, 'Slug sadece küçük harf, rakam ve tire içerebilir'),
+  description: z.string().max(2000, 'Açıklama çok uzun').optional(),
+  permissions: z.record(z.any()).default({}),
+  is_active: z.boolean().default(true)
+})
+
+export const updateRoleSchema = createRoleSchema.partial()
+
+// Profile schemas
+export const profileSchema = z.object({
+  id: z.string().uuid(),
+  user_id: z.string().uuid(),
+  first_name: z.string().min(1, 'Ad gerekli'),
+  last_name: z.string().min(1, 'Soyad gerekli'),
+  phone: z.string().nullable(),
+  birth_date: z.string().nullable(),
+  avatar_url: z.string().url().nullable(),
+  role_id: z.string().uuid(),
+  is_active: z.boolean(),
+  created_at: z.string(),
+  updated_at: z.string()
+})
+
+export const createProfileSchema = z.object({
+  user_id: z.string().uuid('Geçerli bir kullanıcı seçiniz'),
+  first_name: z.string().min(1, 'Ad en az 1 karakter olmalı').max(255, 'Ad çok uzun'),
+  last_name: z.string().min(1, 'Soyad en az 1 karakter olmalı').max(255, 'Soyad çok uzun'),
+  phone: z.string().min(10, 'Telefon numarası geçersiz').max(50, 'Telefon numarası çok uzun').optional(),
+  birth_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Geçerli bir tarih formatı giriniz (YYYY-MM-DD)').optional(),
+  avatar_url: z.string().url('Geçerli bir resim URL\'i giriniz').optional(),
+  role_id: z.string().uuid('Geçerli bir rol seçiniz'),
+  is_active: z.boolean().default(true)
+})
+
+export const updateProfileSchema = createProfileSchema.partial()
+
 // Type exports
 export type BrandFormData = z.infer<typeof createBrandSchema>
 export type CategoryFormData = z.infer<typeof createCategorySchema>
@@ -201,6 +250,8 @@ export type UpdateCartItemFormData = z.infer<typeof updateCartItemSchema>
 export type CreateOrderFormData = z.infer<typeof createOrderSchema>
 export type UpdateOrderStatusFormData = z.infer<typeof updateOrderStatusSchema>
 export type UpdateOrderFormData = z.infer<typeof updateOrderSchema>
+export type RoleFormData = z.infer<typeof createRoleSchema>
+export type ProfileFormData = z.infer<typeof createProfileSchema>
 
 // Validation helpers
 export const validateBrand = (data: unknown) => createBrandSchema.safeParse(data)
@@ -212,4 +263,6 @@ export const validateCartItem = (data: unknown) => cartItemSchema.safeParse(data
 export const validateUpdateCartItem = (data: unknown) => updateCartItemSchema.safeParse(data)
 export const validateCreateOrder = (data: unknown) => createOrderSchema.safeParse(data)
 export const validateUpdateOrderStatus = (data: unknown) => updateOrderStatusSchema.safeParse(data)
-export const validateUpdateOrder = (data: unknown) => updateOrderSchema.safeParse(data) 
+export const validateUpdateOrder = (data: unknown) => updateOrderSchema.safeParse(data)
+export const validateRole = (data: unknown) => createRoleSchema.safeParse(data)
+export const validateProfile = (data: unknown) => createProfileSchema.safeParse(data) 
