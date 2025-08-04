@@ -50,6 +50,55 @@ export interface ProductImage {
   created_at: string
 }
 
+// Variant System Types
+
+export type AttributeType = 'select' | 'text' | 'number'
+
+export interface ProductAttribute {
+  id: string
+  name: string
+  display_name: string
+  attribute_type: AttributeType
+  is_required: boolean
+  sort_order: number
+  created_at: string
+}
+
+export interface ProductAttributeValue {
+  id: string
+  attribute_id: string
+  value: string
+  display_value: string | null
+  hex_color: string | null
+  sort_order: number
+  is_active: boolean
+  created_at: string
+}
+
+export interface ProductVariant {
+  id: string
+  product_id: string
+  sku: string
+  title: string | null
+  price: number
+  compare_at_price: number | null
+  stock_quantity: number
+  track_inventory: boolean
+  continue_selling_when_out_of_stock: boolean
+  is_active: boolean
+  position: number
+  source_platform: string
+  source_variant_id: string | null
+  source_data: Record<string, unknown> | null
+  created_at: string
+  updated_at: string
+}
+
+export interface VariantAttributeValue {
+  variant_id: string
+  attribute_value_id: string
+}
+
 // Bulk upload için helper types
 export interface ProductImageUpload {
   file: File
@@ -60,6 +109,60 @@ export interface ProductImageUpload {
 export interface BulkImageUploadRequest {
   product_id: string
   images: ProductImageUpload[]
+}
+
+// Variant Relations
+export interface VariantAttribute {
+  name: string
+  display_name: string
+  attribute_type: AttributeType
+  value: string
+  display_value: string | null
+  hex_color: string | null
+  sort_order: number
+}
+
+export interface ProductVariantDetailed extends ProductVariant {
+  product_name: string
+  product_slug: string
+  product_image_url: string | null
+  attributes: VariantAttribute[]
+  attributes_text: string | null
+  attribute_count: number
+}
+
+export interface ProductWithVariants extends Product {
+  variants: ProductVariant[]
+  default_variant?: ProductVariant
+}
+
+export interface ProductWithDefaultVariant extends Product {
+  default_variant_id: string | null
+  default_variant_sku: string | null
+  variant_price: number | null
+  variant_compare_at_price: number | null
+  variant_stock: number | null
+  variant_track_inventory: boolean | null
+  variant_continue_selling: boolean | null
+  selected_variant?: ProductVariantDetailed
+  available_variants?: ProductVariantDetailed[]
+}
+
+export interface ProductAttributeSummary {
+  product_id: string
+  product_name: string
+  attributes: Array<{
+    name: string
+    display_name: string
+    attribute_type: AttributeType
+    is_required: boolean
+    values: Array<{
+      value: string
+      display_value: string | null
+      hex_color: string | null
+      sort_order: number
+    }>
+  }>
 }
 
 // Relations for more complex queries
@@ -103,6 +206,7 @@ export interface CartItem {
   id: string
   cart_id: string
   product_id: string
+  variant_id: string | null
   quantity: number
   price: number
   created_at: string
@@ -146,12 +250,29 @@ export interface OrderItem {
 }
 
 // Cart and Order Relations
+export interface CartItemWithVariant extends CartItem {
+  product: Pick<Product, 'id' | 'name' | 'slug' | 'image_url' | 'stock'>
+  variant?: Pick<ProductVariantDetailed, 'id' | 'sku' | 'title' | 'attributes' | 'stock_quantity'>
+  is_available: boolean
+  variant_stock: number | null
+  variant_sku: string | null
+  variant_title: string | null
+  variant_attributes: VariantAttribute[]
+}
+
 export interface CartWithItems extends Cart {
   items: (CartItem & {
     product: Pick<Product, 'id' | 'name' | 'slug' | 'image_url' | 'stock'>
   })[]
   total_amount: number
   total_items: number
+}
+
+export interface CartWithVariants extends Cart {
+  items: CartItemWithVariant[]
+  total_amount: number
+  total_items: number
+  unavailable_items: number
 }
 
 export interface OrderWithItems extends Order {
@@ -166,6 +287,7 @@ export interface CartDetails {
   expires_at: string
   item_id: string | null
   product_id: string | null
+  variant_id: string | null
   quantity: number | null
   item_price: number | null
   item_total: number | null
@@ -173,6 +295,11 @@ export interface CartDetails {
   product_slug: string | null
   product_image: string | null
   product_stock: number | null
+  variant_sku: string | null
+  variant_stock: number | null
+  variant_attributes: VariantAttribute[]
+  variant_title: string | null
+  is_available: boolean
 }
 
 export interface OrderDetails extends Order {
@@ -300,15 +427,58 @@ export interface Database {
         Insert: Omit<Profile, 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Omit<Profile, 'id' | 'created_at'>>
       }
+      product_attributes: {
+        Row: ProductAttribute
+        Insert: Omit<ProductAttribute, 'id' | 'created_at'>
+        Update: Partial<Omit<ProductAttribute, 'id' | 'created_at'>>
+      }
+      product_attribute_values: {
+        Row: ProductAttributeValue
+        Insert: Omit<ProductAttributeValue, 'id' | 'created_at'>
+        Update: Partial<Omit<ProductAttributeValue, 'id' | 'created_at'>>
+      }
+      product_variants: {
+        Row: ProductVariant
+        Insert: Omit<ProductVariant, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<ProductVariant, 'id' | 'created_at'>>
+      }
+      variant_attribute_values: {
+        Row: VariantAttributeValue
+        Insert: VariantAttributeValue
+        Update: VariantAttributeValue
+      }
     }
     Views: {
-      [_ in never]: never
+      products_with_default_variants: {
+        Row: ProductWithDefaultVariant & {
+          brand_name: string | null
+          brand_slug: string | null
+          category_name: string | null
+          category_slug: string | null
+          category_parent_id: string | null
+          category_emoji: string | null
+          effective_price: number
+          has_active_discount: boolean
+          discount_percentage_actual: number
+          discount_amount: number
+        }
+      }
+      product_variants_detailed: {
+        Row: ProductVariantDetailed
+      }
+      cart_items_with_variants: {
+        Row: CartDetails
+      }
+      product_attributes_summary: {
+        Row: ProductAttributeSummary
+      }
     }
     Functions: {
       [_ in never]: never
     }
     Enums: {
       order_status: OrderStatus
+      attribute_type: AttributeType
     }
   }
 } 

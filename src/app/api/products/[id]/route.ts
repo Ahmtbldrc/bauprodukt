@@ -9,9 +9,12 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
+    const { searchParams } = new URL(request.url)
+    const variant = searchParams.get('variant') // Get variant ID parameter
 
+    // Use products_with_default_variants view for variant support
     const { data, error } = await supabase
-      .from('products_with_relations')
+      .from('products_with_default_variants')
       .select(`
         *,
         product_images(
@@ -39,8 +42,41 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Sort product images and prepare brand/category objects
-    const productWithSortedImages = {
+    // Get variant information
+    let selectedVariant = null
+    let availableVariants = []
+
+    if (variant) {
+      // Get specific variant details
+      const { data: variantData } = await supabase
+        .from('product_variants_detailed')
+        .select('*')
+        .eq('id', variant)
+        .eq('product_id', id)
+        .single()
+      
+      selectedVariant = variantData
+    }
+
+    // Get all available variants for this product
+    const { data: allVariants } = await supabase
+      .from('product_variants_detailed')
+      .select('*')
+      .eq('product_id', id)
+      .eq('is_active', true)
+      .order('position', { ascending: true })
+
+    availableVariants = allVariants || []
+
+    // Get product attributes for variant selection UI
+    const { data: attributesSummary } = await supabase
+      .from('product_attributes_summary')
+      .select('*')
+      .eq('product_id', id)
+      .single()
+
+    // Prepare response with variant information
+    const productWithVariants = {
       ...data,
       product_images: data.product_images?.sort((a: { order_index: number; is_cover: boolean }, b: { order_index: number; is_cover: boolean }) => {
         // Cover image comes first, then sort by order_index
@@ -48,6 +84,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         if (!a.is_cover && b.is_cover) return 1
         return a.order_index - b.order_index
       }) || [],
+      // Selected variant (specific or default)
+      selected_variant: selectedVariant || {
+        id: data.default_variant_id,
+        sku: data.default_variant_sku,
+        price: data.variant_price || data.price,
+        compare_at_price: data.variant_compare_at_price || data.discount_price,
+        stock_quantity: data.variant_stock || data.stock,
+        is_default: !selectedVariant,
+        attributes: []
+      },
+      // All available variants for selection
+      available_variants: availableVariants,
+      // Variant attributes for selection UI
+      variant_attributes: attributesSummary?.attributes || [],
       // Brand ve category bilgileri view'dan geliyor ama nested object formatında değil
       brand: data.brand_name ? {
         id: data.brand_id,
@@ -64,7 +114,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       } : null
     }
 
-    return NextResponse.json(productWithSortedImages)
+    return NextResponse.json(productWithVariants)
   } catch (error) {
     console.error('Product API error:', error)
     return NextResponse.json(

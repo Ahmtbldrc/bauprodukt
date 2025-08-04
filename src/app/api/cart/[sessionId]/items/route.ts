@@ -17,9 +17,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Sepet items'larını getir
+    // Sepet items'larını variant bilgileri ile getir
     const { data, error } = await supabase
-      .from('cart_details')
+      .from('cart_items_with_variants')
       .select('*')
       .eq('session_id', sessionId)
       .not('item_id', 'is', null)
@@ -35,25 +35,36 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const items = data.map(item => ({
       id: item.item_id,
       product_id: item.product_id,
+      variant_id: item.variant_id,
       quantity: item.quantity,
       price: item.item_price,
       total_price: item.item_total,
+      is_available: item.is_available,
       product: {
         id: item.product_id,
         name: item.product_name,
         slug: item.product_slug,
         image_url: item.product_image,
         stock: item.product_stock
-      }
+      },
+      variant: item.variant_id ? {
+        id: item.variant_id,
+        sku: item.variant_sku,
+        title: item.variant_title,
+        stock_quantity: item.variant_stock,
+        attributes: item.variant_attributes || []
+      } : null
     }))
 
     const total_amount = items.reduce((sum, item) => sum + (item.total_price || 0), 0)
     const total_items = items.reduce((sum, item) => sum + (item.quantity || 0), 0)
+    const unavailable_items = items.filter(item => !item.is_available).length
 
     return NextResponse.json({
       items,
       total_amount,
-      total_items
+      total_items,
+      unavailable_items
     })
   } catch (error) {
     console.error('Cart items API error:', error)
@@ -85,14 +96,40 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const { product_id, quantity } = validation.data
+    const { product_id, variant_id, quantity } = validation.data
 
-    // Önce ürünü kontrol et ve stok bilgisini al
+    // Product ve variant bilgilerini al
     const { data: product, error: productError } = await supabase
       .from('products')
       .select('id, name, slug, price, discount_price, stock, image_url')
       .eq('id', product_id)
       .single()
+
+    let variant = null
+    if (variant_id) {
+      const { data: variantData, error: variantError } = await supabase
+        .from('product_variants_detailed')
+        .select('*')
+        .eq('id', variant_id)
+        .eq('product_id', product_id)
+        .eq('is_active', true)
+        .single()
+
+      if (variantError) {
+        if (variantError.code === 'PGRST116') {
+          return NextResponse.json(
+            { error: 'Variant not found or inactive' },
+            { status: 404 }
+          )
+        }
+        console.error('Variant fetch error:', variantError)
+        return NextResponse.json(
+          { error: 'Failed to fetch variant' },
+          { status: 500 }
+        )
+      }
+      variant = variantData
+    }
 
     if (productError) {
       if (productError.code === 'PGRST116') {
@@ -108,10 +145,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Stok kontrolü
-    if (product.stock < quantity) {
+    // Stok kontrolü - variant varsa variant stock'unu, yoksa product stock'unu kontrol et
+    const availableStock = variant ? variant.stock_quantity : product.stock
+    const trackInventory = variant ? variant.track_inventory : true
+    const continueSelling = variant ? variant.continue_selling_when_out_of_stock : false
+
+    if (trackInventory && !continueSelling && availableStock < quantity) {
       return NextResponse.json(
-        { error: `Not enough stock. Available: ${product.stock}` },
+        { error: `Not enough stock. Available: ${availableStock}` },
         { status: 400 }
       )
     }
@@ -152,13 +193,20 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       cart = newCart
     }
 
-    // Aynı ürün sepette var mı kontrol et
-    const { data: existingItem, error: itemFetchError } = await supabase
+    // Aynı ürün-variant kombinasyonu sepette var mı kontrol et
+    let existingItemQuery = supabase
       .from('cart_items')
       .select('*')
       .eq('cart_id', cart.id)
       .eq('product_id', product_id)
-      .single()
+
+    if (variant_id) {
+      existingItemQuery = existingItemQuery.eq('variant_id', variant_id)
+    } else {
+      existingItemQuery = existingItemQuery.is('variant_id', null)
+    }
+
+    const { data: existingItem, error: itemFetchError } = await existingItemQuery.single()
 
     if (itemFetchError && itemFetchError.code !== 'PGRST116') {
       console.error('Cart item fetch error:', itemFetchError)
@@ -168,18 +216,20 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Etkili fiyatı hesapla (indirim varsa onu kullan)
-    const effectivePrice = product.discount_price || product.price
+    // Etkili fiyatı hesapla - variant varsa variant price, yoksa product price
+    const effectivePrice = variant 
+      ? (variant.compare_at_price && variant.compare_at_price > variant.price ? variant.price : variant.price)
+      : (product.discount_price || product.price)
 
     let cartItem
     if (existingItem) {
       // Mevcut item'ı güncelle
       const newQuantity = existingItem.quantity + quantity
 
-      // Toplam stok kontrolü
-      if (product.stock < newQuantity) {
+      // Toplam stok kontrolü - variant varsa variant stock'unu kontrol et
+      if (trackInventory && !continueSelling && availableStock < newQuantity) {
         return NextResponse.json(
-          { error: `Not enough stock. Available: ${product.stock}, in cart: ${existingItem.quantity}` },
+          { error: `Not enough stock. Available: ${availableStock}, in cart: ${existingItem.quantity}` },
           { status: 400 }
         )
       }
@@ -209,6 +259,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         .insert([{
           cart_id: cart.id,
           product_id: product_id,
+          variant_id: variant_id,
           quantity: quantity,
           price: effectivePrice
         }])
@@ -231,10 +282,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       cartItem = newItem
     }
 
-    // Güncellenmiş cart item'ı product bilgileriyle döndür
+    // Güncellenmiş cart item'ı product ve variant bilgileriyle döndür
     return NextResponse.json({
       id: cartItem.id,
       product_id: cartItem.product_id,
+      variant_id: cartItem.variant_id,
       quantity: cartItem.quantity,
       price: cartItem.price,
       total_price: cartItem.quantity * cartItem.price,
@@ -244,7 +296,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         slug: product.slug,
         image_url: product.image_url,
         stock: product.stock
-      }
+      },
+      variant: variant ? {
+        id: variant.id,
+        sku: variant.sku,
+        title: variant.title,
+        stock_quantity: variant.stock_quantity,
+        attributes: variant.attributes || []
+      } : null
     }, { status: existingItem ? 200 : 201 })
   } catch (error) {
     console.error('Cart items creation API error:', error)

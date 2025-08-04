@@ -11,12 +11,14 @@ export async function GET(request: NextRequest) {
     const brand = searchParams.get('brand')
     const category = searchParams.get('category')
     const stock_code = searchParams.get('stock_code')
+    const variant = searchParams.get('variant') // New: variant ID filter
 
     const from = (page - 1) * limit
     const to = from + limit - 1
 
+    // Use products_with_default_variants view for variant support
     let query = supabase
-      .from('products_with_relations')
+      .from('products_with_default_variants')
       .select(`
         *,
         product_images(
@@ -46,6 +48,12 @@ export async function GET(request: NextRequest) {
       query = query.eq('stock_code', stock_code)
     }
 
+    // Variant filtering: if variant ID is provided, filter products that have this variant
+    if (variant) {
+      // This will require a more complex query to check if product has the specified variant
+      // For now, we'll handle this after the initial query
+    }
+
     const { data, error, count } = await query
 
     if (error) {
@@ -56,33 +64,78 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Sort product images and prepare discount information for each product
-    const productsWithSortedImages = data?.map(product => ({
-      ...product,
-      product_images: product.product_images?.sort((a: { order_index: number; is_cover: boolean }, b: { order_index: number; is_cover: boolean }) => {
-        // Cover image comes first, then sort by order_index
-        if (a.is_cover && !b.is_cover) return -1
-        if (!a.is_cover && b.is_cover) return 1
-        return a.order_index - b.order_index
-      }) || [],
-      // Brand ve category bilgileri view'dan geliyor ama nested object formatında değil
-      brand: product.brand_name ? {
-        id: product.brand_id,
-        name: product.brand_name,
-        slug: product.brand_slug,
-        created_at: ''
-      } : null,
-      category: product.category_name ? {
-        id: product.category_id,
-        name: product.category_name,
-        slug: product.category_slug,
-        parent_id: product.category_parent_id,
-        created_at: ''
-      } : null
-    }))
+    // Filter by variant if specified
+    let filteredData = data
+    if (variant && data) {
+      // Get products that have the specified variant
+      const { data: productsWithVariant } = await supabase
+        .from('product_variants')
+        .select('product_id')
+        .eq('id', variant)
+        .eq('is_active', true)
+
+      if (productsWithVariant && productsWithVariant.length > 0) {
+        const productIdsWithVariant = productsWithVariant.map(pv => pv.product_id)
+        filteredData = data.filter(product => productIdsWithVariant.includes(product.id))
+      } else {
+        filteredData = []
+      }
+    }
+
+    // Process products with variant information
+    const processedProducts = await Promise.all(
+      (filteredData || []).map(async (product: any) => {
+        // If specific variant requested, get that variant's details
+        let selectedVariant = null
+        if (variant) {
+          const { data: variantData } = await supabase
+            .from('product_variants_detailed')
+            .select('*')
+            .eq('id', variant)
+            .eq('product_id', product.id)
+            .single()
+          
+          selectedVariant = variantData
+        }
+
+        return {
+          ...product,
+          product_images: product.product_images?.sort((a: { order_index: number; is_cover: boolean }, b: { order_index: number; is_cover: boolean }) => {
+            // Cover image comes first, then sort by order_index
+            if (a.is_cover && !b.is_cover) return -1
+            if (!a.is_cover && b.is_cover) return 1
+            return a.order_index - b.order_index
+          }) || [],
+          // Default variant information (from view)
+          selected_variant: selectedVariant || {
+            id: product.default_variant_id,
+            sku: product.default_variant_sku,
+            price: product.variant_price || product.price,
+            compare_at_price: product.variant_compare_at_price || product.discount_price,
+            stock_quantity: product.variant_stock || product.stock,
+            is_default: !selectedVariant,
+            attributes: selectedVariant?.attributes || []
+          },
+          // Brand ve category bilgileri view'dan geliyor ama nested object formatında değil
+          brand: product.brand_name ? {
+            id: product.brand_id,
+            name: product.brand_name,
+            slug: product.brand_slug,
+            created_at: ''
+          } : null,
+          category: product.category_name ? {
+            id: product.category_id,
+            name: product.category_name,
+            slug: product.category_slug,
+            parent_id: product.category_parent_id,
+            created_at: ''
+          } : null
+        }
+      })
+    )
 
     return NextResponse.json({
-      data: productsWithSortedImages,
+      data: processedProducts,
       pagination: {
         page,
         limit,
