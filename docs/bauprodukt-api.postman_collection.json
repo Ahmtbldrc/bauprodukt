@@ -1,12 +1,12 @@
 {
   "info": {
     "name": "Bauprodukt Demo API",
-    "description": "Complete API collection for testing Bauprodukt Demo application with sample data. Includes Cart management and Order processing endpoints for e-commerce functionality.",
+    "description": "Complete API collection for testing Bauprodukt Demo application with Enhanced Content System. Includes Cart management, Order processing, and Swiss VFG enhanced products with structured content tabs (BESCHREIBUNG, TECHNISCHE DATEN, ZUBEHÖR) and PDF attachments.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "bauprodukt-demo",
     "version": {
       "major": 1,
-      "minor": 3,
+      "minor": 4,
       "patch": 0
     }
   },
@@ -584,8 +584,51 @@
                 }
               ]
             },
-            "description": "Get a specific product by ID with brand, category, and variant info"
+            "description": "Get a specific product by ID with brand, category, variant info, enhanced content (features_list), and PDF attachments"
           }
+        },
+        {
+          "name": "Get Product with Enhanced Content (Real Example)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products/1efbdad3-b582-495e-8484-5f89ea6dffbb",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "1efbdad3-b582-495e-8484-5f89ea6dffbb"]
+            },
+            "description": "Get real product example (Dusch-WC Geberit AquaClean Alba) with enhanced content structure showing features_list, content_summary, and PDFs"
+          },
+          "response": [
+            {
+              "name": "Enhanced Product Response Example",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{base_url}}/api/products/1efbdad3-b582-495e-8484-5f89ea6dffbb",
+                  "host": ["{{base_url}}"],
+                  "path": ["api", "products", "1efbdad3-b582-495e-8484-5f89ea6dffbb"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"id\": \"1efbdad3-b582-495e-8484-5f89ea6dffbb\",\n  \"name\": \"Dusch-WC Geberit AquaClean Alba\",\n  \"slug\": \"dusch-wc-geberit-aquaclean-alba-weiss\",\n  \"price\": 1050.0,\n  \"features_list\": {\n    \"BESCHREIBUNG\": {\n      \"content_items\": [\n        {\n          \"type\": \"rich_text\",\n          \"html\": \"<p>Das Dusch-WC AquaClean Alba verbindet zeitloses Design mit bewährter Schweizer Qualität.</p>\",\n          \"text\": \"Das Dusch-WC AquaClean Alba verbindet zeitloses Design mit bewährter Schweizer Qualität.\"\n        }\n      ],\n      \"pdf_references\": [],\n      \"metadata\": {\n        \"extraction_date\": \"2025-08-05T13:25:00Z\",\n        \"total_items\": 8,\n        \"has_pdfs\": false\n      }\n    },\n    \"TECHNISCHE_DATEN\": {\n      \"content_items\": [\n        {\n          \"type\": \"rich_text\",\n          \"html\": \"<p>Spülvolumen: 4.5 Liter</p><p>Druckbereich: 1-5 bar</p>\",\n          \"text\": \"Spülvolumen: 4.5 Liter, Druckbereich: 1-5 bar\"\n        }\n      ],\n      \"pdf_references\": [\n        {\n          \"type\": \"pdf\",\n          \"title\": \"Produktdatenblatt\",\n          \"filename\": \"dusch-wc-geberit-aquaclean-alba-weiss_technische_daten_PRO_3205931-1.pdf\",\n          \"original_url\": \"https://swiss-vfg.ch/files/PRO_3205931-1.pdf\",\n          \"file_size\": \"109.5 KB\",\n          \"supabase_url\": \"https://ccwpzfbdkxgcnmalphap.supabase.co/storage/v1/object/public/pdfs/dusch-wc-geberit-aquaclean-alba-weiss_technische_daten_PRO_3205931-1.pdf\",\n          \"storage_type\": \"both\",\n          \"upload_status\": \"uploaded\"\n        }\n      ],\n      \"metadata\": {\n        \"extraction_date\": \"2025-08-05T13:25:00Z\",\n        \"total_items\": 6,\n        \"has_pdfs\": true\n      }\n    }\n  },\n  \"content_summary\": {\n    \"total_tabs\": 7,\n    \"total_content_items\": 93,\n    \"total_pdfs\": 1,\n    \"last_extraction_date\": \"2025-08-05T13:25:00Z\"\n  },\n  \"pdfs\": [\n    {\n      \"id\": \"ef16cf10-032d-4235-b61b-03571de3b657\",\n      \"product_id\": \"1efbdad3-b582-495e-8484-5f89ea6dffbb\",\n      \"filename\": \"dusch-wc-geberit-aquaclean-alba-weiss_technische_daten_PRO_3205931-1.pdf\",\n      \"tab_section\": \"TECHNISCHE DATEN\",\n      \"supabase_url\": \"https://ccwpzfbdkxgcnmalphap.supabase.co/storage/v1/object/public/pdfs/dusch-wc-geberit-aquaclean-alba-weiss_technische_daten_PRO_3205931-1.pdf\",\n      \"file_size\": 112247,\n      \"upload_status\": \"uploaded\",\n      \"storage_type\": \"both\"\n    }\n  ],\n  \"brand\": {\n    \"id\": \"brand-geberit\",\n    \"name\": \"Geberit\",\n    \"slug\": \"geberit\"\n  },\n  \"category\": {\n    \"id\": \"category-bathroom\",\n    \"name\": \"Badezimmer\",\n    \"slug\": \"badezimmer\"\n  }\n}"
+            }
+          ]
         },
         {
           "name": "Get Product with Specific Variant",
@@ -609,7 +652,7 @@
                 }
               ]
             },
-            "description": "Get product with a specific variant selected, includes variant attributes and available variants"
+            "description": "Get product with a specific variant selected, includes variant attributes, available variants, enhanced content (features_list), and PDF attachments"
           }
         },
         {
@@ -675,7 +718,7 @@
           }
         }
       ],
-      "description": "Product management endpoints with variant support. Products can have variants with attributes like color, size, etc. If no variants are defined, the system uses synthetic variants with product pricing and stock."
+      "description": "Product management endpoints with variant support and Enhanced Content System. Products include features_list (JSONB) with structured content from Swiss VFG tabs (BESCHREIBUNG, TECHNISCHE DATEN, ZUBEHÖR, etc.) and PDF attachments. If no variants are defined, the system uses synthetic variants with product pricing and stock."
     },
     {
       "name": "Product Variants",
@@ -2212,6 +2255,96 @@
         }
       ],
       "description": "Complete cart and order workflow from adding items to cart to order creation and management"
+    },
+    {
+      "name": "Enhanced Content System",
+      "item": [
+        {
+          "name": "Get Product with Features List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products/{{enhanced_product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{enhanced_product_id}}"]
+            },
+            "description": "Get product with enhanced content system including features_list (structured tabs), content_summary, and PDF attachments from Swiss VFG scraper"
+          }
+        },
+        {
+          "name": "Search Content in Features List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products?search=Chrom&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "Chrom",
+                  "description": "Search within features_list content and product names"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Search products by content within features_list tabs (BESCHREIBUNG, TECHNISCHE DATEN, etc.)"
+          }
+        },
+        {
+          "name": "Get Products with PDFs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/products?has_pdfs=true&page=1&limit=10",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"],
+              "query": [
+                {
+                  "key": "has_pdfs",
+                  "value": "true",
+                  "description": "Filter products that have PDF attachments"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "Get products that have PDF attachments (technical specifications, manuals, etc.)"
+          }
+        }
+      ],
+      "description": "Enhanced Content System endpoints for Swiss VFG scraped products with structured content tabs and PDF management"
     }
   ],
   "variable": [
@@ -2279,6 +2412,16 @@
       "key": "size_large_value_id",
       "value": "",
       "description": "Large size attribute value ID for variant testing"
+    },
+    {
+      "key": "enhanced_product_id",
+      "value": "1efbdad3-b582-495e-8484-5f89ea6dffbb",
+      "description": "Product ID with enhanced content for testing (Dusch-WC Geberit AquaClean Alba)"
+    },
+    {
+      "key": "pdf_url",
+      "value": "",
+      "description": "PDF URL for testing (copy from product PDF response)"
     }
   ],
   "event": [
