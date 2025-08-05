@@ -79,16 +79,15 @@ export interface ProductPdf {
   filename: string
   original_url: string
   tab_section: string | null
-  title: string | null
   local_path: string | null
   supabase_url: string | null
   supabase_path: string | null
   storage_type: StorageType
-  file_size: string | null
-  file_size_bytes: number | null
+  file_size: number | null // Bytes in database
   file_hash: string | null
+  mime_type: string | null
+  download_status: string | null
   upload_status: UploadStatus
-  download_date: string | null
   upload_date: string | null
   created_at: string
   updated_at: string

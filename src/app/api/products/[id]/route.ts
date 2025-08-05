@@ -81,7 +81,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .from('product_pdfs')
       .select('*')
       .eq('product_id', id)
-      .eq('upload_status', 'uploaded')
+      .eq('download_status', 'completed')
       .order('created_at', { ascending: false })
     
     const pdfs: ProductPdf[] = pdfData || []
@@ -139,7 +139,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       // Variant attributes for selection UI (empty if no variants)
       variant_attributes: data.has_variants ? (attributesSummary?.attributes || []) : [],
       // Enhanced content system fields
-      content_summary: contentSummary,
+      content_summary: contentSummary || null,
       pdfs: pdfs,
       
       // Brand ve category bilgileri view'dan geliyor ama nested object formatında değil
