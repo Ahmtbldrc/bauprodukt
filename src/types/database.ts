@@ -1,5 +1,107 @@
 // Database types based on the SQL schema
 
+// Enhanced Content System Types
+
+// Content item types
+export type ContentType = 'rich_text' | 'pdf' | 'structured_data'
+
+// Upload status for PDFs
+export type UploadStatus = 'pending' | 'uploaded' | 'failed' | 'skipped'
+
+// Storage type for PDFs
+export type StorageType = 'local' | 'supabase' | 'both'
+
+// Extraction quality levels
+export type ExtractionQuality = 'high' | 'medium' | 'low'
+
+// Rich text content structure
+export interface RichTextContent {
+  type: 'rich_text'
+  html: string
+  text: string
+  metadata?: {
+    word_count?: number
+    has_tables?: boolean
+    extraction_quality?: ExtractionQuality
+  }
+}
+
+// Structured data content
+export interface StructuredDataContent {
+  type: 'structured_data'
+  data: Record<string, unknown>
+  schema_version?: string
+}
+
+// PDF reference structure
+export interface PdfReference {
+  type: 'pdf'
+  title: string
+  filename: string
+  original_url: string
+  file_size: string
+  file_size_bytes?: number
+  file_hash?: string
+  local_path?: string
+  supabase_url?: string
+  storage_type: StorageType
+  upload_status: UploadStatus
+}
+
+// Content item union type
+export type ContentItem = RichTextContent | StructuredDataContent | PdfReference
+
+// Tab metadata for extraction tracking
+export interface TabMetadata {
+  extraction_date: string
+  total_items: number
+  has_pdfs: boolean
+}
+
+// Individual tab content
+export interface TabContent {
+  content_items: (RichTextContent | StructuredDataContent)[]
+  pdf_references: PdfReference[]
+  metadata: TabMetadata
+}
+
+// Complete features list structure
+export interface FeaturesListStructure {
+  [tabName: string]: TabContent
+  // Common tabs: BESCHREIBUNG, TECHNISCHE_DATEN, ZUBEHÖR, LIEFERKETTE, 
+  // WFW_PER_UNIT, LIEFERUNG_VERSAND, GESCHÄFTSKUNDEN_B2B
+}
+
+// Product PDF management
+export interface ProductPdf {
+  id: string
+  product_id: string
+  filename: string
+  original_url: string
+  tab_section: string | null
+  title: string | null
+  local_path: string | null
+  supabase_url: string | null
+  supabase_path: string | null
+  storage_type: StorageType
+  file_size: string | null
+  file_size_bytes: number | null
+  file_hash: string | null
+  upload_status: UploadStatus
+  download_date: string | null
+  upload_date: string | null
+  created_at: string
+  updated_at: string
+}
+
+// Content summary for API responses
+export interface ContentSummary {
+  total_tabs: number
+  total_content_items: number
+  total_pdfs: number
+  last_extraction_date: string | null
+}
+
 export interface Brand {
   id: string
   name: string
@@ -28,7 +130,10 @@ export interface Product {
   image_url: string | null
   brand_id: string | null
   category_id: string | null
+  // Enhanced content system
+  features_list: FeaturesListStructure | null
   created_at: string
+  updated_at: string
 }
 
 export interface Banner {
@@ -145,6 +250,9 @@ export interface ProductVariantDetailed extends ProductVariant {
 export interface ProductWithVariants extends Product {
   variants: ProductVariant[]
   default_variant?: ProductVariant
+  // Enhanced content fields for product detail responses
+  content_summary?: ContentSummary
+  pdfs?: ProductPdf[]
 }
 
 export interface ProductWithDefaultVariant extends Product {
@@ -398,8 +506,13 @@ export interface Database {
       }
       products: {
         Row: Product
-        Insert: Omit<Product, 'id' | 'created_at'>
+        Insert: Omit<Product, 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Omit<Product, 'id' | 'created_at'>>
+      }
+      product_pdfs: {
+        Row: ProductPdf
+        Insert: Omit<ProductPdf, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<ProductPdf, 'id' | 'created_at'>>
       }
       banners: {
         Row: Banner
@@ -493,6 +606,8 @@ export interface Database {
     Enums: {
       order_status: OrderStatus
       attribute_type: AttributeType
+      upload_status: UploadStatus
+      storage_type: StorageType
     }
   }
 } 

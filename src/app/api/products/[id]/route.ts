@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { updateProductSchema } from '@/schemas/database'
+import type { ProductPdf, ContentSummary, FeaturesListStructure } from '@/types/database'
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -75,6 +76,43 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .eq('product_id', id)
       .single()
 
+    // Get PDF information
+    const { data: pdfData } = await supabase
+      .from('product_pdfs')
+      .select('*')
+      .eq('product_id', id)
+      .eq('upload_status', 'uploaded')
+      .order('created_at', { ascending: false })
+    
+    const pdfs: ProductPdf[] = pdfData || []
+
+    // Generate content summary if features_list exists
+    let contentSummary: ContentSummary | undefined
+    if (data.features_list) {
+      const featuresList = data.features_list as FeaturesListStructure
+      const tabs = Object.keys(featuresList)
+      const totalContentItems = tabs.reduce((total, tabName) => {
+        return total + (featuresList[tabName]?.content_items?.length || 0)
+      }, 0)
+      const totalPdfs = tabs.reduce((total, tabName) => {
+        return total + (featuresList[tabName]?.pdf_references?.length || 0)
+      }, 0)
+      
+      // Find the latest extraction date
+      const extractionDates = tabs
+        .map(tabName => featuresList[tabName]?.metadata?.extraction_date)
+        .filter(Boolean)
+        .sort()
+      const lastExtractionDate = extractionDates.length > 0 ? extractionDates[extractionDates.length - 1] : null
+      
+      contentSummary = {
+        total_tabs: tabs.length,
+        total_content_items: totalContentItems,
+        total_pdfs: totalPdfs,
+        last_extraction_date: lastExtractionDate
+      }
+    }
+
     // Prepare response with variant information
     const productWithVariants = {
       ...data,
@@ -100,6 +138,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       available_variants: data.has_variants ? availableVariants : [],
       // Variant attributes for selection UI (empty if no variants)
       variant_attributes: data.has_variants ? (attributesSummary?.attributes || []) : [],
+      // Enhanced content system fields
+      content_summary: contentSummary,
+      pdfs: pdfs,
+      
       // Brand ve category bilgileri view'dan geliyor ama nested object formatında değil
       brand: data.brand_name ? {
         id: data.brand_id,
