@@ -536,14 +536,20 @@ export default function ProductPageContent({
                 
                 <div className="mb-4">
                   <div className="flex items-center gap-3">
-                    <p className="text-xl font-bold" style={{color: '#F39236'}}>
-                      {formatPrice(Number(displayPrice))}
-                    </p>
                     {hasDiscount && (
-                      <p className="text-base text-gray-500 line-through">
+                      <p className="text-base text-gray-500 line-through" style={{ 
+                        textDecorationThickness: '1px', 
+                        textDecorationSkipInk: 'none',
+                        textDecorationLine: 'line-through',
+                        textDecorationColor: '#6B7280',
+                        transform: 'translateY(4px)'
+                      }}>
                         {formatPrice(Number(product?.price ?? 0))}
                       </p>
                     )}
+                    <p className="text-xl font-bold" style={{color: '#F39236'}}>
+                      {formatPrice(Number(displayPrice))}
+                    </p>
                   </div>
                 </div>
                 
