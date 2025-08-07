@@ -14,7 +14,9 @@ if (!supabaseAnonKey) {
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
-    persistSession: false, // MVP doesn't need authentication
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
   },
 })
 

@@ -1,6 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
 import type { 
   AuthState, 
   AuthContextType, 
@@ -115,6 +116,7 @@ const generateNewUser = (data: RegisterData): User => {
     firstName: data.firstName,
     lastName: data.lastName,
     fullName: `${data.firstName} ${data.lastName}`,
+    role: 'user', // Default role for new registrations
     phone: data.phone,
     createdAt: new Date()
   }
@@ -126,7 +128,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Check for stored auth on mount
   useEffect(() => {
-    const checkStoredAuth = () => {
+    const checkStoredAuth = async () => {
       // Skip during SSR
       if (typeof window === 'undefined') {
         dispatch({ type: 'SET_LOADING', payload: false })
@@ -134,21 +136,52 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       try {
-        const storedUser = localStorage.getItem(STORAGE_KEYS.USER)
-        const storedToken = localStorage.getItem(STORAGE_KEYS.TOKEN)
+        // Supabase session kontrolü
+        const { data: { session }, error } = await supabase.auth.getSession()
         
-        if (storedUser && storedToken) {
-          const user = JSON.parse(storedUser)
-          // Mock token validation - gerçek uygulamada token'ın geçerliliği kontrol edilir
+        if (error) {
+          console.error('Session check error:', error)
+          dispatch({ type: 'SET_LOADING', payload: false })
+          return
+        }
+
+        if (session?.user) {
+          // Kullanıcı profilini al
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select(`
+              *,
+              role:roles(*)
+            `)
+            .eq('user_id', session.user.id)
+            .single()
+
+          if (profileError && profileError.code !== 'PGRST116') {
+            console.error('Profile fetch error:', profileError)
+          }
+
+          // User objesini oluştur
+          const user: User = {
+            id: session.user.id,
+            email: session.user.email!,
+            firstName: profileData?.first_name || session.user.user_metadata?.first_name || '',
+            lastName: profileData?.last_name || session.user.user_metadata?.last_name || '',
+            fullName: profileData ? `${profileData.first_name} ${profileData.last_name}` : session.user.user_metadata?.full_name || '',
+            role: profileData?.role?.slug === 'admin' ? 'admin' : 'user',
+            phone: profileData?.phone || '',
+            avatar: profileData?.avatar_url || session.user.user_metadata?.avatar_url,
+            createdAt: new Date(session.user.created_at),
+            supabaseUser: session.user,
+            profile: profileData,
+            roleData: profileData?.role,
+          }
+
           dispatch({ type: 'LOGIN_SUCCESS', payload: user })
         } else {
           dispatch({ type: 'SET_LOADING', payload: false })
         }
       } catch (error) {
         console.error('Auth check error:', error)
-        // Clear invalid stored data
-        localStorage.removeItem(STORAGE_KEYS.USER)
-        localStorage.removeItem(STORAGE_KEYS.TOKEN)
         dispatch({ type: 'SET_LOADING', payload: false })
       }
     }
@@ -161,26 +194,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'LOGIN_START' })
     
     try {
-      await mockApiDelay()
-      
-      // Mock kullanıcı kontrolü
-      const user = findUserByEmail(credentials.email)
-      
-      if (!user) {
-        throw new Error('Es wurde kein Benutzer mit dieser E-Mail-Adresse gefunden')
+      // Supabase Auth ile giriş
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: credentials.email,
+        password: credentials.password,
+      })
+
+      if (error) {
+        throw new Error(error.message)
       }
-      
-      // Mock password kontrolü - gerçek uygulamada backend'de hash kontrolü yapılır
-      // Şimdilik sadece "kadir123" şifresi kabul ediliyor
-      if (credentials.password !== 'kadir123') {
-        throw new Error('E-Mail oder Passwort ist falsch')
+
+      if (!data.user) {
+        throw new Error('Anmeldung fehlgeschlagen')
       }
-      
-      // Success - store auth data
-      const mockToken = `mock_token_${user.id}_${Date.now()}`
+
+      // Kullanıcı profilini al
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          role:roles(*)
+        `)
+        .eq('user_id', data.user.id)
+        .single()
+
+      if (profileError && profileError.code !== 'PGRST116') {
+        console.error('Profile fetch error:', profileError)
+      }
+
+      // User objesini oluştur
+      const user: User = {
+        id: data.user.id,
+        email: data.user.email!,
+        firstName: profileData?.first_name || data.user.user_metadata?.first_name || '',
+        lastName: profileData?.last_name || data.user.user_metadata?.last_name || '',
+        fullName: profileData ? `${profileData.first_name} ${profileData.last_name}` : data.user.user_metadata?.full_name || '',
+        role: profileData?.role?.slug === 'admin' ? 'admin' : 'user',
+        phone: profileData?.phone || '',
+        avatar: profileData?.avatar_url || data.user.user_metadata?.avatar_url,
+        createdAt: new Date(data.user.created_at),
+        supabaseUser: data.user,
+        profile: profileData,
+        roleData: profileData?.role,
+      }
+
+      // Store auth data
       if (typeof window !== 'undefined') {
         localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user))
-        localStorage.setItem(STORAGE_KEYS.TOKEN, mockToken)
       }
       
       dispatch({ type: 'LOGIN_SUCCESS', payload: user })
@@ -196,14 +256,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     dispatch({ type: 'REGISTER_START' })
     
     try {
-      await mockApiDelay()
-      
-      // Email'in daha önce kullanılıp kullanılmadığını kontrol et
-      const existingUser = findUserByEmail(data.email)
-      if (existingUser) {
-        throw new Error('Diese E-Mail-Adresse wird bereits verwendet')
-      }
-      
       // Password confirmation kontrolü
       if (data.password !== data.confirmPassword) {
         throw new Error('Passwörter stimmen nicht überein')
@@ -214,20 +266,69 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         throw new Error('Sie müssen die Nutzungsbedingungen akzeptieren')
       }
       
-      // Create new user
-      const newUser = generateNewUser(data)
-      
-      // Mock API success - store auth data
-      const mockToken = `mock_token_${newUser.id}_${Date.now()}`
+      // Supabase Auth ile kayıt
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            first_name: data.firstName,
+            last_name: data.lastName,
+            full_name: `${data.firstName} ${data.lastName}`,
+          }
+        }
+      })
+
+      if (authError) {
+        throw new Error(authError.message)
+      }
+
+      if (!authData.user) {
+        throw new Error('Registrierung fehlgeschlagen')
+      }
+
+      // Default user role'ü al
+      const { data: defaultRole } = await supabase
+        .from('roles')
+        .select('*')
+        .eq('slug', 'user')
+        .single()
+
+      // Kullanıcı profilini oluştur
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          user_id: authData.user.id,
+          first_name: data.firstName,
+          last_name: data.lastName,
+          phone: data.phone,
+          role_id: defaultRole?.id,
+          is_active: true,
+        })
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError)
+      }
+
+      // User objesini oluştur
+      const user: User = {
+        id: authData.user.id,
+        email: authData.user.email!,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        fullName: `${data.firstName} ${data.lastName}`,
+        role: 'user', // Default role
+        phone: data.phone || '',
+        createdAt: new Date(authData.user.created_at),
+        supabaseUser: authData.user,
+      }
+
+      // Store auth data
       if (typeof window !== 'undefined') {
-        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(newUser))
-        localStorage.setItem(STORAGE_KEYS.TOKEN, mockToken)
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user))
       }
       
-      // Yeni kullanıcıyı mock verilere ekle (session boyunca)
-      MOCK_USERS.push(newUser)
-      
-      dispatch({ type: 'REGISTER_SUCCESS', payload: newUser })
+      dispatch({ type: 'REGISTER_SUCCESS', payload: user })
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Bei der Registrierung ist ein Fehler aufgetreten'
       dispatch({ type: 'REGISTER_ERROR', payload: errorMessage })
@@ -236,14 +337,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   // Logout function
-  const logout = (): void => {
-    // Clear stored auth data
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(STORAGE_KEYS.USER)
-      localStorage.removeItem(STORAGE_KEYS.TOKEN)
+  const logout = async (): Promise<void> => {
+    try {
+      // Supabase Auth ile çıkış
+      const { error } = await supabase.auth.signOut()
+      
+      if (error) {
+        console.error('Logout error:', error)
+      }
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      // Clear stored auth data
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem(STORAGE_KEYS.USER)
+        localStorage.removeItem(STORAGE_KEYS.TOKEN)
+      }
+      
+      dispatch({ type: 'LOGOUT' })
     }
-    
-    dispatch({ type: 'LOGOUT' })
   }
 
   // Clear error function
@@ -255,7 +367,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     ...state,
     login,
     register,
-    logout,
+    logout: logout as () => void, // Type compatibility
     clearError
   }
 

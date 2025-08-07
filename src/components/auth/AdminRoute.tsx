@@ -1,21 +1,20 @@
 'use client'
 
-import { AdminLayout } from '@/components/admin/AdminLayout'
-import { useAuth } from '@/contexts/AuthContext'
-import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
-import { ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 import { Loader2 } from 'lucide-react'
 
-interface AdminRootLayoutProps {
-  children: ReactNode
+interface AdminRouteProps {
+  children: React.ReactNode
 }
 
-export default function AdminRootLayout({ children }: AdminRootLayoutProps) {
+export function AdminRoute({ children }: AdminRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
+    // Only redirect if not loading and not already authenticated as admin
     if (!isLoading) {
       if (!isAuthenticated) {
         router.replace('/admin-login')
@@ -49,10 +48,6 @@ export default function AdminRootLayout({ children }: AdminRootLayoutProps) {
     )
   }
 
-  // Render admin layout if user is authenticated and is admin
-  return (
-    <AdminLayout>
-      {children}
-    </AdminLayout>
-  )
-} 
+  // Render children if user is authenticated and is admin
+  return <>{children}</>
+}
