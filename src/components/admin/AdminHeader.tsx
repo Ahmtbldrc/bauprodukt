@@ -2,12 +2,25 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
-import { Mail, Bell, HelpCircle, Settings } from 'lucide-react'
+import { Mail, Bell, HelpCircle, Settings, LogOut } from 'lucide-react'
+import { useAdminAuth } from '@/contexts/AdminAuthContext'
+import { useRouter } from 'next/navigation'
 
 export function AdminHeader() {
   const [activeFilter, setActiveFilter] = useState('Dieser Monat')
+  const { user, logout } = useAdminAuth()
+  const router = useRouter()
   
   const timeFilters = ['Heute', 'Diese Woche', 'Dieser Monat', 'Berichte']
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      router.push('/admin-login')
+    } catch (error) {
+      console.error('Logout error:', error)
+    }
+  }
 
   return (
     <header className="py-4">
@@ -75,6 +88,15 @@ export function AdminHeader() {
             <Settings size={20} />
           </button>
 
+          {/* Logout Button */}
+          <button 
+            onClick={handleLogout}
+            className="relative flex items-center justify-center w-11 h-11 rounded-full bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700 shadow-sm transition-all duration-200"
+            title="Abmelden"
+          >
+            <LogOut size={20} />
+          </button>
+
           {/* User Profile */}
           <div className="flex items-center space-x-3 ml-2">
             <div className="w-12 h-12 rounded-full overflow-hidden">
@@ -85,8 +107,10 @@ export function AdminHeader() {
               />
             </div>
             <div className="text-left">
-              <p className="text-base font-medium text-gray-900" style={{ fontFamily: 'var(--font-blinker)' }}>Hans Schmidt</p>
-              <p className="text-xs text-gray-500" style={{ fontFamily: 'var(--font-blinker)' }}>Projektmanager</p>
+              <p className="text-base font-medium text-gray-900" style={{ fontFamily: 'var(--font-blinker)' }}>
+                {user?.fullName || 'Admin User'}
+              </p>
+              <p className="text-xs text-gray-500" style={{ fontFamily: 'var(--font-blinker)' }}>Administrator</p>
             </div>
           </div>
         </div>

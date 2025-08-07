@@ -11,13 +11,13 @@ async function createAdminUser() {
     
     // 1. Create user with Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signUp({
-      email: 'admin@bauprodukt.com',
-      password: 'admin123',
+      email: 'ahmed.bildirici@softsidedigital.com',
+      password: 'admin123*',
       options: {
         data: {
-          first_name: 'Admin',
-          last_name: 'User',
-          full_name: 'Admin User',
+          first_name: 'Ahmed',
+          last_name: 'Bildirici',
+          full_name: 'Ahmed Bildirici',
         }
       }
     })
@@ -48,8 +48,8 @@ async function createAdminUser() {
       .from('profiles')
       .insert({
         user_id: authData.user.id,
-        first_name: 'Admin',
-        last_name: 'User',
+        first_name: 'Ahmed',
+        last_name: 'Bildirici',
         role_id: adminRole.id,
         is_active: true,
       })
@@ -63,8 +63,8 @@ async function createAdminUser() {
 
     console.log('Admin profile created:', profileData)
     console.log('Admin user created successfully!')
-    console.log('Email: admin@bauprodukt.com')
-    console.log('Password: admin123')
+    console.log('Email: ahmed.bildirici@softsidedigital.com')
+    console.log('Password: admin123*')
 
   } catch (error) {
     console.error('Error:', error)

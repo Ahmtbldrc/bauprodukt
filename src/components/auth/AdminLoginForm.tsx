@@ -3,13 +3,13 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAdminAuth } from '@/contexts/AdminAuthContext'
 import type { LoginCredentials } from '@/types/auth'
 import { Eye, EyeOff, Mail, Lock, Loader2, Check, Shield, Settings } from 'lucide-react'
 
 export function AdminLoginForm() {
   const router = useRouter()
-  const { login, isLoading, error, clearError } = useAuth()
+  const { login, isLoading, error, clearError } = useAdminAuth()
 
   const [formData, setFormData] = useState<LoginCredentials>({
     email: '',

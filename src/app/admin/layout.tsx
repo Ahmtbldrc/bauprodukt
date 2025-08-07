@@ -1,7 +1,7 @@
 'use client'
 
 import { AdminLayout } from '@/components/admin/AdminLayout'
-import { useAuth } from '@/contexts/AuthContext'
+import { AdminAuthProvider, useAdminAuth } from '@/contexts/AdminAuthContext'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { ReactNode } from 'react'
@@ -11,8 +11,8 @@ interface AdminRootLayoutProps {
   children: ReactNode
 }
 
-export default function AdminRootLayout({ children }: AdminRootLayoutProps) {
-  const { user, isAuthenticated, isLoading } = useAuth()
+function AdminLayoutWrapper({ children }: AdminRootLayoutProps) {
+  const { user, isAuthenticated, isLoading } = useAdminAuth()
   const router = useRouter()
 
   useEffect(() => {
@@ -54,5 +54,13 @@ export default function AdminRootLayout({ children }: AdminRootLayoutProps) {
     <AdminLayout>
       {children}
     </AdminLayout>
+  )
+}
+
+export default function AdminRootLayout({ children }: AdminRootLayoutProps) {
+  return (
+    <AdminAuthProvider>
+      <AdminLayoutWrapper>{children}</AdminLayoutWrapper>
+    </AdminAuthProvider>
   )
 } 
