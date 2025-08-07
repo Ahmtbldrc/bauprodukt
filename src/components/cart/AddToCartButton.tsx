@@ -43,6 +43,7 @@ interface AddToCartButtonProps {
   productStock: number
   className?: string
   disabled?: boolean
+  variantId?: string
   product?: {
     id: string
     name: string
@@ -73,6 +74,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   productStock,
   className,
   disabled = false,
+  variantId,
   product
 }) => {
   const { addToCart, isLoading } = useCart()
@@ -87,7 +89,7 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
 
     try {
       setActionLoading(true)
-      await addToCart(productId, localQuantity) // Add current local quantity
+      await addToCart(productId, localQuantity, variantId) // Add current local quantity with variant
     } catch (error) {
       console.error('Failed to add to cart:', error)
     } finally {

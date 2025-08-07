@@ -100,14 +100,19 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   }
 
   // Add item to cart
-  const addToCart = async (productId: string, quantity = 1) => {
+  const addToCart = async (productId: string, quantity = 1, variantId?: string) => {
     try {
       setIsLoading(true)
       setError(null)
 
+      const payload: any = { product_id: productId, quantity }
+      if (variantId) {
+        payload.variant_id = variantId
+      }
+
       await apiCall(`/api/cart/${sessionId}/items`, {
         method: 'POST',
-        body: JSON.stringify({ product_id: productId, quantity }),
+        body: JSON.stringify(payload),
       })
 
       // Refresh cart after adding item

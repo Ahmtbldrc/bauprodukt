@@ -3,7 +3,7 @@
 import { AddToCartButton } from '@/components/cart'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { ChevronUp, ChevronDown, Download, Heart, ShoppingCart } from 'lucide-react'
+import { ChevronUp, ChevronDown, Download, Heart, ShoppingCart, Check } from 'lucide-react'
 import { 
   useBrandBySlug, 
   useCategoryBySlug, 
@@ -29,6 +29,11 @@ export default function ProductPageContent({
   const [activeTab, setActiveTab] = useState('specs')
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0)
+  const [selectedValues, setSelectedValues] = useState<Record<string, string>>({
+    color: 'red',
+    size: 'medium',
+    material: 'metal'
+  })
 
   // Fetch brand, category and product data
   const { data: brand } = useBrandBySlug(brandSlug)
@@ -537,19 +542,71 @@ export default function ProductPageContent({
                 <div className="mb-4">
                   <div className="flex items-center gap-3">
                     {hasDiscount && (
-                      <p className="text-base text-gray-500 line-through" style={{ 
-                        textDecorationThickness: '1px', 
+                      <p className="text-xl" style={{ 
+                        color: '#A3A3A3',
+                        textDecoration: 'line-through 2px #A3A3A3',
                         textDecorationSkipInk: 'none',
-                        textDecorationLine: 'line-through',
-                        textDecorationColor: '#6B7280',
-                        transform: 'translateY(4px)'
-                      }}>
+                        '--tw-text-decoration-offset': '0.2em'
+                      } as React.CSSProperties}>
                         {formatPrice(Number(product?.price ?? 0))}
                       </p>
                     )}
                     <p className="text-xl font-bold" style={{color: '#F39236'}}>
                       {formatPrice(Number(displayPrice))}
                     </p>
+                  </div>
+                </div>
+
+                {/* Static Variant Selector */}
+                <div className="mb-6">
+                  <div className="grid grid-cols-3 gap-4">
+                    {/* Color Selection */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Farbe
+                      </label>
+                      <select
+                        value={selectedValues.color}
+                        onChange={(e) => setSelectedValues(prev => ({ ...prev, color: e.target.value }))}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-[#F39236]"
+                      >
+                        <option value="red">Rot</option>
+                        <option value="blue">Blau</option>
+                        <option value="green">Grün</option>
+                      </select>
+                    </div>
+
+                    {/* Size Selection */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Größe
+                      </label>
+                      <select
+                        value={selectedValues.size}
+                        onChange={(e) => setSelectedValues(prev => ({ ...prev, size: e.target.value }))}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-[#F39236]"
+                      >
+                        <option value="small">Klein</option>
+                        <option value="medium">Mittel</option>
+                        <option value="large">Groß</option>
+                      </select>
+                    </div>
+
+                    {/* Material Selection */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Material
+                      </label>
+                      <select
+                        value={selectedValues.material}
+                        onChange={(e) => setSelectedValues(prev => ({ ...prev, material: e.target.value }))}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-[#F39236]"
+                      >
+                        <option value="plastic">Kunststoff</option>
+                        <option value="metal">Metall</option>
+                        <option value="wood">Holz</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
                 
