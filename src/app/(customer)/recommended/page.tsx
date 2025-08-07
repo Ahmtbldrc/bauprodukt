@@ -203,57 +203,68 @@ export default function RecommendedProductsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {products.map((product) => (
                 <Link key={product.id} href={generateProductURL(product)}>
-                  <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="h-48 bg-gray-100 overflow-hidden relative">
-                      {product.image_url ? (
-                        <img 
-                          src={product.image_url} 
-                          alt={product.name}
-                          className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            target.nextElementSibling?.classList.remove('hidden');
-                          }}
-                        />
-                      ) : null}
-                      <div className={`absolute inset-0 flex items-center justify-center ${product.image_url ? 'hidden' : ''}`}>
-                        <span className="text-gray-500 text-sm">Produktbild</span>
+                  <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative">
+                    <div className="relative">
+                      {/* Product Image */}
+                      <div className="h-48 bg-white overflow-hidden">
+                        {product.image_url ? (
+                          <img 
+                            src={product.image_url} 
+                            alt={product.name}
+                            className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                              target.nextElementSibling?.classList.remove('hidden');
+                            }}
+                          />
+                        ) : null}
+                        <div className={`w-full h-full flex items-center justify-center ${product.image_url ? 'hidden' : ''}`}>
+                          <span className="text-gray-500 text-sm">Produktbild</span>
+                        </div>
                       </div>
                       
-                      {/* Badges */}
-                      <div className="absolute top-2 left-2 flex flex-col gap-1">
-                        <span className="inline-block px-2 py-1 bg-orange-500 text-white text-xs rounded">
-                          EMPFOHLEN
+                      {/* Divider Line */}
+                      <div className="h-px bg-gray-200"></div>
+                      
+                      {/* Recommended Badge - Top Right */}
+                      <div className="absolute top-3 right-3">
+                        <span className="px-2 py-1 text-xs rounded font-medium" style={{backgroundColor: '#F39236', color: '#F2F2F2'}}>
+                          Empfohlen
                         </span>
-                        {hasDiscount(product) && (
-                          <span className="px-2 py-1 bg-green-500 text-white text-xs rounded font-semibold">
-                            {getDiscountPercentage(product)}% RABATT
-                          </span>
-                        )}
                       </div>
                     </div>
+                    
                     <div className="p-4">
-                      <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                      {/* Stock Status Icon */}
+                      <div className="flex items-center mb-2">
+                        <div className={`w-5 h-5 rounded flex items-center justify-center mr-2`} style={{
+                          background: product.stock <= 0 ? '#E0BEBB' : product.stock <= 5 ? '#FFF0E2' : '#E9EDD0',
+                          border: product.stock <= 0 ? '1px solid #A63F35' : product.stock <= 5 ? '1px solid #F39237' : '1px solid #AAB560',
+                          borderRadius: '5px'
+                        }}>
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{
+                            color: product.stock <= 0 ? '#A63F35' : product.stock <= 5 ? '#F39237' : '#AAB560'
+                          }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                          </svg>
+                        </div>
+                      </div>
+                      
+                      {/* Product Name */}
+                      <h3 className="font-bold text-gray-900 mb-1 line-clamp-2 h-12 text-sm">
                         {product.name}
                       </h3>
-                      {product.brand && (
-                        <p className="text-sm text-gray-600 mb-1">
-                          {product.brand.name}
-                        </p>
-                      )}
+                      
+                      {/* Category Description */}
                       {product.category && (
-                        <p className="text-xs text-gray-500 mb-2">
+                        <p className="text-xs text-gray-500 mb-3">
                           {product.category.name}
                         </p>
                       )}
-                      {product.stock_code && (
-                        <p className="text-xs text-gray-400 mb-2">
-                          Code: {product.stock_code}
-                        </p>
-                      )}
                       
-                      <div className="flex items-center gap-2 mb-2">
+                      {/* Price */}
+                      <div className="flex items-center gap-2">
                         {hasDiscount(product) && (
                           <span className="text-sm text-gray-500 line-through">
                             {formatPrice(product.price)}
@@ -262,22 +273,6 @@ export default function RecommendedProductsPage() {
                         <span className="text-lg font-bold" style={{color: '#F39236'}}>
                           {formatPrice(hasDiscount(product) ? product.discount_price! : product.price)}
                         </span>
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-1">
-                        {product.stock <= 0 ? (
-                          <span className="inline-block px-2 py-1 bg-red-100 text-red-800 text-xs rounded">
-                            Nicht auf Lager
-                          </span>
-                        ) : product.stock <= 5 ? (
-                          <span className="inline-block px-2 py-1 bg-orange-100 text-orange-800 text-xs rounded">
-                            Wenig Bestand ({product.stock} Stück)
-                          </span>
-                        ) : (
-                          <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
-                            Auf Lager
-                          </span>
-                        )}
                       </div>
                     </div>
                   </div>

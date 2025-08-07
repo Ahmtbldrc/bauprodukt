@@ -113,59 +113,68 @@ export function DiscountedProducts() {
             const discountPercent = product.discount_price !== null ? Math.round(((product.price - product.discount_price) / product.price) * 100) : 0
             return (
               <Link key={product.id} href={generateProductURL(product)}>
-                <div className="group bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg hover:border-gray-300 transition-all duration-300 flex flex-col h-[540px]">
-                  <div className="relative w-full h-72 flex-shrink-0">
-                    <div className="w-full h-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative">
+                  <div className="relative">
+                    {/* Product Image */}
+                    <div className="h-48 bg-white overflow-hidden">
                       {product.product_images && product.product_images.length > 0 ? (
                         <img
                           src={product.product_images[0].image_url}
                           alt={product.name}
-                          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
-                          style={{ maxHeight: '260px', minHeight: '160px' }}
+                          className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
-                        <span className="text-gray-400 text-sm">Produktbild</span>
+                        <div className="w-full h-full flex items-center justify-center">
+                          <span className="text-gray-500 text-sm">Produktbild</span>
+                        </div>
                       )}
                     </div>
-                    {/* Discount badge */}
-                    <div className="absolute top-3 left-3">
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                        %{discountPercent} Rabatt
+                    
+                    {/* Divider Line */}
+                    <div className="h-px bg-gray-200"></div>
+                    
+                    {/* Sale Badge - Top Right */}
+                    <div className="absolute top-3 right-3">
+                      <span className="px-2 py-1 text-xs rounded font-medium" style={{backgroundColor: '#F39236', color: '#F2F2F2'}}>
+                        Sale
                       </span>
                     </div>
                   </div>
-                  <div className="py-6 px-5 pb-8 flex flex-col flex-1 min-h-[240px] gap-3">
-                    <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2 leading-5 min-h-[40px]">
-                      {product.name}
-                    </h3>
-                    <p className="text-sm text-gray-500 mb-3 min-h-[20px]">
-                      {product.brand?.name}
-                    </p>
-                    {/* Price section */}
-                    <div className="space-y-1 mb-4">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-400 line-through">
-                          {formatPrice(product.price)}
-                        </span>
-                        <span className="text-xs text-red-600 font-medium">
-                          {formatPrice(product.discount_price !== null ? product.price - product.discount_price : 0)} Ersparnis
-                        </span>
-                      </div>
-                      <div className="text-lg font-bold text-gray-900">
-                        {formatPrice(product.discount_price !== null ? product.discount_price : product.price)}
+                  
+                  <div className="p-4">
+                    {/* Stock Status Icon */}
+                    <div className="flex items-center mb-2">
+                      <div className={`w-5 h-5 rounded flex items-center justify-center mr-2`} style={{
+                        background: product.stock <= 0 ? '#E0BEBB' : product.stock <= 5 ? '#FFF0E2' : '#E9EDD0',
+                        border: product.stock <= 0 ? '1px solid #A63F35' : product.stock <= 5 ? '1px solid #F39237' : '1px solid #AAB560',
+                        borderRadius: '5px'
+                      }}>
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{
+                          color: product.stock <= 0 ? '#A63F35' : product.stock <= 5 ? '#F39237' : '#AAB560'
+                        }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
                       </div>
                     </div>
-                    {/* Stock status */}
-                    <div className="flex items-center justify-between mt-0 mb-4">
-                      {product.stock <= 0 ? (
-                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-600">
-                          Nicht auf Lager
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-green-100 text-green-700">
-                          Auf Lager
-                        </span>
-                      )}
+                    
+                    {/* Product Name */}
+                    <h3 className="font-bold text-gray-900 mb-1 line-clamp-2 h-12 text-sm">
+                      {product.name}
+                    </h3>
+                    
+                    {/* Category Description */}
+                    <p className="text-xs text-gray-500 mb-3">
+                      Garnituren, Bad, Mischer
+                    </p>
+                    
+                    {/* Price */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-500 line-through">
+                        {formatPrice(product.price)}
+                      </span>
+                      <span className="text-lg font-bold" style={{color: '#F39236'}}>
+                        {formatPrice(product.discount_price !== null ? product.discount_price : product.price)}
+                      </span>
                     </div>
                   </div>
                 </div>

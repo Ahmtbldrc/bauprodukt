@@ -116,56 +116,24 @@ export function Header() {
 
   return (
     <div className="sticky top-0 z-50">
-      {/* Top Bar */}
-      <div className={`bg-gray-800 text-white transition-all duration-300 overflow-hidden ${
-        isScrolled ? 'max-h-0 opacity-0 py-0' : 'max-h-10 opacity-100 py-1'
-      }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center text-xs">
-            <div className="flex items-center space-x-4">
-              <span className="flex items-center">
-                <Phone className="h-3 w-3 mr-1" />
-                0850 000 0000
-              </span>
-              <span className="flex items-center">
-                <Mail className="h-3 w-3 mr-1" />
-                info@bauprodukt.ch
-              </span>
-            </div>
-                          <div className="flex items-center space-x-4">
-                <Link href="/help" className="hover:text-blue-300 transition-colors">
-                  Hilfe & Support
-                </Link>
-                <div className="flex items-center text-gray-300 hover:text-white cursor-pointer transition-colors">
-                  <Truck className="h-3 w-3 mr-1" />
-                  <span>Schnelle Lieferung</span>
-                </div>
-                <div className="flex items-center text-gray-300 hover:text-white cursor-pointer transition-colors">
-                  <Clock className="h-3 w-3 mr-1" />
-                  <span>24/7 Service</span>
-                </div>
-              </div>
-          </div>
-        </div>
-      </div>
-
       {/* Main Header */}
       <header className={`transition-all duration-300 ${
         isScrolled 
           ? 'bg-white/95 backdrop-blur-lg shadow-xl border-b border-gray-200/50' 
           : 'bg-white shadow-lg border-b border-gray-100'
       }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+          <div className="flex justify-between items-center h-24">
             {/* Logo */}
-            <div className="flex items-center">
+            <div className="flex items-center" style={{ marginLeft: '-8px' }}>
               <Link href="/" className="group transition-transform duration-200 hover:scale-105">
                 <Image
                   src="/Bauprodukt-Logo.svg"
                   alt="Bauprodukt"
-                  width={220}
-                  height={75}
-                  className="h-14 w-auto"
+                  width={360}
+                  height={120}
+                  className="w-auto"
+                  style={{ height: '90px' }}
                   priority
                 />
               </Link>
@@ -179,51 +147,29 @@ export function Header() {
                 </div>
                 <input
                   type="search"
-                  placeholder="Produkt, Marke, Kategorie suchen..."
-                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:bg-white transition-all duration-200 text-gray-700 placeholder-gray-400"
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#F39236'
-                    e.target.style.boxShadow = `0 0 0 3px rgba(243, 146, 54, 0.1)`
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '#e5e7eb'
-                    e.target.style.boxShadow = 'none'
+                  placeholder="Produkt, Marke, Kategorie..."
+                  className="w-full h-11 pl-12 pr-20 bg-white border-[1.5px] border-[#F2F2F2] rounded-[10px] focus:ring-2 focus:ring-gray-200 focus:border-gray-300 transition-all duration-300 ease-out text-gray-700 placeholder-gray-400 hover:border-[#F39237]"
+                  style={{
+                    width: '620px',
+                    height: '44px'
                   }}
                 />
-                <button 
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-white px-4 py-1.5 rounded-lg transition-colors"
-                  style={{backgroundColor: '#F39236'}}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#E8832B')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#F39236')}
-                >
-                  Suchen
-                </button>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-4">
+                  <span className="text-gray-500 text-sm mr-2">Suche</span>
+                  <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </div>
               </div>
             </div>
 
-            {/* Location Selector */}
-            <div className="hidden md:flex items-center mr-4">
-              <div className="flex items-center bg-gradient-to-r from-gray-50 to-gray-100 px-3 py-2 rounded-xl border border-gray-200 hover:shadow-md transition-all duration-200 cursor-pointer group"
-                   onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#F39236')}
-                   onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#e5e7eb')}>
-                <MapPin className="h-3.5 w-3.5 mr-1.5 transition-colors" style={{color: '#F39236'}} />
-                <div className="flex flex-col">
-                  <span className="text-xs text-gray-500 group-hover:text-gray-600">Standort</span>
-                  <span className="text-sm font-medium text-gray-700 transition-colors group-hover:text-gray-800">
-                    {selectedLocation}
-                  </span>
-                </div>
-                <ChevronDown className="h-3.5 w-3.5 text-gray-400 ml-1.5 transition-all duration-200 group-hover:rotate-180 group-hover:text-gray-600" />
-              </div>
-            </div>
-            
             {/* Right Side Actions */}
             <div className="flex items-center space-x-3">
               {/* Favorites */}
-              <Link href="/favorites" className="relative p-2 text-gray-600 hover:text-red-500 transition-all duration-200 hover:bg-red-50 rounded-lg group">
-                <Heart className="h-5 w-5 group-hover:fill-red-500 transition-all duration-200" />
+              <Link href="/favorites" className="relative text-gray-400 border border-gray-200 rounded-sm hover:border-gray-300 transition-all duration-200 flex items-center justify-center" style={{ width: '30px', height: '30px' }}>
+                <Heart className="h-4 w-4" />
                 {favoriteItemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {favoriteItemCount}
                   </span>
                 )}
@@ -232,23 +178,22 @@ export function Header() {
               {/* Shopping Cart */}
               <Link
                 href="/cart"
-                className="relative p-2 text-gray-600 transition-all duration-200 rounded-lg group"
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#F39236'
-                  e.currentTarget.style.backgroundColor = '#F3923615'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#4b5563'
-                  e.currentTarget.style.backgroundColor = 'transparent'
-                }}
+                className="relative text-gray-400 border border-gray-200 rounded-sm hover:border-gray-300 transition-all duration-200 flex items-center justify-center" style={{ width: '30px', height: '30px' }}
               >
-                <ShoppingCart className="h-6 w-6 group-hover:scale-110 transition-transform duration-200" />
+                <ShoppingCart className="h-4 w-4" />
                 {/* Cart Badge - sadece sepette ürün varsa göster */}
                 {totalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center font-medium animate-bounce">
+                  <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center font-medium animate-bounce">
                     {totalItems > 99 ? '99+' : totalItems}
                   </span>
                 )}
+              </Link>
+              
+              {/* Pencil/User Icon */}
+              <Link href="/login" className="text-gray-400 border border-gray-200 rounded-sm hover:border-gray-300 transition-all duration-200 flex items-center justify-center" style={{ width: '30px', height: '30px' }}>
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                </svg>
               </Link>
               
               {/* User Menu */}
@@ -329,14 +274,31 @@ export function Header() {
                   <div className="flex items-center space-x-3">
                     <Link
                       href="/login"
-                      className="flex items-center text-gray-600 hover:text-orange-600 font-medium transition-all duration-200 px-4 py-2 rounded-lg hover:bg-orange-50 border border-orange-200 hover:border-orange-300"
+                      className="font-medium rounded-sm transition-all duration-200 border border-orange-500 text-gray-800 flex items-center justify-center"
+                      style={{
+                        fontWeight: '500',
+                        fontSize: '12px',
+                        lineHeight: '16px',
+                        letterSpacing: '0px',
+                        width: '75px',
+                        height: '30px'
+                      }}
                     >
-                      <User className="h-4 w-4 mr-2" />
                       Anmelden
                     </Link>
                     <Link
                       href="/register"
-                      className="bg-gradient-to-r from-orange-500 to-red-500 text-white font-medium px-6 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+                      className="font-medium rounded-sm transition-all duration-200 text-white flex items-center justify-center"
+                      style={{
+                        fontWeight: '500',
+                        fontSize: '12px',
+                        lineHeight: '16px',
+                        letterSpacing: '0px',
+                        backgroundColor: '#F39236',
+                        color: '#FFFFFF',
+                        width: '90px',
+                        height: '30px'
+                      }}
                     >
                       Registrieren
                     </Link>
@@ -370,13 +332,13 @@ export function Header() {
 
       {/* Secondary Navigation */}
       <div className={`bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 relative transition-all duration-300 ${
-        isScrolled ? 'max-h-0 opacity-0 border-b-0 overflow-hidden' : 'max-h-20 opacity-100'
+        isScrolled ? 'max-h-0 opacity-0 border-b-0 overflow-hidden' : 'max-h-9 opacity-100'
       }`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
           <div className={`flex items-center justify-between transition-all duration-300 ${
             isScrolled ? 'py-0' : 'py-2'
           }`}>
-            <div className="flex items-center space-x-6 text-sm overflow-visible">
+            <div className="flex items-center space-x-6 text-sm overflow-visible" style={{ fontSize: '12px' }}>
               {/* All Categories Button - Moved here */}
               <div className="relative category-dropdown">
                 <button
@@ -387,14 +349,12 @@ export function Header() {
                     }
                     setIsCategoryMenuOpen(!isCategoryMenuOpen)
                   }}
-                  className="flex items-center text-white px-4 py-2 rounded-lg transition-all duration-200 font-medium whitespace-nowrap"
-                  style={{backgroundColor: '#F39236'}}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#E8832B')}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#F39236')}
+                  className="flex items-center font-medium whitespace-nowrap transition-all duration-200"
+                  style={{ color: '#2C2C2C' }}
                 >
-                  <Menu className="h-4 w-4 mr-2" />
+                  <Menu className="h-4 w-4 mr-1" />
                   Alle Kategorien
-                  <ChevronDown className={`h-4 w-4 ml-2 transition-transform duration-200 ${isCategoryMenuOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`h-4 w-4 ml-1 transition-transform duration-200 ${isCategoryMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {isCategoryMenuOpen && (
@@ -501,11 +461,12 @@ export function Header() {
                     }
                     setIsBrandMenuOpen(!isBrandMenuOpen)
                   }}
-                  className="flex items-center bg-gradient-to-r from-[#C74A40] to-[#A63F35] text-white px-4 py-2 rounded-lg hover:from-[#D65A4F] hover:to-[#C74A40] transition-all duration-200 font-medium whitespace-nowrap shadow-lg hover:shadow-xl"
+                  className="flex items-center font-medium whitespace-nowrap transition-all duration-200"
+                  style={{ color: '#2C2C2C' }}
                 >
-                  <Star className="h-4 w-4 mr-2" />
+                  <Star className="h-4 w-4 mr-1" />
                   Alle Marken
-                  <ChevronDown className={`h-4 w-4 ml-2 transition-transform duration-200 ${isBrandMenuOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`h-4 w-4 ml-1 transition-transform duration-200 ${isBrandMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {isBrandMenuOpen && (
@@ -551,27 +512,12 @@ export function Header() {
                 )}
               </div>
 
-              <Link href="/new-products" className="flex items-center text-green-600 hover:text-green-700 font-medium whitespace-nowrap">
-                <Zap className="h-4 w-4 mr-1" />
-                Neue Produkte
-              </Link>
-              <Link href="/bestsellers" className="flex items-center text-orange-600 hover:text-orange-700 font-medium whitespace-nowrap">
-                <Star className="h-4 w-4 mr-1" />
-                Bestseller
-              </Link>
-              <Link href="/coupons" className="flex items-center text-red-600 hover:text-red-700 font-medium whitespace-nowrap">
+              <Link href="/discounted" className="flex items-center font-medium whitespace-nowrap" style={{ color: '#2C2C2C' }}>
                 <Tag className="h-4 w-4 mr-1" />
-                Rabattierte Produkte
-              </Link>
-              <Link href="/discounted" className="flex items-center text-purple-600 hover:text-purple-700 font-medium whitespace-nowrap">
-                <Gift className="h-4 w-4 mr-1" />
-                Kampagnen
+                Angebote
               </Link>
             </div>
-            <div className="hidden md:flex items-center text-xs text-gray-500">
-              <Truck className="h-4 w-4 mr-1" />
-              <span>Ab 100 CHF <strong>versandkostenfrei</strong></span>
-            </div>
+            
           </div>
         </div>
       </div>

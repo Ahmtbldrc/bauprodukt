@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react'
 import { useCart } from '@/contexts/CartContext'
-import { Minus, Plus, ShoppingCart } from 'lucide-react'
+import { useFavorites } from '@/contexts/FavoritesContext'
+import { Minus, Plus, ShoppingCart, Heart, Edit } from 'lucide-react'
 
 // Simple Button component
 const Button: React.FC<{
@@ -42,15 +43,40 @@ interface AddToCartButtonProps {
   productStock: number
   className?: string
   disabled?: boolean
+  product?: {
+    id: string
+    name: string
+    slug: string
+    description: string
+    price: number
+    originalPrice?: number
+    image?: string
+    brand: {
+      id: string
+      name: string
+      slug: string
+    }
+    category: {
+      id: string
+      name: string
+      slug: string
+    }
+    inStock: boolean
+    onSale: boolean
+    discountPercentage?: number
+    addedAt: string
+  }
 }
 
 export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   productId,
   productStock,
   className,
-  disabled = false
+  disabled = false,
+  product
 }) => {
   const { addToCart, isLoading } = useCart()
+  const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
   const [actionLoading, setActionLoading] = useState(false)
   const [localQuantity, setLocalQuantity] = useState(1) // Local counter starts at 1
   
@@ -81,47 +107,89 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       {/* Quantity Controls */}
-      <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-        <Button
-          variant="ghost"
-          size="sm"
+      <div className="flex items-center" style={{
+        width: '90px',
+        height: '30px',
+        background: '#FFFFFF 0% 0% no-repeat padding-box',
+        border: '1px solid #F2F2F2',
+        borderRadius: '5px',
+        opacity: 1
+      }}>
+        <button
           disabled={loading || localQuantity <= 1}
           onClick={() => handleLocalQuantityChange(localQuantity - 1)}
-          className="h-12 w-10 p-0 rounded-none border-0 hover:bg-gray-100"
+          className="w-8 h-full flex items-center justify-center hover:bg-gray-50 border-r"
+          style={{color: '#A3A3A3', borderColor: '#F2F2F2'}}
         >
-          <Minus className="h-4 w-4" />
-        </Button>
+          <Minus className="h-3 w-3" />
+        </button>
         
-        <div className="w-12 h-12 flex items-center justify-center bg-white font-semibold text-gray-900 border-x">
+        <div className="w-8 h-full flex items-center justify-center text-sm" style={{color: '#A3A3A3'}}>
           {localQuantity}
         </div>
         
-        <Button
-          variant="ghost"
-          size="sm"
+        <button
           disabled={loading || localQuantity >= maxQuantity}
           onClick={() => handleLocalQuantityChange(localQuantity + 1)}
-          className="h-12 w-10 p-0 rounded-none border-0 hover:bg-gray-100"
+          className="w-8 h-full flex items-center justify-center hover:bg-gray-50 border-l"
+          style={{color: '#A3A3A3', borderColor: '#F2F2F2'}}
         >
-          <Plus className="h-4 w-4" />
-        </Button>
+          <Plus className="h-3 w-3" />
+        </button>
       </div>
       
       {/* Add To Cart Button */}
       <button
         onClick={handleAddToCart}
         disabled={disabled || loading || productStock === 0}
-        className="h-12 px-4 text-white font-semibold rounded-lg hover:opacity-90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-        style={{ backgroundColor: productStock === 0 ? '#d1d5db' : '#F39236' }}
+        className="font-medium rounded-sm transition-all duration-200 text-white flex items-center justify-center px-6"
+        style={{
+          fontWeight: '500',
+          fontSize: '12px',
+          lineHeight: '16px',
+          letterSpacing: '0px',
+          backgroundColor: productStock === 0 ? '#d1d5db' : '#F39236',
+          color: '#FFFFFF',
+          width: '120px',
+          height: '30px'
+        }}
       >
         {loading ? (
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
         ) : (
-          <>
-            <ShoppingCart className="h-4 w-4" />
-            <span>{productStock === 0 ? 'Ausverkauft' : 'In den Warenkorb'}</span>
-          </>
+          <span className="whitespace-nowrap">
+            {productStock === 0 ? 'Ausverkauft' : 'In den Warenkorb'}
+          </span>
         )}
+      </button>
+      
+      {/* Favorite Button */}
+      <button
+        onClick={() => {
+          if (product) {
+            if (isFavorite(product.id)) {
+              removeFromFavorites(product.id)
+            } else {
+              addToFavorites(product)
+            }
+          }
+        }}
+        className={`border border-gray-200 rounded-sm hover:border-gray-300 transition-all duration-200 flex items-center justify-center ${
+          product && isFavorite(product.id) ? 'text-red-500' : 'text-gray-400 hover:text-red-500'
+        }`}
+        style={{ width: '30px', height: '30px' }}
+      >
+        <Heart className={`h-4 w-4 ${product && isFavorite(product.id) ? 'fill-current' : ''}`} />
+      </button>
+      
+      {/* Edit Button */}
+      <button
+        className="text-gray-400 border border-gray-200 rounded-sm hover:border-gray-300 hover:text-gray-900 transition-all duration-200 flex items-center justify-center"
+        style={{ width: '30px', height: '30px' }}
+      >
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+        </svg>
       </button>
     </div>
   )

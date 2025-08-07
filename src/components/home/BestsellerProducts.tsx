@@ -193,13 +193,13 @@ export function BestsellerProducts() {
           </Link>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {products.map((product: UIProduct) => (
             <Link key={product.id} href={generateProductURL(product)}>
-              <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative">
+              <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative">
                 <div className="relative">
                   {/* Product Image */}
-                  <div className="h-48 bg-gray-100 overflow-hidden">
+                  <div className="h-48 bg-white overflow-hidden">
                     {product.image ? (
                       <img 
                         src={product.image} 
@@ -217,46 +217,49 @@ export function BestsellerProducts() {
                     </div>
                   </div>
                   
-                  {/* Badges */}
-                  <div className="absolute top-2 left-2 flex flex-col gap-1">
-                    <span className="px-2 py-1 bg-red-500 text-white text-xs rounded font-semibold">
-                      BESTSELLER
+                  {/* Divider Line */}
+                  <div className="h-px bg-gray-200"></div>
+                  
+                  {/* Status Badge - Top Right */}
+                  <div className="absolute top-3 right-3">
+                    <span className="px-2 py-1 text-xs rounded font-medium" style={{backgroundColor: '#AAB560', color: '#F2F2F2'}}>
+                      Bestseller
                     </span>
-                    {hasDiscount(product) && (
-                      <span className="px-2 py-1 bg-green-500 text-white text-xs rounded font-semibold">
-                        {getDiscountPercentage(product)}% RABATT
-                      </span>
-                    )}
-                    {/* product.inStock is used for stock status, but if you want to show low stock, you need to map stock value as well. For now, just show 'Auf Lager' or 'Nicht auf Lager' */}
-                    {product.inStock ? (
-                      <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
-                        Auf Lager
-                      </span>
-                    ) : (
-                      <span className="inline-block px-2 py-1 bg-red-100 text-red-800 text-xs rounded">
-                        Nicht auf Lager
-                      </span>
-                    )}
                   </div>
                 </div>
                 
                 <div className="p-4">
-                  <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 h-12">
+                  {/* Stock Status Icon */}
+                  <div className="flex items-center mb-2">
+                    <div className={`w-5 h-5 rounded flex items-center justify-center mr-2 ${
+                      product.inStock ? 'bg-green-100 border border-green-600' : 'bg-red-100 border border-red-600'
+                    }`} style={{
+                      background: product.inStock ? '#E9EDD0' : '#E0BEBB',
+                      border: product.inStock ? '1px solid #AAB560' : '1px solid #A63F35',
+                      borderRadius: '5px'
+                    }}>
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" style={{
+                        color: product.inStock ? '#AAB560' : '#A63F35'
+                      }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                      </svg>
+                    </div>
+                  </div>
+                  
+                  {/* Product Name */}
+                  <h3 className="font-bold text-gray-900 mb-1 line-clamp-2 h-12 text-sm">
                     {product.name}
                   </h3>
-                  {product.brand && (
-                    <p className="text-sm text-gray-600 mb-1">
-                      {product.brand.name}
-                    </p>
-                  )}
+                  
+                  {/* Category Description */}
                   {product.category && (
                     <p className="text-xs text-gray-500 mb-3">
                       {product.category.name}
                     </p>
                   )}
-                  {/* Stock code is not mapped, so skip this for now or add to UIProduct if needed */}
                   
-                  <div className="flex items-center gap-2 mb-2">
+                  {/* Price */}
+                  <div className="flex items-center gap-2">
                     {hasDiscount(product) && (
                       <span className="text-sm text-gray-500 line-through">
                         {formatPrice(product.price)}
@@ -265,20 +268,6 @@ export function BestsellerProducts() {
                     <span className="text-lg font-bold" style={{color: '#F39236'}}>
                       {formatPrice(hasDiscount(product) ? product.originalPrice! : product.price)}
                     </span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      {!product.inStock ? (
-                        <span className="inline-block px-2 py-1 bg-red-100 text-red-800 text-xs rounded">
-                          Nicht auf Lager
-                        </span>
-                      ) : (
-                        <span className="inline-block px-2 py-1 bg-green-100 text-green-800 text-xs rounded">
-                          Auf Lager
-                        </span>
-                      )}
-                    </div>
                   </div>
                 </div>
               </div>
