@@ -11,9 +11,8 @@ export default function CartPage() {
   const [isCouponOpen, setIsCouponOpen] = useState(false)
 
   const handleCheckout = () => {
-    // TODO: Implement checkout flow
-    console.log('Proceeding to checkout...')
-    alert('Die Checkout-Funktion wird bald verfügbar sein!')
+    // Navigate to checkout page
+    window.location.href = '/checkout'
   }
 
   if (isLoading && !cart) {

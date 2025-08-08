@@ -128,6 +128,9 @@ Create a `.env.local` file in the root directory:
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
+# Required for server-side operations (API routes)
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
 # Optional: For development
 NODE_ENV=development
 ```
@@ -138,6 +141,7 @@ NODE_ENV=development
 2. Run the database schema (SQL above) in Supabase SQL Editor
 3. Set up Row Level Security (RLS) policies as needed
 4. Create a storage bucket named `images` for file uploads
+5. Get your service role key from Supabase Dashboard > Settings > API > Project API keys > `service_role` key
 
 ### 5. Run the development server
 

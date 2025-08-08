@@ -29,6 +29,7 @@ export interface Cart {
 export interface AddToCartRequest {
   product_id: string
   quantity: number
+  variant_id?: string
 }
 
 export interface UpdateCartItemRequest {
@@ -41,7 +42,7 @@ export interface CartContextType {
   error: string | null
   
   // Actions
-  addToCart: (productId: string, quantity?: number) => Promise<void>
+  addToCart: (productId: string, quantity?: number, variantId?: string) => Promise<void>
   updateCartItem: (itemId: string, quantity: number) => Promise<void>
   removeFromCart: (itemId: string) => Promise<void>
   clearCart: () => Promise<void>
