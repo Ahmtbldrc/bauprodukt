@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useProducts } from '@/hooks/useProducts'
 import { formatPrice } from '@/lib/url-utils'
 import { ProductWithRelations as DBProduct } from '@/types/database'
@@ -77,11 +78,6 @@ export function BestsellerProducts() {
     return product.originalPrice && product.originalPrice < product.price
   }
 
-  const getDiscountPercentage = (product: UIProduct) => {
-    if (!hasDiscount(product)) return 0
-    const discount = ((product.price - (product.originalPrice ?? product.price)) / product.price) * 100
-    return Math.round(discount)
-  }
 
   const generateProductURL = (product: UIProduct) => {
     if (product.brand?.slug && product.category?.slug) {
@@ -201,9 +197,11 @@ export function BestsellerProducts() {
                   {/* Product Image */}
                   <div className="h-48 bg-white overflow-hidden">
                     {product.image ? (
-                      <img 
+                      <Image 
                         src={product.image} 
                         alt={product.name}
+                        width={300}
+                        height={192}
                         className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;

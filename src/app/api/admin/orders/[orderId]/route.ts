@@ -4,11 +4,11 @@ import { sendEmail, generateOrderStatusUpdateEmail } from '@/lib/email'
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
     const supabase = createClient()
-    const { orderId } = params
+    const { orderId } = await params
     const body = await request.json()
     
     const { status } = body
@@ -97,11 +97,11 @@ export async function PATCH(
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { orderId: string } }
+  { params }: { params: Promise<{ orderId: string }> }
 ) {
   try {
     const supabase = createClient()
-    const { orderId } = params
+    const { orderId } = await params
 
     const { data: order, error } = await supabase
       .from('orders')

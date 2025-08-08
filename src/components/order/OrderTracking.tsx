@@ -18,8 +18,6 @@ const statusSteps = [
   { key: 'delivered', label: 'Zugestellt', icon: CheckCircle, color: 'text-green-600' }
 ]
 
-const cancelledStep = { key: 'cancelled', label: 'Storniert', icon: XCircle, color: 'text-red-600' }
-
 export function OrderTracking({ status, orderNumber, createdAt, updatedAt }: OrderTrackingProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('de-DE', {

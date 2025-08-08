@@ -10,7 +10,7 @@ import {
   ShoppingCart, 
   Users, 
   Home, 
-  Image, 
+  Image as ImageIcon, 
   Star, 
   MessageCircle, 
   BarChart3, 
@@ -66,7 +66,7 @@ export function AdminSidebar() {
     { 
       name: 'Banners', 
       href: '/admin/banners', 
-      icon: <Image className="w-5 h-5" strokeWidth={1.5} />,
+      icon: <ImageIcon className="w-5 h-5" strokeWidth={1.5} />,
       current: pathname.startsWith('/admin/banners')
     },
     { 

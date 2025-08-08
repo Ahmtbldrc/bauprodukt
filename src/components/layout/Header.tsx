@@ -20,14 +20,10 @@ import {
   ChevronDown,
   MapPin,
   Gift,
-  Truck,
-  Clock,
   Star,
   Tag,
   Package,
-  Zap,
-  Phone,
-  Mail
+  Zap
 } from 'lucide-react'
 
 // Helper: Build category tree from flat array
@@ -385,7 +381,7 @@ export function Header() {
                                   {category.emoji
                                     ? category.emoji
                                     : category.image
-                                      ? <img src={category.image} alt={category.name} className="inline w-6 h-6 rounded" />
+                                      ? <Image src={category.image} alt={category.name} width={24} height={24} className="inline rounded" />
                                       : '📦'}
                                 </span>
                                 <div className="flex-1">
@@ -427,7 +423,7 @@ export function Header() {
                                 {subcat.emoji
                                   ? subcat.emoji
                                   : subcat.image
-                                    ? <img src={subcat.image} alt={subcat.name} className="inline w-5 h-5 rounded mr-2" />
+                                    ? <Image src={subcat.image} alt={subcat.name} width={20} height={20} className="inline rounded mr-2" />
                                     : '📂'} {subcat.name}
                               </span>
                             </Link>
@@ -548,7 +544,7 @@ export function Header() {
                         href={`/categories/${category.slug}`}
                         className="flex items-center mb-2 hover:text-orange-600 transition-colors"
                       >
-                        <span className="text-lg mr-2">{category.emoji || category.image ? <img src={category.image} alt={category.name} className="inline w-6 h-6 rounded" /> : '📦'}</span>
+                        <span className="text-lg mr-2">{category.emoji || (category.image ? <Image src={category.image} alt={category.name} width={24} height={24} className="inline rounded" /> : '📦')}</span>
                         <span className="text-sm font-medium text-gray-800">{category.name}</span>
                       </Link>
                         {/* Subcategories in mobile menu */}

@@ -2,6 +2,7 @@
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useProducts } from '@/hooks/useProducts'
 import { useBrands } from '@/hooks/useBrands'
 import { useCategories } from '@/hooks/useCategories'
@@ -122,7 +123,13 @@ export default function CouponProductsPage() {
                 <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow flex flex-col h-96">
                   <div className="h-48 bg-gray-200 flex items-center justify-center relative flex-shrink-0">
                     {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} className="w-full h-full object-contain" />
+                      <Image 
+                        src={product.image_url} 
+                        alt={product.name} 
+                        width={300}
+                        height={192}
+                        className="w-full h-full object-contain" 
+                      />
                     ) : (
                       <span className="text-gray-500 text-sm">Produktbild</span>
                     )}

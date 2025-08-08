@@ -1,6 +1,7 @@
 "use client"
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useProducts } from '@/hooks/useProducts'
 import { formatPrice } from '@/lib/url-utils'
 import type { ProductWithRelations } from '@/types/database'
@@ -110,7 +111,6 @@ export function DiscountedProducts() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {discountedProducts.map((product) => {
-            const discountPercent = product.discount_price !== null ? Math.round(((product.price - product.discount_price) / product.price) * 100) : 0
             return (
               <Link key={product.id} href={generateProductURL(product)}>
                 <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative">
@@ -118,9 +118,11 @@ export function DiscountedProducts() {
                     {/* Product Image */}
                     <div className="h-48 bg-white overflow-hidden">
                       {product.product_images && product.product_images.length > 0 ? (
-                        <img
+                        <Image
                           src={product.product_images[0].image_url}
                           alt={product.name}
+                          width={300}
+                          height={192}
                           className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
                         />
                       ) : (

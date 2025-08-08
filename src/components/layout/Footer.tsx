@@ -168,7 +168,7 @@ export function Footer() {
                 Datenschutz & Impressum
               </Link>
               <Link href="/terms" className="hover:text-primary transition-colors" style={{ color: '#A3A3A3' }}>
-                AGB's
+                AGB&apos;s
               </Link>
               <Link href="/cookies" className="hover:text-primary transition-colors" style={{ color: '#A3A3A3' }}>
                 Cookie-Richtlinien

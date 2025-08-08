@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useReducer, useEffect } from 'react'
+import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react'
 import { Cart, CartContextType, CartAction } from '@/types/cart'
 
 // Generate a unique session ID
@@ -84,7 +84,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   }
 
   // Fetch cart from API
-  const refreshCart = async () => {
+  const refreshCart = useCallback(async () => {
     try {
       setIsLoading(true)
       setError(null)
@@ -97,7 +97,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [sessionId])
 
   // Add item to cart
   const addToCart = async (productId: string, quantity = 1, variantId?: string) => {
@@ -105,7 +105,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       setIsLoading(true)
       setError(null)
 
-      const payload: any = { product_id: productId, quantity }
+      const payload: { product_id: string; quantity: number; variant_id?: string } = { product_id: productId, quantity }
       if (variantId) {
         payload.variant_id = variantId
       }
@@ -207,7 +207,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   // Load cart on mount
   useEffect(() => {
     refreshCart()
-  }, [])
+  }, [refreshCart])
 
   const value: CartContextType = {
     cart,

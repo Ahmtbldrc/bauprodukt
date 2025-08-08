@@ -9,7 +9,6 @@ import type {
   RegisterData, 
   User
 } from '@/types/auth'
-import { MOCK_USERS } from '@/types/auth'
 
 // Auth actions
 type AuthAction =
@@ -102,25 +101,7 @@ const STORAGE_KEYS = {
   TOKEN: 'bauprodukt_auth_token'
 }
 
-// Mock API helper functions
-const mockApiDelay = () => new Promise(resolve => setTimeout(resolve, 800)) // Gerçek API gecikme simülasyonu
 
-const findUserByEmail = (email: string): User | undefined => {
-  return MOCK_USERS.find(user => user.email.toLowerCase() === email.toLowerCase())
-}
-
-const generateNewUser = (data: RegisterData): User => {
-  return {
-    id: Date.now().toString(), // Basit ID generation
-    email: data.email,
-    firstName: data.firstName,
-    lastName: data.lastName,
-    fullName: `${data.firstName} ${data.lastName}`,
-    role: 'user', // Default role for new registrations
-    phone: data.phone,
-    createdAt: new Date()
-  }
-}
 
 // Auth provider component
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {

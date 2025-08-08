@@ -3,6 +3,7 @@
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState } from 'react'
 import { useProducts } from '@/hooks/useProducts'
 import type { ProductWithRelations } from '@/types/database'
@@ -49,11 +50,7 @@ export default function BestsellersPage() {
   }
 
   const hasDiscount = (product: ProductWithRelations) => product.discount_price && product.discount_price < product.price
-  const getDiscountPercentage = (product: ProductWithRelations) => {
-    if (!hasDiscount(product)) return 0
-    const discount = ((product.price - (product.discount_price || 0)) / product.price) * 100
-    return Math.round(discount)
-  }
+  
   const generateProductURL = (product: ProductWithRelations) => {
     if (product.brand?.slug && product.category?.slug) {
       return `/${product.brand.slug}/${product.category.slug}/${product.slug}`
@@ -214,9 +211,11 @@ export default function BestsellersPage() {
                       {/* Product Image */}
                       <div className="h-48 bg-white overflow-hidden">
                         {product.image_url ? (
-                          <img 
+                          <Image 
                             src={product.image_url} 
                             alt={product.name}
+                            width={300}
+                            height={192}
                             className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;

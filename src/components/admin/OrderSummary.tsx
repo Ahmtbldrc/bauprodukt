@@ -1,7 +1,17 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Package, Clock, CheckCircle, Truck, XCircle, TrendingUp } from 'lucide-react'
+import Link from 'next/link'
+import { Package, Clock, CheckCircle, XCircle } from 'lucide-react'
+
+interface Order {
+  id: string
+  order_number: string
+  customer_name: string
+  total_amount: number
+  status: string
+  created_at: string
+}
 
 interface OrderStats {
   total: number
@@ -11,14 +21,7 @@ interface OrderStats {
   shipped: number
   delivered: number
   cancelled: number
-  recentOrders: Array<{
-    id: string
-    order_number: string
-    customer_name: string
-    total_amount: number
-    status: string
-    created_at: string
-  }>
+  recentOrders: Order[]
 }
 
 export function OrderSummary() {
@@ -40,13 +43,13 @@ export function OrderSummary() {
         const orders = data.orders || []
         const stats: OrderStats = {
           total: orders.length,
-          pending: orders.filter((o: any) => o.status === 'pending').length,
-          confirmed: orders.filter((o: any) => o.status === 'confirmed').length,
-          processing: orders.filter((o: any) => o.status === 'processing').length,
-          shipped: orders.filter((o: any) => o.status === 'shipped').length,
-          delivered: orders.filter((o: any) => o.status === 'delivered').length,
-          cancelled: orders.filter((o: any) => o.status === 'cancelled').length,
-          recentOrders: orders.slice(0, 5).map((order: any) => ({
+          pending: orders.filter((o: Order) => o.status === 'pending').length,
+          confirmed: orders.filter((o: Order) => o.status === 'confirmed').length,
+          processing: orders.filter((o: Order) => o.status === 'processing').length,
+          shipped: orders.filter((o: Order) => o.status === 'shipped').length,
+          delivered: orders.filter((o: Order) => o.status === 'delivered').length,
+          cancelled: orders.filter((o: Order) => o.status === 'cancelled').length,
+          recentOrders: orders.slice(0, 5).map((order: Order) => ({
             id: order.id,
             order_number: order.order_number,
             customer_name: order.customer_name,
@@ -170,13 +173,13 @@ export function OrderSummary() {
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">Letzte Bestellungen</h3>
-            <a 
+            <Link 
               href="/admin/orders" 
               className="text-sm font-medium hover:underline"
               style={{color: '#F39236'}}
             >
               Alle anzeigen
-            </a>
+            </Link>
           </div>
         </div>
         

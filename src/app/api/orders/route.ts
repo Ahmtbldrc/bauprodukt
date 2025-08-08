@@ -2,10 +2,47 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { sendEmail, generateOrderConfirmationEmail } from '@/lib/email'
 
+interface OrderItemRequest {
+  product: {
+    id: string
+    name: string
+    slug: string
+  }
+  quantity: number
+  price: number
+}
+
+interface CreateOrderRequest {
+  customerName: string
+  customerEmail: string
+  customerPhone: string
+  shippingProvince: string
+  shippingDistrict: string
+  shippingPostalCode: string
+  shippingAddress: string
+  billingProvince?: string
+  billingDistrict?: string
+  billingPostalCode?: string
+  billingAddress?: string
+  notes?: string
+  totalAmount: number
+  items: OrderItemRequest[]
+}
+
+interface OrderItemData {
+  order_id: string
+  product_id: string
+  product_name: string
+  product_slug: string
+  quantity: number
+  unit_price: number
+  total_price: number
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = createClient()
-    const body = await request.json()
+    const body: CreateOrderRequest = await request.json()
     
     const {
       customerName,
@@ -75,7 +112,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order items
-    const orderItems = items.map((item: any) => ({
+    const orderItems: OrderItemData[] = items.map((item: OrderItemRequest) => ({
       order_id: order.id,
       product_id: item.product.id,
       product_name: item.product.name,
@@ -110,7 +147,7 @@ export async function POST(request: NextRequest) {
         customerName: customerName,
         customerEmail: customerEmail,
         totalAmount,
-        items: orderItems.map((item: any) => ({
+        items: orderItems.map((item: OrderItemData) => ({
           product_name: item.product_name,
           quantity: item.quantity,
           unit_price: item.unit_price,

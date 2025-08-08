@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState } from 'react'
 import { Mail, Bell, HelpCircle, Settings, LogOut } from 'lucide-react'
 import { useAdminAuth } from '@/contexts/AdminAuthContext'
@@ -29,9 +30,11 @@ export function AdminHeader() {
         <div className="flex-1 flex justify-start -ml-12">
           <Link href="/admin" className="flex items-center">
             <div className="relative">
-              <img 
+              <Image 
                 src="/Bauprodukt-Logo.svg" 
                 alt="Bauprodukt" 
+                width={192}
+                height={48}
                 className="w-48 h-auto block"
                 style={{ maxWidth: '192px', height: 'auto' }}
               />
@@ -100,9 +103,11 @@ export function AdminHeader() {
           {/* User Profile */}
           <div className="flex items-center space-x-3 ml-2">
             <div className="w-12 h-12 rounded-full overflow-hidden">
-              <img 
+              <Image 
                 src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
                 alt="Benutzer-Avatar"
+                width={48}
+                height={48}
                 className="w-full h-full object-cover"
               />
             </div>

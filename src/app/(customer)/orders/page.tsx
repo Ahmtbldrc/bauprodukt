@@ -1,8 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { ArrowLeft, Search, Package, Clock, CheckCircle, Truck, XCircle } from 'lucide-react'
 import { OrderTracking } from '@/components/order'
 
@@ -84,7 +83,6 @@ const statusConfig = {
 }
 
 export default function OrdersPage() {
-  const router = useRouter()
   const [orders, setOrders] = useState<Order[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)

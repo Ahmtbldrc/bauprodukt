@@ -3,7 +3,7 @@
 import { AddToCartButton } from '@/components/cart'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { ChevronUp, ChevronDown, Download, Heart, ShoppingCart, Check } from 'lucide-react'
+import { ChevronUp, ChevronDown, Download, Heart, ShoppingCart } from 'lucide-react'
 import { 
   useBrandBySlug, 
   useCategoryBySlug, 
@@ -13,7 +13,6 @@ import {
 import { formatPrice, generateBrandURL, generateCategoryURL } from '@/lib/url-utils'
 import Image from 'next/image'
 import { Lens } from '@/components/magicui/lens'
-import { FavoriteButton } from '@/components/favorites'
 
 interface ProductPageContentProps {
   brandSlug: string
@@ -102,9 +101,6 @@ export default function ProductPageContent({
 
   // Calculate discount information
   const hasDiscount = product?.discount_price !== undefined && product?.discount_price < product?.price;
-  const discountPercentage = hasDiscount && product?.price && product.discount_price !== undefined
-    ? Math.round(((product.price - product.discount_price) / product.price) * 100)
-    : 0;
   const displayPrice = hasDiscount && product?.discount_price !== undefined
     ? product.discount_price
     : product?.price;
@@ -441,7 +437,7 @@ export default function ProductPageContent({
                               {/* Product Details */}
                               <div className="flex-1 max-w-sm">
                                 <h4 className="font-bold text-gray-900 text-sm mb-1">
-                                  Abstellverschraubung, ½" x ½", ½" x ½" mit flacher Rosette, verchromt
+                                  Abstellverschraubung, ½ x ½, ½ x ½ mit flacher Rosette, verchromt
                                 </h4>
                                 <p className="text-xs text-gray-500">
                                   Art-Nr. 123456789 | Hersteller-Nr. 987654321
@@ -717,9 +713,6 @@ export default function ProductPageContent({
               {relatedProducts.map((relatedProduct) => {
                 const relatedHasDiscount = relatedProduct.discount_price && relatedProduct.discount_price < relatedProduct.price
                 const relatedDisplayPrice = relatedHasDiscount ? relatedProduct.discount_price! : relatedProduct.price
-                const relatedDiscountPercentage = relatedHasDiscount 
-                  ? Math.round(((relatedProduct.price - relatedProduct.discount_price!) / relatedProduct.price) * 100)
-                  : 0
                 
                 // Generate product URL
                 const productURL = `/${relatedProduct.brand?.slug || ''}/${relatedProduct.category?.slug || ''}/${relatedProduct.slug}`

@@ -12,7 +12,7 @@ export interface User {
   address?: Address
   createdAt: Date
   // Supabase Auth user data
-  supabaseUser?: any
+  supabaseUser?: import('@supabase/supabase-js').User
   profile?: Profile
   roleData?: Role
 }

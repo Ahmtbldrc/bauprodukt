@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useCategoryBySlug, useProductsByCategory } from '@/hooks'
 import { formatPrice } from '@/lib/url-utils'
 import { notFound } from 'next/navigation'
@@ -165,9 +166,11 @@ export function CategoryPageContent({ slug }: CategoryPageContentProps) {
                     {/* Product Image */}
                     <div className="h-48 bg-white overflow-hidden">
                       {product.product_images && product.product_images.length > 0 ? (
-                        <img 
+                        <Image 
                           src={product.product_images[0].image_url} 
                           alt={product.name}
+                          width={300}
+                          height={192}
                           className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
                         />
                       ) : (

@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useCart } from '@/contexts/CartContext'
-import { ArrowLeft, Check, CreditCard, Truck, User, MapPin } from 'lucide-react'
+import { ArrowLeft, Check, CreditCard, User, MapPin } from 'lucide-react'
 
 interface CheckoutFormData {
   // Customer Information
