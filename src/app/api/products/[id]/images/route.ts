@@ -179,3 +179,99 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     )
   }
 } 
+
+// PUT endpoint for updating product images (admin functionality)
+export async function PUT(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { id: productId } = await params
+    const body = await request.json()
+
+    const { images } = body
+
+    if (!images || !Array.isArray(images)) {
+      return NextResponse.json(
+        { error: 'Images array is required' },
+        { status: 400 }
+      )
+    }
+
+    // Check if product exists
+    const { error: productError } = await supabase
+      .from('products')
+      .select('id')
+      .eq('id', productId)
+      .single()
+
+    if (productError) {
+      if (productError.code === 'PGRST116') {
+        return NextResponse.json(
+          { error: 'Product not found' },
+          { status: 404 }
+        )
+      }
+      return NextResponse.json(
+        { error: 'Failed to validate product' },
+        { status: 500 }
+      )
+    }
+
+    // Delete existing images for this product
+    const { error: deleteError } = await supabase
+      .from('product_images')
+      .delete()
+      .eq('product_id', productId)
+
+    if (deleteError) {
+      console.error('Failed to delete existing images:', deleteError)
+      return NextResponse.json(
+        { error: 'Failed to delete existing images' },
+        { status: 500 }
+      )
+    }
+
+    // Insert new images
+    if (images.length > 0) {
+      const imagesToInsert = images.map((image: {
+        image_url: string
+        is_cover?: boolean
+      }, index: number) => ({
+        product_id: productId,
+        image_url: image.image_url,
+        order_index: index,
+        is_cover: image.is_cover || false
+      }))
+
+      const { data: insertedImages, error: insertError } = await supabase
+        .from('product_images')
+        .insert(imagesToInsert)
+        .select('*')
+
+      if (insertError) {
+        console.error('Failed to insert images:', insertError)
+        return NextResponse.json(
+          { error: 'Failed to insert images' },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json({
+        message: 'Images updated successfully',
+        data: insertedImages,
+        count: insertedImages.length
+      })
+    }
+
+    return NextResponse.json({
+      message: 'All images removed successfully',
+      data: [],
+      count: 0
+    })
+
+  } catch (error) {
+    console.error('Image update API error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+} 

@@ -2,13 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query'
 
-interface ProductImage {
-  id: string
-  image_url: string
-  order_index: number
-  is_cover: boolean
-}
-
 interface Brand {
   id: string
   name: string
@@ -181,5 +174,77 @@ export function useProductsByBrand(brandId: string, options: Omit<UseProductsOpt
     ...options,
     brand: brandId,
     limit: options.limit || 100 // Get more products for brand pages
+  })
+} 
+
+// Product Variant interface
+export interface ProductVariant {
+  id?: string
+  product_id: string
+  sku: string
+  title?: string
+  price: number
+  compare_at_price?: number
+  stock_quantity: number
+  track_inventory: boolean
+  continue_selling_when_out_of_stock: boolean
+  is_active: boolean
+  position: number
+  source_platform?: string
+  source_variant_id?: string
+  source_data?: Record<string, unknown>
+  created_at?: string
+  updated_at?: string
+}
+
+// Product Image interface
+export interface ProductImage {
+  id?: string
+  product_id: string
+  image_url: string
+  order_index: number
+  is_cover: boolean
+  created_at?: string
+}
+
+// Hook for fetching product variants
+export function useProductVariants(productId: string) {
+  return useQuery({
+    queryKey: ['product-variants', productId],
+    queryFn: async () => {
+      if (!productId) return { data: [], count: 0 }
+      
+      const response = await fetch(`/api/products/${productId}/variants`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch product variants')
+      }
+
+      return response.json()
+    },
+    enabled: !!productId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
+  })
+}
+
+// Hook for fetching product images
+export function useProductImages(productId: string) {
+  return useQuery({
+    queryKey: ['product-images', productId],
+    queryFn: async () => {
+      if (!productId) return { data: [], count: 0 }
+      
+      const response = await fetch(`/api/products/${productId}/images`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch product images')
+      }
+
+      return response.json()
+    },
+    enabled: !!productId,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   })
 } 

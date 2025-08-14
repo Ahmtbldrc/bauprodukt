@@ -1,7 +1,9 @@
 'use client'
 
 import React from 'react'
+import { useRouter } from 'next/navigation'
 import { useCart } from '@/contexts/CartContext'
+import { useAuth } from '@/contexts/AuthContext'
 
 // Simple Button component
 const Button: React.FC<{
@@ -45,10 +47,16 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
   onCheckout, 
   className = '' 
 }) => {
+  const router = useRouter()
   const { cart, getTotalItems, getTotalAmount, clearCart, isLoading } = useCart()
+  const { isAuthenticated } = useAuth()
 
+  console.log('CartSummary render - cart:', cart, 'isLoading:', isLoading, 'isAuthenticated:', isAuthenticated)
+  
   const totalItems = getTotalItems()
   const totalAmount = getTotalAmount()
+  
+  console.log('CartSummary - totalItems:', totalItems, 'totalAmount:', totalAmount)
 
   const handleClearCart = async () => {
     if (isLoading || !cart || cart.items.length === 0) return
@@ -62,6 +70,13 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
 
   const handleCheckout = () => {
     if (totalItems === 0) return
+    if (!isAuthenticated) {
+      console.log('CartSummary checkout clicked but user not authenticated')
+      // Redirect to login with checkout redirect
+      router.push('/login?redirect=/checkout')
+      return
+    }
+    console.log('CartSummary checkout clicked, calling onCheckout')
     onCheckout?.()
   }
 
@@ -105,11 +120,11 @@ export const CartSummary: React.FC<CartSummaryProps> = ({
       <div className="mt-6 space-y-3">
         <Button
           onClick={handleCheckout}
-          disabled={isLoading || totalItems === 0}
+          disabled={isLoading || totalItems === 0 || !isAuthenticated}
           size="lg"
           className="w-full"
         >
-          Zur Kasse
+          {isAuthenticated ? 'Zur Kasse' : 'Anmelden erforderlich'}
         </Button>
         
         <Button

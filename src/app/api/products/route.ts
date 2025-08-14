@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
           order_index,
           is_cover
         )
-      `)
+      `, { count: 'exact' })
       .range(from, to)
       .order('created_at', { ascending: false })
 
@@ -160,9 +160,13 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    console.log('API\'ye gelen veri:', body)
     
     const validation = validateProduct(body)
+    console.log('Validation sonucu:', validation)
+    
     if (!validation.success) {
+      console.error('Validation hatası:', validation.error.errors)
       return NextResponse.json(
         { error: 'Validation failed', details: validation.error.errors },
         { status: 400 }

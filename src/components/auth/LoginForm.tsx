@@ -10,6 +10,9 @@ import { Eye, EyeOff, Mail, Lock, Loader2, Check } from 'lucide-react'
 export function LoginForm() {
   const router = useRouter()
   const { login, isLoading, error, clearError } = useAuth()
+  
+  // Get redirect parameter from URL
+  const [redirectPath, setRedirectPath] = useState<string>('/')
 
   const [formData, setFormData] = useState<LoginCredentials>({
     email: '',
@@ -19,8 +22,15 @@ export function LoginForm() {
   const [rememberMe, setRememberMe] = useState(false)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
 
-  // Load remembered credentials on mount
+  // Load remembered credentials and redirect path on mount
   useEffect(() => {
+    // Get redirect parameter from URL
+    const urlParams = new URLSearchParams(window.location.search)
+    const redirect = urlParams.get('redirect')
+    if (redirect) {
+      setRedirectPath(redirect)
+    }
+    
     const rememberedEmail = localStorage.getItem('bauprodukt_remember_email')
     const rememberedPassword = localStorage.getItem('bauprodukt_remember_password')
     
@@ -88,7 +98,7 @@ export function LoginForm() {
         localStorage.removeItem('bauprodukt_remember_password')
       }
       
-      router.push('/') // Redirect to homepage after successful login
+      router.push(redirectPath) // Redirect to intended page after successful login
     } catch (error) {
       // Error is handled by the context
       console.log('Login failed:', error)

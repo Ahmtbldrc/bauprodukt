@@ -3,14 +3,17 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
-import { Mail, Bell, HelpCircle, Settings, LogOut } from 'lucide-react'
+import { Mail, Bell, HelpCircle, Settings, LogOut, Search, Plus, Users, Package, ShoppingCart, BarChart3 } from 'lucide-react'
 import { useAdminAuth } from '@/contexts/AdminAuthContext'
-import { useRouter } from 'next/navigation'
+import { useAdminSearch } from '@/contexts/AdminSearchContext'
+import { useRouter, usePathname } from 'next/navigation'
 
 export function AdminHeader() {
   const [activeFilter, setActiveFilter] = useState('Dieser Monat')
   const { user, logout } = useAdminAuth()
+  const { searchQuery, setSearchQuery } = useAdminSearch()
   const router = useRouter()
+  const pathname = usePathname()
   
   const timeFilters = ['Heute', 'Diese Woche', 'Dieser Monat', 'Berichte']
 
@@ -22,6 +25,224 @@ export function AdminHeader() {
       console.error('Logout error:', error)
     }
   }
+
+  // Sayfa bazında header içeriğini belirle
+  const getHeaderContent = () => {
+    // Dashboard
+    if (pathname === '/admin') {
+      return {
+        showTimeFilters: true,
+        centerContent: (
+          <div className="flex items-center space-x-1">
+            {timeFilters.map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setActiveFilter(filter)}
+                className={`px-8 py-3 text-sm font-medium rounded-full border border-gray-300 transition-all duration-200 ${
+                  activeFilter === filter
+                    ? 'bg-gray-900 text-white shadow-sm'
+                    : 'text-gray-900 hover:bg-gray-50'
+                }`}
+                style={{ fontFamily: 'var(--font-blinker)' }}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
+        )
+      }
+    }
+
+    // Products sayfası
+    if (pathname.startsWith('/admin/products')) {
+      // Ürün detay sayfası veya yeni ürün sayfası ise ortada hiçbir şey gösterme
+      if (pathname.includes('/admin/products/') || pathname === '/admin/products/new') {
+        return {
+          showTimeFilters: false,
+          centerContent: null
+        }
+      }
+      
+      // Sadece ana products sayfasında search ve yeni ürün butonu göster
+      return {
+        showTimeFilters: false,
+        centerContent: (
+          <div className="flex items-center space-x-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <input
+                type="text"
+                placeholder="Produkt suchen..."
+                value={searchQuery || ''}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-80 pl-10 pr-4 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium"
+                style={{ fontFamily: 'var(--font-blinker)' }}
+              />
+            </div>
+            <Link
+              href="/admin/products/new"
+              className="px-8 py-3 text-sm font-medium rounded-full border border-gray-300 bg-gray-900 text-white hover:bg-gray-800 transition-all duration-200 shadow-sm flex items-center gap-2"
+              style={{ fontFamily: 'var(--font-blinker)' }}
+            >
+              <Plus className="h-4 w-4" />
+              Neues Produkt
+            </Link>
+          </div>
+        )
+      }
+    }
+
+    // Categories sayfası
+    if (pathname.startsWith('/admin/categories')) {
+      return {
+        showTimeFilters: false,
+        centerContent: (
+          <div className="flex items-center space-x-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <input
+                type="text"
+                placeholder="Kategorie suchen..."
+                value={searchQuery || ''}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-80 pl-10 pr-4 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium"
+                style={{ fontFamily: 'var(--font-blinker)' }}
+              />
+            </div>
+            <Link
+              href="/admin/categories/new"
+              className="px-8 py-3 text-sm font-medium rounded-full border border-gray-300 bg-gray-900 text-white hover:bg-gray-800 transition-all duration-200 shadow-sm flex items-center gap-2"
+              style={{ fontFamily: 'var(--font-blinker)' }}
+            >
+              <Plus className="h-4 w-4" />
+              Neue Kategorie
+            </Link>
+          </div>
+        )
+      }
+    }
+
+    // Brands sayfası
+    if (pathname.startsWith('/admin/brands')) {
+      return {
+        showTimeFilters: false,
+        centerContent: (
+          <div className="flex items-center space-x-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <input
+                type="text"
+                placeholder="Marke suchen..."
+                value={searchQuery || ''}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-80 pl-10 pr-4 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium"
+                style={{ fontFamily: 'var(--font-blinker)' }}
+              />
+            </div>
+          </div>
+        )
+      }
+    }
+
+    // Orders sayfası
+    if (pathname.startsWith('/admin/orders')) {
+      return {
+        showTimeFilters: false,
+        centerContent: (
+          <div className="flex items-center space-x-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <input
+                type="text"
+                placeholder="Bestellung suchen..."
+                value={searchQuery || ''}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-80 pl-10 pr-4 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium"
+                style={{ fontFamily: 'var(--font-blinker)' }}
+              />
+            </div>
+            <div className="flex items-center space-x-2 text-sm text-gray-600">
+              <Package className="h-4 w-4" />
+              <span>Bestellverwaltung</span>
+            </div>
+          </div>
+        )
+      }
+    }
+
+    // Banners sayfası
+    if (pathname.startsWith('/admin/banners')) {
+      return {
+        showTimeFilters: false,
+        centerContent: (
+          <div className="flex items-center space-x-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <input
+                type="text"
+                placeholder="Banner suchen..."
+                value={searchQuery || ''}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-80 pl-10 pr-4 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium"
+                style={{ fontFamily: 'var(--font-blinker)' }}
+              />
+            </div>
+            <Link
+              href="/admin/banners/new"
+              className="px-8 py-3 text-sm font-medium rounded-full border border-gray-300 bg-gray-900 text-white hover:bg-gray-800 transition-all duration-200 shadow-sm flex items-center gap-2"
+              style={{ fontFamily: 'var(--font-blinker)' }}
+            >
+              <Plus className="h-4 w-4" />
+              Neuer Banner
+            </Link>
+          </div>
+        )
+      }
+    }
+
+    // Images sayfası
+    if (pathname.startsWith('/admin/images')) {
+      return {
+        showTimeFilters: false,
+        centerContent: (
+          <div className="flex items-center space-x-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <input
+                type="text"
+                placeholder="Bild suchen..."
+                value={searchQuery || ''}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-80 pl-10 pr-4 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium"
+                style={{ fontFamily: 'var(--font-blinker)' }}
+              />
+            </div>
+            <Link
+              href="/admin/images/upload"
+              className="px-8 py-3 text-sm font-medium rounded-full border border-gray-300 bg-gray-900 text-white hover:bg-gray-800 transition-all duration-200 shadow-sm flex items-center gap-2"
+              style={{ fontFamily: 'var(--font-blinker)' }}
+            >
+              <Plus className="h-4 w-4" />
+              Bild hochladen
+            </Link>
+          </div>
+        )
+      }
+    }
+
+    // Default - diğer sayfalar için
+    return {
+      showTimeFilters: false,
+      centerContent: (
+        <div className="flex items-center space-x-2 text-gray-600">
+          <BarChart3 className="h-5 w-5" />
+          <span className="text-lg font-medium">Admin Panel</span>
+        </div>
+      )
+    }
+  }
+
+  const headerContent = getHeaderContent()
 
   return (
     <header className="py-4">
@@ -48,24 +269,9 @@ export function AdminHeader() {
           </Link>
         </div>
         
-        {/* Center Section - Time Filters */}
+        {/* Center Section - Dynamic Content */}
         <div className="flex-1 flex justify-center">
-          <div className="flex items-center space-x-1">
-            {timeFilters.map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setActiveFilter(filter)}
-                className={`px-8 py-3 text-sm font-medium rounded-full border border-gray-300 transition-all duration-200 ${
-                  activeFilter === filter
-                    ? 'bg-gray-900 text-white shadow-sm'
-                    : 'text-gray-900 hover:bg-gray-50'
-                }`}
-                style={{ fontFamily: 'var(--font-blinker)' }}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
+          {headerContent.centerContent}
         </div>
         
         {/* Right Section - User */}

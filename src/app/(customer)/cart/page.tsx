@@ -2,20 +2,37 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useCart } from '@/contexts/CartContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { CartItem, CartSummary } from '@/components/cart'
 import { ShoppingBag, ArrowLeft, ChevronDown, ChevronUp } from 'lucide-react'
 
 export default function CartPage() {
+  const router = useRouter()
   const { cart, isLoading, error } = useCart()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [isCouponOpen, setIsCouponOpen] = useState(false)
+  
+  console.log('CartPage render - cart:', cart, 'isLoading:', isLoading, 'error:', error, 'isAuthenticated:', isAuthenticated)
 
   const handleCheckout = () => {
-    // Navigate to checkout page
-    window.location.href = '/checkout'
+    // Check if user is authenticated before proceeding to checkout
+    if (!isAuthenticated) {
+      console.log('User not authenticated, redirecting to login')
+      router.push('/login?redirect=/checkout')
+      return
+    }
+    
+    // Navigate to checkout page using Next.js router
+    console.log('Checkout button clicked, navigating to /checkout')
+    console.log('Current cart state:', cart)
+    console.log('Total items:', cart?.items?.length || 0)
+    router.push('/checkout')
   }
 
-  if (isLoading && !cart) {
+  if (isLoading || authLoading) {
+    console.log('CartPage - Loading state')
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-center min-h-[400px]">
@@ -24,7 +41,7 @@ export default function CartPage() {
               className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-4"
               style={{borderBottomColor: '#F39236'}}
             ></div>
-            <p className="text-gray-600">Warenkorb wird geladen...</p>
+            <p className="text-gray-600">Wird geladen...</p>
           </div>
         </div>
       </div>
@@ -32,6 +49,7 @@ export default function CartPage() {
   }
 
   if (error) {
+    console.log('CartPage - Error state:', error)
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center">
@@ -43,8 +61,43 @@ export default function CartPage() {
       </div>
     )
   }
+  
+  // Check if user is authenticated
+  if (!authLoading && !isAuthenticated) {
+    console.log('CartPage - User not authenticated')
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="text-center">
+          <ShoppingBag className="h-24 w-24 text-gray-300 mx-auto mb-6" />
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+            Anmeldung erforderlich
+          </h2>
+          <p className="text-gray-600 mb-8 max-w-md mx-auto">
+            Sie müssen sich anmelden, um Ihren Warenkorb zu sehen und fortzufahren.
+          </p>
+          <div className="space-x-4">
+            <Link 
+              href="/login" 
+              className="inline-flex items-center px-6 py-3 text-white font-medium rounded-md transition-colors hover:opacity-90"
+              style={{backgroundColor: '#F39236'}}
+            >
+              Anmelden
+            </Link>
+            <Link 
+              href="/register" 
+              className="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 transition-colors"
+            >
+              Registrieren
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   const isEmpty = !cart || cart.items.length === 0
+  
+  console.log('CartPage - isEmpty:', isEmpty, 'cart items length:', cart?.items?.length || 0)
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -73,7 +126,7 @@ export default function CartPage() {
         /* Empty Cart */
         <div className="text-center py-16">
           <ShoppingBag className="h-24 w-24 text-gray-300 mx-auto mb-6" />
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">
+          <h2 className="text-3xl font-semibold text-gray-900 mb-4">
             Ihr Warenkorb ist leer
           </h2>
           <p className="text-gray-600 mb-8 max-w-md mx-auto">

@@ -25,10 +25,13 @@ const initialState: Cart | null = null
 
 // Cart reducer
 const cartReducer = (state: Cart | null, action: CartAction): Cart | null => {
+  console.log('Cart reducer called with action:', action.type, action.payload)
   switch (action.type) {
     case 'SET_CART':
+      console.log('Setting cart state:', action.payload)
       return action.payload
     case 'CLEAR_CART':
+      console.log('Clearing cart')
       return {
         cart_id: null,
         session_id: getSessionId(),
@@ -89,7 +92,9 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       setIsLoading(true)
       setError(null)
       
+      console.log('Fetching cart for session:', sessionId)
       const cartData = await apiCall(`/api/cart/${sessionId}`)
+      console.log('Cart data received:', cartData)
       dispatch({ type: 'SET_CART', payload: cartData })
     } catch (err) {
       console.error('Failed to fetch cart:', err)
@@ -197,15 +202,18 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   }
 
   const getTotalItems = (): number => {
+    console.log('Getting total items, cart:', cart)
     return cart ? cart.total_items : 0
   }
 
   const getTotalAmount = (): number => {
+    console.log('Getting total amount, cart:', cart)
     return cart ? cart.total_amount : 0
   }
 
   // Load cart on mount
   useEffect(() => {
+    console.log('CartContext mounted, refreshing cart')
     refreshCart()
   }, [refreshCart])
 

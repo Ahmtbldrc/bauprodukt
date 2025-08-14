@@ -191,3 +191,112 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     )
   }
 }
+
+// PUT endpoint for updating variants (admin functionality)
+export async function PUT(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { id } = await params
+    const body = await request.json()
+
+    const { variants } = body
+
+    if (!variants || !Array.isArray(variants)) {
+      return NextResponse.json(
+        { error: 'Variants array is required' },
+        { status: 400 }
+      )
+    }
+
+    // Check if product exists
+    const { error: productError } = await supabase
+      .from('products')
+      .select('id')
+      .eq('id', id)
+      .single()
+
+    if (productError) {
+      if (productError.code === 'PGRST116') {
+        return NextResponse.json(
+          { error: 'Product not found' },
+          { status: 404 }
+        )
+      }
+      return NextResponse.json(
+        { error: 'Failed to validate product' },
+        { status: 500 }
+      )
+    }
+
+    // Delete existing variants for this product
+    const { error: deleteError } = await supabase
+      .from('product_variants')
+      .delete()
+      .eq('product_id', id)
+
+    if (deleteError) {
+      console.error('Failed to delete existing variants:', deleteError)
+      return NextResponse.json(
+        { error: 'Failed to delete existing variants' },
+        { status: 500 }
+      )
+    }
+
+    // Insert new variants
+    if (variants.length > 0) {
+      const variantsToInsert = variants.map((variant: {
+        sku: string
+        title?: string
+        price: string | number
+        compare_at_price?: string | number
+        stock_quantity: string | number
+        track_inventory?: boolean
+        continue_selling_when_out_of_stock?: boolean
+        is_active?: boolean
+        position?: number
+      }) => ({
+        product_id: id,
+        sku: variant.sku,
+        title: variant.title || '',
+        price: parseFloat(variant.price.toString()),
+        compare_at_price: variant.compare_at_price ? parseFloat(variant.compare_at_price.toString()) : null,
+        stock_quantity: parseInt(variant.stock_quantity.toString()),
+        track_inventory: variant.track_inventory !== undefined ? variant.track_inventory : true,
+        continue_selling_when_out_of_stock: variant.continue_selling_when_out_of_stock !== undefined ? variant.continue_selling_when_out_of_stock : false,
+        is_active: variant.is_active !== undefined ? variant.is_active : true,
+        position: variant.position || 0
+      }))
+
+      const { data: insertedVariants, error: insertError } = await supabase
+        .from('product_variants')
+        .insert(variantsToInsert)
+        .select('*')
+
+      if (insertError) {
+        console.error('Failed to insert variants:', insertError)
+        return NextResponse.json(
+          { error: 'Failed to insert variants' },
+          { status: 500 }
+        )
+      }
+
+      return NextResponse.json({
+        message: 'Variants updated successfully',
+        data: insertedVariants,
+        count: insertedVariants.length
+      })
+    }
+
+    return NextResponse.json({
+      message: 'All variants removed successfully',
+      data: [],
+      count: 0
+    })
+
+  } catch (error) {
+    console.error('Variant update API error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}

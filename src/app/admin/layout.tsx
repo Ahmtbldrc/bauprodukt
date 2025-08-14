@@ -2,6 +2,7 @@
 
 import { AdminLayout } from '@/components/admin/AdminLayout'
 import { AdminAuthProvider, useAdminAuth } from '@/contexts/AdminAuthContext'
+import { AdminSearchProvider } from '@/contexts/AdminSearchContext'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { ReactNode } from 'react'
@@ -60,7 +61,9 @@ function AdminLayoutWrapper({ children }: AdminRootLayoutProps) {
 export default function AdminRootLayout({ children }: AdminRootLayoutProps) {
   return (
     <AdminAuthProvider>
-      <AdminLayoutWrapper>{children}</AdminLayoutWrapper>
+      <AdminSearchProvider>
+        <AdminLayoutWrapper>{children}</AdminLayoutWrapper>
+      </AdminSearchProvider>
     </AdminAuthProvider>
   )
 } 

@@ -64,15 +64,17 @@ export async function POST(request: NextRequest) {
     // Validate required fields
     if (!customerName || !customerEmail || !customerPhone || 
         !shippingProvince || !shippingDistrict || !shippingPostalCode || !shippingAddress) {
+      console.error('Missing required fields:', { customerName, customerEmail, customerPhone, shippingProvince, shippingDistrict, shippingPostalCode, shippingAddress })
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: 'Alle Pflichtfelder müssen ausgefüllt werden' },
         { status: 400 }
       )
     }
 
     if (!items || items.length === 0) {
+      console.error('No items in order')
       return NextResponse.json(
-        { error: 'No items in order' },
+        { error: 'Der Warenkorb ist leer' },
         { status: 400 }
       )
     }
@@ -106,7 +108,7 @@ export async function POST(request: NextRequest) {
     if (orderError) {
       console.error('Error creating order:', orderError)
       return NextResponse.json(
-        { error: 'Failed to create order' },
+        { error: `Fehler beim Erstellen der Bestellung: ${orderError.message || 'Unbekannter Datenbankfehler'}` },
         { status: 500 }
       )
     }
@@ -135,7 +137,7 @@ export async function POST(request: NextRequest) {
         .eq('id', order.id)
       
       return NextResponse.json(
-        { error: 'Failed to create order items' },
+        { error: `Fehler beim Erstellen der Bestellpositionen: ${itemsError.message || 'Unbekannter Datenbankfehler'}` },
         { status: 500 }
       )
     }
@@ -172,7 +174,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Order creation error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: `Interner Serverfehler: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}` },
       { status: 500 }
     )
   }

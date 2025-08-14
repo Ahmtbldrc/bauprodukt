@@ -1,27 +1,28 @@
-import Link from 'next/link'
+'use client'
+
+import { CategoriesTable } from '@/components/admin/CategoriesTable'
 
 export default function CategoriesPage() {
+  const handleDeleteCategory = (categoryId: string) => {
+    if (confirm('Sind Sie sicher, dass Sie diese Kategorie löschen möchten?')) {
+      // TODO: Implement delete functionality
+      console.log('Deleting category:', categoryId)
+      console.log('Category ID:', categoryId)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Kategoriler</h1>
-          <p className="text-gray-600">Kategori yönetimi</p>
+          <h1 className="text-3xl font-bold text-gray-900">Kategorien</h1>
+          <p className="text-gray-600">Kategorieverwaltung und -verfolgung</p>
         </div>
-        
-        <Link 
-          href="/admin"
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          Yeni Kategori Ekle
-        </Link>
       </div>
       
-      <div className="bg-white rounded-lg shadow">
-        <div className="p-6">
-          <p className="text-gray-500">Henüz kategori bulunmuyor.</p>
-        </div>
-      </div>
+      <CategoriesTable 
+        onDeleteCategory={handleDeleteCategory}
+      />
     </div>
   )
 } 

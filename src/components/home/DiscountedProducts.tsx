@@ -111,7 +111,7 @@ export function DiscountedProducts() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {discountedProducts.map((product) => {
-            return (
+              return (
               <Link key={product.id} href={generateProductURL(product)}>
                 <div className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 relative">
                   <div className="relative">
