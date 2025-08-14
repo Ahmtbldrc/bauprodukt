@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { ArrowLeft, Check, CreditCard, User, MapPin } from 'lucide-react'
+import { ArrowLeft, Check, CreditCard, User } from 'lucide-react'
 
 interface Address {
   id?: string
@@ -201,25 +201,32 @@ export default function CheckoutPage() {
         }))
       }
     }
-  }, [authLoading, isAuthenticated, savedAddresses.length, savedPaymentMethods.length])
+  }, [authLoading, isAuthenticated, savedAddresses, savedPaymentMethods])
 
-  const handleInputChange = (field: keyof CheckoutFormData, value: any) => {
+  function handleInputChange(field: 'newAddress', value: Address): void
+  function handleInputChange(field: 'newPaymentMethod', value: PaymentMethod): void
+  function handleInputChange(
+    field: 'selectedShippingAddress' | 'selectedBillingAddress' | 'selectedPaymentMethod',
+    value: string | null
+  ): void
+  function handleInputChange(field: 'notes', value: string): void
+  function handleInputChange(field: keyof CheckoutFormData, value: unknown): void {
     setFormData(prev => {
       if (field === 'newAddress') {
         return {
           ...prev,
-          newAddress: value
+          newAddress: value as Address
         }
       } else if (field === 'newPaymentMethod') {
         return {
           ...prev,
-          newPaymentMethod: value
+          newPaymentMethod: value as PaymentMethod
         }
       } else {
         return {
           ...prev,
-          [field]: value
-        }
+          [field]: value as string | null
+        } as CheckoutFormData
       }
     })
   }

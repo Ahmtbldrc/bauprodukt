@@ -3,8 +3,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useProducts } from '@/hooks/useProducts'
 import { useAdminSearch } from '@/contexts/AdminSearchContext'
-import { Product } from '@/types/product'
-import { Edit, Trash2, Eye, Plus, Search } from 'lucide-react'
+import { Edit, Trash2, Eye, Search } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 
 interface ProductsTableProps {
@@ -24,7 +24,9 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
     search: '', // API'de arama yapmıyoruz, client-side arama yapacağız
   })
 
-  const allProducts = productsResponse?.data || []
+  const allProducts = useMemo(() => {
+    return productsResponse?.data ?? []
+  }, [productsResponse?.data])
   const pagination = productsResponse?.pagination
 
   // Debug için log ekleyelim
@@ -182,12 +184,14 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
                   <tr key={product.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-12 w-12">
+                        <div className="flex-shrink-0 h-12 w-12 relative">
                           {product.image_url ? (
-                            <img
-                              className="h-12 w-12 rounded-lg object-cover"
+                            <Image
                               src={product.image_url}
                               alt={product.name}
+                              fill
+                              sizes="48px"
+                              className="rounded-lg object-cover"
                             />
                           ) : (
                             <div className="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center">

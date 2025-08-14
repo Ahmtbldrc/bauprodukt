@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
-import { Mail, Bell, HelpCircle, Settings, LogOut, Search, Plus, Users, Package, ShoppingCart, BarChart3 } from 'lucide-react'
+import { Mail, Bell, HelpCircle, Settings, LogOut, Search, Plus, Package, BarChart3 } from 'lucide-react'
 import { useAdminAuth } from '@/contexts/AdminAuthContext'
 import { useAdminSearch } from '@/contexts/AdminSearchContext'
 import { useRouter, usePathname } from 'next/navigation'

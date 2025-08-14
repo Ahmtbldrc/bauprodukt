@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useBrands } from '@/hooks/useBrands'
 import { useAdminSearch } from '@/contexts/AdminSearchContext'
-import { Edit, Trash2, Eye, Plus, Search } from 'lucide-react'
+import { Edit, Trash2, Search } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 
 interface BrandsTableProps {
@@ -22,7 +23,9 @@ export function BrandsTable({ onDeleteBrand }: BrandsTableProps) {
     search: '', // API'de arama yapmıyoruz, client-side arama yapacağız
   })
 
-  const allBrands = brandsResponse?.data || []
+  const allBrands = useMemo(() => {
+    return brandsResponse?.data ?? []
+  }, [brandsResponse?.data])
   const pagination = brandsResponse?.pagination
 
   // Debounce search effect
@@ -137,12 +140,14 @@ export function BrandsTable({ onDeleteBrand }: BrandsTableProps) {
                   <tr key={brand.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-12 w-12">
+                        <div className="flex-shrink-0 h-12 w-12 relative">
                           {brand.logo ? (
-                            <img
-                              className="h-12 w-12 rounded-lg object-cover"
+                            <Image
                               src={brand.logo}
                               alt={brand.name}
+                              fill
+                              sizes="48px"
+                              className="rounded-lg object-cover"
                             />
                           ) : (
                             <div className="h-12 w-12 rounded-lg bg-gray-200 flex items-center justify-center">

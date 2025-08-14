@@ -5,7 +5,8 @@ import { useRouter, useParams } from 'next/navigation'
 import { useProductById, useProductVariants, useProductImages } from '@/hooks/useProducts'
 import { useAllBrands } from '@/hooks/useBrands'
 import { useAllCategories } from '@/hooks/useCategories'
-import { ArrowLeft, Save, X, Loader2, Plus, Trash2, Image, Package, Info, GripVertical } from 'lucide-react'
+import { ArrowLeft, Save, X, Loader2, Plus, Trash2, Image as ImageIcon, Package, Info, GripVertical } from 'lucide-react'
+import Image from 'next/image'
 import Link from 'next/link'
 
 interface Variant {
@@ -336,7 +337,7 @@ export default function EditProductPage() {
   const tabs = [
     { id: 'general', label: 'Genel Bilgiler', icon: Info },
     { id: 'variants', label: 'Varyantlar', icon: Package },
-    { id: 'images', label: 'Resimler', icon: Image }
+    { id: 'images', label: 'Resimler', icon: ImageIcon }
   ]
 
   return (
@@ -721,7 +722,7 @@ export default function EditProductPage() {
 
               {images.length === 0 ? (
                 <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
-                  <Image className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                  <ImageIcon className="h-12 w-12 mx-auto mb-3 text-gray-300" />
                   <p className="text-sm font-medium text-gray-900 mb-1">Henüz resim eklenmemiş</p>
                   <p className="text-xs">Ürün resimleri eklemek için yukarıdaki butona tıklayın</p>
                 </div>
@@ -779,20 +780,18 @@ export default function EditProductPage() {
                             
                             {/* Image Preview */}
                             <td className="px-4 py-3 whitespace-nowrap">
-                              <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                              <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 relative">
                                 {image.image_url ? (
-                                  <img
+                                  <Image
                                     src={image.image_url}
                                     alt={`Ürün resmi ${index + 1}`}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement
-                                      target.style.display = 'none'
-                                    }}
+                                    fill
+                                    sizes="48px"
+                                    className="object-cover"
                                   />
                                 ) : (
                                   <div className="w-full h-full flex items-center justify-center">
-                                    <Image className="h-5 w-5 text-gray-300" />
+                                    <ImageIcon className="h-5 w-5 text-gray-300" />
                                   </div>
                                 )}
                               </div>

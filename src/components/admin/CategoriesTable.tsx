@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useCategories } from '@/hooks/useCategories'
 import { useAdminSearch } from '@/contexts/AdminSearchContext'
-import { Edit, Trash2, Eye, Plus, Search, Folder } from 'lucide-react'
+import { Edit, Trash2, Search, Folder } from 'lucide-react'
 import Link from 'next/link'
 
 interface CategoriesTableProps {
@@ -22,7 +22,9 @@ export function CategoriesTable({ onDeleteCategory }: CategoriesTableProps) {
     search: '', // API'de arama yapmıyoruz, client-side arama yapacağız
   })
 
-  const allCategories = categoriesResponse?.data || []
+  const allCategories = useMemo(() => {
+    return categoriesResponse?.data ?? []
+  }, [categoriesResponse?.data])
   const pagination = categoriesResponse?.pagination
 
   // Debounce search effect
