@@ -25,7 +25,6 @@ const initialState: Cart | null = null
 
 // Cart reducer
 const cartReducer = (state: Cart | null, action: CartAction): Cart | null => {
-  console.log('Cart reducer called with action:', action.type, action.payload)
   switch (action.type) {
     case 'SET_CART':
       console.log('Setting cart state:', action.payload)
