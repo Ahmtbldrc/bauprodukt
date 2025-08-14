@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabaseAdminClient } from '@/lib/supabase'
 import type { 
   AuthState, 
   AuthContextType, 
@@ -115,7 +115,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
           const user = JSON.parse(storedAdminUser)
           
           // Verify the user is still valid by checking Supabase session
-          const { data: { session }, error } = await supabase.auth.getSession()
+          const { data: { session }, error } = await supabaseAdminClient.auth.getSession()
           
           if (error || !session?.user || session.user.id !== user.id) {
             // Clear invalid admin session
@@ -126,7 +126,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
           }
 
           // Verify user is still admin
-          const { data: profileData, error: profileError } = await supabase
+          const { data: profileData, error: profileError } = await supabaseAdminClient
             .from('profiles')
             .select(`
               *,
@@ -176,7 +176,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
     
     try {
       // Supabase Auth ile giriş
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabaseAdminClient.auth.signInWithPassword({
         email: credentials.email,
         password: credentials.password,
       })
@@ -190,7 +190,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
       }
 
       // Kullanıcı profilini al ve admin kontrolü yap
-      const { data: profileData, error: profileError } = await supabase
+      const { data: profileData, error: profileError } = await supabaseAdminClient
         .from('profiles')
         .select(`
           *,
@@ -241,7 +241,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
   const logout = async (): Promise<void> => {
     try {
       // Supabase Auth ile çıkış
-      const { error } = await supabase.auth.signOut()
+      const { error } = await supabaseAdminClient.auth.signOut()
       
       if (error) {
         console.error('Admin logout error:', error)

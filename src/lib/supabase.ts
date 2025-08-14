@@ -17,7 +17,19 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
+    // Use a distinct storage key for customer-facing session to avoid collision with admin
+    storageKey: 'bauprodukt_customer_auth',
   },
 })
 
 export default supabase 
+
+// Create a separate client for admin with its own storage key to isolate sessions
+export const supabaseAdminClient = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: 'bauprodukt_admin_auth',
+  },
+})
