@@ -14,7 +14,13 @@ export async function GET(request: NextRequest) {
     const brand = searchParams.get('brand')
     const category = searchParams.get('category')
     const stock_code = searchParams.get('stock_code')
-    const variant = searchParams.get('variant') // New: variant ID filter
+    const variant = searchParams.get('variant')
+    const status = searchParams.get('status') // Admin filter for status
+    const is_changeable = searchParams.get('is_changeable') // Admin filter for changeability
+    
+    // Check if user is admin from middleware headers
+    const userRole = request.headers.get('x-user-role')
+    const isAdmin = userRole === 'admin'
 
     const from = (page - 1) * limit
     const to = from + limit - 1
@@ -34,6 +40,14 @@ export async function GET(request: NextRequest) {
       .range(from, to)
       .order('created_at', { ascending: false })
 
+    // Only filter by status for non-admin users (customers see only active products)
+    if (!isAdmin) {
+      query = query.eq('status', 'active')
+    } else if (status) {
+      // Admin can filter by specific status
+      query = query.eq('status', status)
+    }
+
     // Apply filters
     if (search) {
       query = query.ilike('name', `%${search}%`)
@@ -49,6 +63,11 @@ export async function GET(request: NextRequest) {
 
     if (stock_code) {
       query = query.eq('stock_code', stock_code)
+    }
+
+    // Admin-only filter for changeability
+    if (isAdmin && is_changeable !== null) {
+      query = query.eq('is_changeable', is_changeable === 'true')
     }
 
     // Variant filtering: if variant ID is provided, filter products that have this variant
@@ -121,6 +140,11 @@ export async function GET(request: NextRequest) {
             is_synthetic: !product.has_variants, // Indicates fallback variant
             attributes: selectedVariant?.attributes || []
           },
+          // Admin-specific fields (only included if user is admin)
+          ...(isAdmin && {
+            status: (product as any).status,
+            is_changeable: (product as any).is_changeable
+          }),
           // Brand ve category bilgileri view'dan geliyor ama nested object formatında değil
           brand: product.brand_name ? {
             id: product.brand_id,
@@ -216,6 +240,24 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to create product' },
         { status: 500 }
       )
+    }
+
+    // Add audit log for product creation (admin only, middleware ensures this)
+    const userEmail = request.headers.get('x-user-email') || 'unknown'
+    try {
+      await supabase
+        .from('audit_log')
+        .insert({
+          actor: userEmail,
+          action: 'create_product',
+          target_type: 'product',
+          target_id: data.id,
+          after_state: data,
+          timestamp: new Date().toISOString()
+        })
+    } catch (auditError) {
+      console.error('Failed to create audit log:', auditError)
+      // Don't fail the product creation if audit logging fails
     }
 
     // Fetch the created product with relations

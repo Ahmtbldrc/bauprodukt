@@ -12,9 +12,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { id } = await params
     const { searchParams } = new URL(request.url)
     const variant = searchParams.get('variant') // Get variant ID parameter
+    
+    // Check if user is admin from middleware headers
+    const userRole = request.headers.get('x-user-role')
+    const isAdmin = userRole === 'admin'
 
     // Use products_with_default_variants view for variant support
-    const { data, error } = await supabase
+    let query = supabase
       .from('products_with_default_variants')
       .select(`
         *,
@@ -26,7 +30,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         )
       `)
       .eq('id', id)
-      .single()
+    
+    // Only allow active products for non-admin users
+    if (!isAdmin) {
+      query = query.eq('status', 'active')
+    }
+    
+    const { data, error } = await query.single()
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -233,6 +243,24 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       )
     }
 
+    // Add audit log for product update (admin only, middleware ensures this)
+    const userEmail = request.headers.get('x-user-email') || 'unknown'
+    try {
+      await supabase
+        .from('audit_log')
+        .insert({
+          actor: userEmail,
+          action: 'update_product',
+          target_type: 'product',
+          target_id: id,
+          after_state: data,
+          timestamp: new Date().toISOString()
+        })
+    } catch (auditError) {
+      console.error('Failed to create audit log:', auditError)
+      // Don't fail the product update if audit logging fails
+    }
+
     // Fetch the updated product with relations
     const { data: updatedProduct, error: fetchError } = await supabase
       .from('products_with_relations')
@@ -311,6 +339,23 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         { error: 'Failed to delete product' },
         { status: 500 }
       )
+    }
+
+    // Add audit log for product deletion (admin only, middleware ensures this)
+    const userEmail = request.headers.get('x-user-email') || 'unknown'
+    try {
+      await supabase
+        .from('audit_log')
+        .insert({
+          actor: userEmail,
+          action: 'delete_product',
+          target_type: 'product',
+          target_id: id,
+          timestamp: new Date().toISOString()
+        })
+    } catch (auditError) {
+      console.error('Failed to create audit log:', auditError)
+      // Don't fail the product deletion if audit logging fails
     }
 
     return NextResponse.json({ message: 'Product deleted successfully' })
