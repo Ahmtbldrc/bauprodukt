@@ -91,22 +91,37 @@ export function LoginForm() {
 
     try {
       await login(formData)
+      
       // After successful login, if there is a pending favorite, add it directly via API
       const { data: userData } = await supabase.auth.getUser()
       const supabaseUserId = userData.user?.id
+      
       if (typeof window !== 'undefined') {
         const pendingProductId = localStorage.getItem('pending_favorite_product_id')
-        if (pendingProductId) {
+        if (pendingProductId && supabaseUserId) {
           try {
-            if (supabaseUserId) {
-              await fetch('/api/favorites', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'x-user-id': supabaseUserId },
-                body: JSON.stringify({ product_id: pendingProductId })
-              })
+            const response = await fetch('/api/favorites', {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json', 
+                'x-user-id': supabaseUserId 
+              },
+              body: JSON.stringify({ product_id: pendingProductId })
+            })
+            
+            if (response.ok) {
+              // Successfully added to favorites, refresh the favorites list
               await refreshFavorites()
+              if (process.env.NODE_ENV === 'development') {
+                console.log('Pending favorite added successfully')
+              }
+            } else {
+              console.error('Failed to add pending favorite:', response.statusText)
             }
+          } catch (error) {
+            console.error('Error adding pending favorite:', error)
           } finally {
+            // Always remove the pending favorite ID regardless of success/failure
             localStorage.removeItem('pending_favorite_product_id')
           }
         }

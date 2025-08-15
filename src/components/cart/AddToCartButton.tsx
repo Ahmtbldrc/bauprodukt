@@ -147,6 +147,9 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
             if (!isAuthenticated) {
               if (typeof window !== 'undefined') {
                 localStorage.setItem('pending_favorite_product_id', product.id)
+                // Also store the current page URL for better redirect experience
+                const currentUrl = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '')
+                localStorage.setItem('pending_favorite_redirect_url', currentUrl)
               }
               const currentUrl = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '')
               router.push(`/login?redirect=${encodeURIComponent(currentUrl)}`)

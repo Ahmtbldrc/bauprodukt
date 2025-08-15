@@ -31,35 +31,63 @@ const saveFavoritesToStorage = (favorites: FavoriteProduct[]) => {
 
 // Favorites reducer
 const favoritesReducer = (state: FavoriteProduct[], action: FavoritesAction): FavoriteProduct[] => {
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Favorites reducer called with action:', action.type, 'payload:', (action as any).payload)
+    console.log('Current state:', state)
+  }
+  
+  let newState: FavoriteProduct[]
+  
   switch (action.type) {
     case 'SET_FAVORITES':
-      return action.payload || []
+      newState = (action as any).payload || []
+      if (process.env.NODE_ENV === 'development') {
+        console.log('SET_FAVORITES - New state:', newState)
+      }
+      return newState
     case 'ADD_FAVORITE': {
-      const { product } = action.payload;
+      const { product } = (action as any).payload;
       // Check if already in favorites
       if (state.some(fav => fav.id === product.id)) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('ADD_FAVORITE - Product already in favorites, returning current state')
+        }
         return state;
       }
       const favoriteProduct: FavoriteProduct = {
         ...product,
         addedAt: new Date().toISOString()
       };
-      const newFavorites = [...state, favoriteProduct];
-      saveFavoritesToStorage(newFavorites);
-      return newFavorites;
+      newState = [...state, favoriteProduct];
+      if (process.env.NODE_ENV === 'development') {
+        console.log('ADD_FAVORITE - New state:', newState)
+      }
+      saveFavoritesToStorage(newState);
+      return newState;
     }
     case 'REMOVE_FAVORITE': {
-      const { productId } = action.payload
-      const newFavorites = state.filter(fav => fav.id !== productId)
-      saveFavoritesToStorage(newFavorites)
-      return newFavorites
+      const { productId } = (action as any).payload
+      newState = state.filter(fav => fav.id !== productId)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('REMOVE_FAVORITE - New state:', newState)
+      }
+      saveFavoritesToStorage(newState)
+      return newState
     }
     case 'CLEAR_FAVORITES': {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('CLEAR_FAVORITES - Clearing all favorites')
+      }
       saveFavoritesToStorage([])
       return []
     }
-    default:
+    default: {
+      const actionType = (action as any).type
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Favorites reducer - Unknown action type:', actionType)
+      }
       return state
+    }
   }
 }
 
@@ -92,10 +120,16 @@ export const FavoritesProvider: React.FC<FavoritesProviderProps> = ({ children }
         setIsLoading(true)
         setError(null)
         if (isAuthenticated && user) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Loading favorites for authenticated user:', user.id)
+          }
           // Fetch from API
           const res = await fetch('/api/favorites', { headers: { 'x-user-id': user.id } })
           if (!res.ok) throw new Error('Failed to load favorites')
           const data: Array<{ product_id: string; created_at: string }> = await res.json()
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Favorites API response:', data)
+          }
           // Map to FavoriteProduct placeholders (only id is used elsewhere)
           const mapped: FavoriteProduct[] = data.map(d => ({
             id: d.product_id,
@@ -109,8 +143,14 @@ export const FavoritesProvider: React.FC<FavoritesProviderProps> = ({ children }
             inStock: true,
             addedAt: d.created_at
           }))
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Mapped favorites:', mapped)
+          }
           dispatch({ type: 'SET_FAVORITES', payload: mapped })
         } else {
+          if (process.env.NODE_ENV === 'development') {
+            console.log('User not authenticated, clearing favorites')
+          }
           // Guest users see empty favorites
           dispatch({ type: 'SET_FAVORITES', payload: [] })
         }
@@ -124,42 +164,88 @@ export const FavoritesProvider: React.FC<FavoritesProviderProps> = ({ children }
     load()
   }, [isAuthenticated, user?.id])
 
+  // Debug: Log favorites state changes
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Favorites state changed:', favorites)
+    }
+  }, [favorites])
+
   // Refresh favorites (reload from localStorage)
   const refreshFavorites = async () => {
     try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Starting refreshFavorites...')
+      }
       setIsLoading(true)
       setError(null)
       if (isAuthenticated && user) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Refreshing favorites for user:', user.id)
+        }
         const res = await fetch('/api/favorites', { headers: { 'x-user-id': user.id } })
         if (!res.ok) throw new Error('Failed to refresh favorites')
+        
         const data: Array<{ product_id: string; created_at: string }> = await res.json()
-        const mapped: FavoriteProduct[] = data.map(d => ({
-          id: d.product_id,
-          name: '', slug: '', description: '', price: 0,
-          image: undefined,
-          brand: { id: '', name: '', slug: '' },
-          category: { id: '', name: '', slug: '' },
-          inStock: true,
-          addedAt: d.created_at
-        }))
-        dispatch({ type: 'SET_FAVORITES', payload: mapped })
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Refresh favorites API response:', data)
+        }
+        
+        // Ensure data is an array and has the expected structure
+        if (Array.isArray(data)) {
+          const mapped: FavoriteProduct[] = data.map(d => ({
+            id: d.product_id,
+            name: '', 
+            slug: '', 
+            description: '', 
+            price: 0,
+            image: undefined,
+            brand: { id: '', name: '', slug: '' },
+            category: { id: '', name: '', slug: '' },
+            inStock: true,
+            addedAt: d.created_at
+          }))
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Mapped refresh favorites:', mapped)
+          }
+          dispatch({ type: 'SET_FAVORITES', payload: mapped })
+          if (process.env.NODE_ENV === 'development') {
+            console.log('Favorites refreshed successfully:', mapped.length, 'items')
+          }
+        } else {
+          console.error('Invalid favorites data format:', data)
+          dispatch({ type: 'SET_FAVORITES', payload: [] })
+        }
       } else {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('User not authenticated during refresh, clearing favorites')
+        }
         dispatch({ type: 'SET_FAVORITES', payload: [] })
       }
     } catch (err) {
       console.error('Failed to refresh favorites:', err)
       setError(err instanceof Error ? err.message : 'Failed to refresh favorites')
+      // On error, keep existing favorites instead of clearing them
     } finally {
       setIsLoading(false)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('refreshFavorites completed')
+      }
     }
   }
 
   // Add item to favorites
   const addToFavorites = async (product: FavoriteProduct) => {
     try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Starting addToFavorites for product:', product.id)
+      }
       setIsLoading(true)
       setError(null)
       if (isAuthenticated && user) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Adding favorite for authenticated user:', user.id)
+        }
         const res = await fetch('/api/favorites', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
@@ -172,6 +258,24 @@ export const FavoritesProvider: React.FC<FavoritesProviderProps> = ({ children }
           throw new Error(errorData.error || `HTTP ${res.status}: ${res.statusText}`)
         }
         
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Favorite added successfully via API')
+        }
+        
+        // Immediately add to local state for better UX
+        const favoriteProduct: FavoriteProduct = {
+          ...product,
+          addedAt: new Date().toISOString()
+        }
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Dispatching ADD_FAVORITE action:', favoriteProduct)
+        }
+        dispatch({ type: 'ADD_FAVORITE', payload: { product: favoriteProduct } })
+        
+        // Then refresh from server to ensure consistency
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Refreshing favorites from server...')
+        }
         await refreshFavorites()
       } else {
         throw new Error('Bitte melden Sie sich an, um Favoriten zu nutzen')
@@ -182,17 +286,41 @@ export const FavoritesProvider: React.FC<FavoritesProviderProps> = ({ children }
       throw err
     } finally {
       setIsLoading(false)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('addToFavorites completed')
+      }
     }
   }
 
   // Remove item from favorites
   const removeFromFavorites = async (productId: string) => {
     try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Starting removeFromFavorites for product:', productId)
+      }
       setIsLoading(true)
       setError(null)
       if (isAuthenticated && user) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Removing favorite for authenticated user:', user.id)
+        }
         const res = await fetch(`/api/favorites/${productId}`, { method: 'DELETE', headers: { 'x-user-id': user.id } })
         if (!res.ok) throw new Error('Failed to remove favorite')
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Favorite removed successfully via API')
+        }
+        
+        // Immediately remove from local state for better UX
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Dispatching REMOVE_FAVORITE action for product:', productId)
+        }
+        dispatch({ type: 'REMOVE_FAVORITE', payload: { productId } })
+        
+        // Then refresh from server to ensure consistency
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Refreshing favorites from server...')
+        }
         await refreshFavorites()
       } else {
         throw new Error('Bitte melden Sie sich an, um Favoriten zu nutzen')
@@ -203,6 +331,9 @@ export const FavoritesProvider: React.FC<FavoritesProviderProps> = ({ children }
       throw err
     } finally {
       setIsLoading(false)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('removeFromFavorites completed')
+      }
     }
   }
 
@@ -233,7 +364,11 @@ export const FavoritesProvider: React.FC<FavoritesProviderProps> = ({ children }
   // Check if product is in favorites
   const isFavorite = (productId: string): boolean => {
     if (!isClient) return false
-    return favorites.some(fav => fav.id === productId)
+    const result = favorites.some(fav => fav.id === productId)
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Checking if product ${productId} is favorite:`, result, 'Total favorites:', favorites.length)
+    }
+    return result
   }
 
   // Get favorites count
