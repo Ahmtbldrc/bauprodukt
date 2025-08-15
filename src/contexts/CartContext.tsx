@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react'
 import { Cart, CartContextType, CartAction } from '@/types/cart'
+import { useAuth } from '@/contexts/AuthContext'
 
 // Generate a unique session ID
 const generateSessionId = (): string => {
@@ -64,8 +65,10 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   const [cart, dispatch] = useReducer(cartReducer, initialState)
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const { isAuthenticated, user } = useAuth()
 
   const sessionId = getSessionId()
+  const baseUrl = isAuthenticated && user?.id ? `/api/cart/user/${user.id}` : `/api/cart/${sessionId}`
 
   // API call helper
   const apiCall = async (url: string, options: RequestInit = {}) => {
@@ -90,10 +93,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     try {
       setIsLoading(true)
       setError(null)
-      
-      console.log('Fetching cart for session:', sessionId)
-      const cartData = await apiCall(`/api/cart/${sessionId}`)
-      console.log('Cart data received:', cartData)
+      const cartData = await apiCall(`${baseUrl}`)
       dispatch({ type: 'SET_CART', payload: cartData })
     } catch (err) {
       console.error('Failed to fetch cart:', err)
@@ -101,7 +101,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     } finally {
       setIsLoading(false)
     }
-  }, [sessionId])
+  }, [baseUrl])
 
   // Add item to cart
   const addToCart = async (productId: string, quantity = 1, variantId?: string) => {
@@ -114,7 +114,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         payload.variant_id = variantId
       }
 
-      await apiCall(`/api/cart/${sessionId}/items`, {
+      await apiCall(`${baseUrl}/items`, {
         method: 'POST',
         body: JSON.stringify(payload),
       })
@@ -136,7 +136,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       setIsLoading(true)
       setError(null)
 
-      await apiCall(`/api/cart/${sessionId}/items/${itemId}`, {
+      await apiCall(`${baseUrl}/items/${itemId}`, {
         method: 'PUT',
         body: JSON.stringify({ quantity }),
       })
@@ -158,7 +158,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       setIsLoading(true)
       setError(null)
 
-      await apiCall(`/api/cart/${sessionId}/items/${itemId}`, {
+      await apiCall(`${baseUrl}/items/${itemId}`, {
         method: 'DELETE',
       })
 
@@ -179,7 +179,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       setIsLoading(true)
       setError(null)
 
-      await apiCall(`/api/cart/${sessionId}`, {
+      await apiCall(`${baseUrl}` , {
         method: 'DELETE',
       })
 
@@ -215,6 +215,24 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     console.log('CartContext mounted, refreshing cart')
     refreshCart()
   }, [refreshCart])
+
+  // Merge guest cart into user cart after login
+  useEffect(() => {
+    const mergeGuestCart = async () => {
+      try {
+        if (isAuthenticated && user) {
+          await apiCall('/api/cart/merge', {
+            method: 'POST',
+            body: JSON.stringify({ sessionId, userId: user.id })
+          })
+          await refreshCart()
+        }
+      } catch (err) {
+        console.error('Failed to merge guest cart:', err)
+      }
+    }
+    mergeGuestCart()
+  }, [isAuthenticated, user?.id])
 
   const value: CartContextType = {
     cart,

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useReducer, useEffect } from 'react'
 import { FavoriteProduct, FavoritesContextType, FavoritesAction } from '@/types/favorites'
+import { useAuth } from '@/contexts/AuthContext'
 
 // Get favorites from localStorage
 const getFavoritesFromStorage = (): FavoriteProduct[] => {
@@ -81,22 +82,70 @@ export const FavoritesProvider: React.FC<FavoritesProviderProps> = ({ children }
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [isClient, setIsClient] = React.useState(false)
+  const { isAuthenticated, user } = useAuth()
 
-  // Load favorites from localStorage on mount
+  // Load favorites depending on auth
   useEffect(() => {
-    setIsClient(true)
-    const storedFavorites = getFavoritesFromStorage()
-    dispatch({ type: 'SET_FAVORITES', payload: storedFavorites })
-  }, [])
+    const load = async () => {
+      setIsClient(true)
+      try {
+        setIsLoading(true)
+        setError(null)
+        if (isAuthenticated && user) {
+          // Fetch from API
+          const res = await fetch('/api/favorites', { headers: { 'x-user-id': user.id } })
+          if (!res.ok) throw new Error('Failed to load favorites')
+          const data: Array<{ product_id: string; created_at: string }> = await res.json()
+          // Map to FavoriteProduct placeholders (only id is used elsewhere)
+          const mapped: FavoriteProduct[] = data.map(d => ({
+            id: d.product_id,
+            name: '',
+            slug: '',
+            description: '',
+            price: 0,
+            image: undefined,
+            brand: { id: '', name: '', slug: '' },
+            category: { id: '', name: '', slug: '' },
+            inStock: true,
+            addedAt: d.created_at
+          }))
+          dispatch({ type: 'SET_FAVORITES', payload: mapped })
+        } else {
+          // Guest users see empty favorites
+          dispatch({ type: 'SET_FAVORITES', payload: [] })
+        }
+      } catch (err) {
+        console.error('Failed to load favorites:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load favorites')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    load()
+  }, [isAuthenticated, user?.id])
 
   // Refresh favorites (reload from localStorage)
   const refreshFavorites = async () => {
     try {
       setIsLoading(true)
       setError(null)
-      
-      const storedFavorites = getFavoritesFromStorage()
-      dispatch({ type: 'SET_FAVORITES', payload: storedFavorites })
+      if (isAuthenticated && user) {
+        const res = await fetch('/api/favorites', { headers: { 'x-user-id': user.id } })
+        if (!res.ok) throw new Error('Failed to refresh favorites')
+        const data: Array<{ product_id: string; created_at: string }> = await res.json()
+        const mapped: FavoriteProduct[] = data.map(d => ({
+          id: d.product_id,
+          name: '', slug: '', description: '', price: 0,
+          image: undefined,
+          brand: { id: '', name: '', slug: '' },
+          category: { id: '', name: '', slug: '' },
+          inStock: true,
+          addedAt: d.created_at
+        }))
+        dispatch({ type: 'SET_FAVORITES', payload: mapped })
+      } else {
+        dispatch({ type: 'SET_FAVORITES', payload: [] })
+      }
     } catch (err) {
       console.error('Failed to refresh favorites:', err)
       setError(err instanceof Error ? err.message : 'Failed to refresh favorites')
@@ -110,12 +159,23 @@ export const FavoritesProvider: React.FC<FavoritesProviderProps> = ({ children }
     try {
       setIsLoading(true)
       setError(null)
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 200))
-      dispatch({ 
-        type: 'ADD_FAVORITE', 
-        payload: { product } 
-      })
+      if (isAuthenticated && user) {
+        const res = await fetch('/api/favorites', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
+          body: JSON.stringify({ product_id: product.id })
+        })
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ error: 'Unknown error' }))
+          console.error('Favorites API error:', errorData)
+          throw new Error(errorData.error || `HTTP ${res.status}: ${res.statusText}`)
+        }
+        
+        await refreshFavorites()
+      } else {
+        throw new Error('Bitte melden Sie sich an, um Favoriten zu nutzen')
+      }
     } catch (err) {
       console.error('Failed to add to favorites:', err)
       setError(err instanceof Error ? err.message : 'Failed to add to favorites')
@@ -130,14 +190,13 @@ export const FavoritesProvider: React.FC<FavoritesProviderProps> = ({ children }
     try {
       setIsLoading(true)
       setError(null)
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 200))
-
-      dispatch({ 
-        type: 'REMOVE_FAVORITE', 
-        payload: { productId } 
-      })
+      if (isAuthenticated && user) {
+        const res = await fetch(`/api/favorites/${productId}`, { method: 'DELETE', headers: { 'x-user-id': user.id } })
+        if (!res.ok) throw new Error('Failed to remove favorite')
+        await refreshFavorites()
+      } else {
+        throw new Error('Bitte melden Sie sich an, um Favoriten zu nutzen')
+      }
     } catch (err) {
       console.error('Failed to remove from favorites:', err)
       setError(err instanceof Error ? err.message : 'Failed to remove from favorites')
@@ -152,11 +211,16 @@ export const FavoritesProvider: React.FC<FavoritesProviderProps> = ({ children }
     try {
       setIsLoading(true)
       setError(null)
-
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 200))
-
-      dispatch({ type: 'CLEAR_FAVORITES' })
+      if (isAuthenticated && user) {
+        // No bulk delete endpoint; delete one by one
+        const current = favorites.slice()
+        for (const fav of current) {
+          await fetch(`/api/favorites/${fav.id}`, { method: 'DELETE', headers: { 'x-user-id': user.id } })
+        }
+        await refreshFavorites()
+      } else {
+        throw new Error('Bitte melden Sie sich an, um Favoriten zu nutzen')
+      }
     } catch (err) {
       console.error('Failed to clear favorites:', err)
       setError(err instanceof Error ? err.message : 'Failed to clear favorites')

@@ -3,6 +3,8 @@
 import React, { useState } from 'react'
 import { useCart } from '@/contexts/CartContext'
 import { useFavorites } from '@/contexts/FavoritesContext'
+import { useAuth } from '@/contexts/AuthContext'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { Minus, Plus, Heart } from 'lucide-react'
 
 
@@ -47,6 +49,10 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
 }) => {
   const { addToCart, isLoading } = useCart()
   const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
+  const { isAuthenticated } = useAuth()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [actionLoading, setActionLoading] = useState(false)
   const [localQuantity, setLocalQuantity] = useState(1) // Local counter starts at 1
   
@@ -135,13 +141,24 @@ export const AddToCartButton: React.FC<AddToCartButtonProps> = ({
       
       {/* Favorite Button */}
       <button
-        onClick={() => {
-          if (product) {
-            if (isFavorite(product.id)) {
-              removeFromFavorites(product.id)
-            } else {
-              addToFavorites(product)
+        onClick={async () => {
+          if (!product) return
+          try {
+            if (!isAuthenticated) {
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('pending_favorite_product_id', product.id)
+              }
+              const currentUrl = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '')
+              router.push(`/login?redirect=${encodeURIComponent(currentUrl)}`)
+              return
             }
+            if (isFavorite(product.id)) {
+              await removeFromFavorites(product.id)
+            } else {
+              await addToFavorites(product)
+            }
+          } catch (err) {
+            console.error('Favorite toggle failed:', err)
           }
         }}
         className={`border border-gray-200 rounded-sm hover:border-gray-300 transition-all duration-200 flex items-center justify-center ${

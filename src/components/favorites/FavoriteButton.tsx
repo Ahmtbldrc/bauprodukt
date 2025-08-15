@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { Heart } from 'lucide-react'
 import { useFavorites } from '@/contexts/FavoritesContext'
 import { FavoriteProduct } from '@/types/favorites'
+import { useAuth } from '@/contexts/AuthContext'
+import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 
 interface FavoriteButtonProps {
   product: FavoriteProduct
@@ -19,6 +21,10 @@ export function FavoriteButton({
   showText = false 
 }: FavoriteButtonProps) {
   const { isFavorite, addToFavorites, removeFromFavorites, isLoading } = useFavorites()
+  const { isAuthenticated } = useAuth()
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const [mounted, setMounted] = useState(false)
   const favorite = isFavorite(product.id)
 
@@ -31,6 +37,16 @@ export function FavoriteButton({
     e.stopPropagation()
 
     try {
+      // If not logged in, store pending favorite and redirect to login
+      if (!isAuthenticated) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('pending_favorite_product_id', product.id)
+        }
+        const currentUrl = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : '')
+        router.push(`/login?redirect=${encodeURIComponent(currentUrl)}`)
+        return
+      }
+
       if (favorite) {
         await removeFromFavorites(product.id)
       } else {

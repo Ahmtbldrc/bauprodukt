@@ -14,6 +14,7 @@ import { formatPrice, generateBrandURL, generateCategoryURL } from '@/lib/url-ut
 import Image from 'next/image'
 import { Lens } from '@/components/magicui/lens'
 
+
 interface ProductPageContentProps {
   brandSlug: string
   categorySlug: string
@@ -465,9 +466,6 @@ export default function ProductPageContent({
                                 
                                 {/* Action Buttons */}
                                 <div className="flex gap-2">
-                                  <button className="text-gray-400 border border-gray-200 rounded-sm hover:border-gray-300 hover:text-red-500 transition-all duration-200 flex items-center justify-center" style={{ width: '30px', height: '30px' }}>
-                                    <Heart className="h-4 w-4" />
-                                  </button>
                                   <button className="text-gray-400 border border-gray-200 rounded-sm hover:border-gray-300 hover:text-gray-900 transition-all duration-200 flex items-center justify-center" style={{ width: '30px', height: '30px' }}>
                                     <ShoppingCart className="h-4 w-4" />
                                   </button>
@@ -666,7 +664,7 @@ export default function ProductPageContent({
                   </div>
                 </div>
                 
-                <div className="flex space-x-4">
+                <div className="flex space-x-4 items-center">
                   <AddToCartButton 
                     productId={product?.id || ''}
                     productStock={product?.stock || 0}
@@ -696,6 +694,7 @@ export default function ProductPageContent({
                       addedAt: '', // Set as needed
                     } : undefined}
                   />
+
                 </div>
               </div>
             </div>

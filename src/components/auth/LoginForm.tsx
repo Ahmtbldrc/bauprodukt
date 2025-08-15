@@ -4,12 +4,15 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
+import { useFavorites } from '@/contexts/FavoritesContext'
+import { supabase } from '@/lib/supabase'
 import type { LoginCredentials } from '@/types/auth'
 import { Eye, EyeOff, Mail, Lock, Loader2, Check } from 'lucide-react'
 
 export function LoginForm() {
   const router = useRouter()
   const { login, isLoading, error, clearError } = useAuth()
+  const { refreshFavorites } = useFavorites()
   
   // Get redirect parameter from URL
   const [redirectPath, setRedirectPath] = useState<string>('/')
@@ -88,6 +91,26 @@ export function LoginForm() {
 
     try {
       await login(formData)
+      // After successful login, if there is a pending favorite, add it directly via API
+      const { data: userData } = await supabase.auth.getUser()
+      const supabaseUserId = userData.user?.id
+      if (typeof window !== 'undefined') {
+        const pendingProductId = localStorage.getItem('pending_favorite_product_id')
+        if (pendingProductId) {
+          try {
+            if (supabaseUserId) {
+              await fetch('/api/favorites', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-user-id': supabaseUserId },
+                body: JSON.stringify({ product_id: pendingProductId })
+              })
+              await refreshFavorites()
+            }
+          } finally {
+            localStorage.removeItem('pending_favorite_product_id')
+          }
+        }
+      }
       
       // Handle remember me
       if (rememberMe) {
