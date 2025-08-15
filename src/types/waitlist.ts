@@ -4,15 +4,15 @@ export interface WaitlistEntry {
   id: string
   product_slug: string
   product_id: string | null
-  payload_json: any
-  diff_summary: any
+  payload_json: Record<string, unknown>
+  diff_summary: Record<string, unknown> | null
   created_at: string
   updated_at: string | null
   created_by: string
   version: number
   reason: WaitlistReason
   is_valid: boolean
-  validation_errors: any
+  validation_errors: string[]
   requires_manual_review: boolean
   price_drop_percentage: number | null
   has_invalid_discount: boolean
@@ -46,8 +46,8 @@ export interface WaitlistValidation {
 
 export interface WaitlistDiff {
   [key: string]: {
-    current: any
-    proposed: any
+    current: unknown
+    proposed: unknown
     type: 'numeric' | 'text' | 'boolean' | 'object'
     percentage_change?: number
   }
@@ -92,7 +92,7 @@ export interface BulkOperationResult {
   }>
 }
 
-export interface WaitlistApiResponse<T = any> {
+export interface WaitlistApiResponse<T = unknown> {
   success: boolean
   data?: T
   error?: string

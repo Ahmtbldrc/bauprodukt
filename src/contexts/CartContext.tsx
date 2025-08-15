@@ -232,7 +232,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
       }
     }
     mergeGuestCart()
-  }, [isAuthenticated, user?.id])
+  }, [isAuthenticated, user, refreshCart, sessionId])
 
   const value: CartContextType = {
     cart,

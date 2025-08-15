@@ -30,7 +30,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .eq('id', product_id)
       .single()
 
-    let variant = null as any
+    let variant: Record<string, unknown> | null = null
     if (variant_id) {
       const { data: variantData, error: variantError } = await supabase
         .from('product_variants_detailed')
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     const effectivePrice = variant 
-      ? (variant.compare_at_price && variant.compare_at_price > variant.price ? variant.price : variant.price)
+      ? (variant.compare_at_price && (variant.compare_at_price as number) > (variant.price as number) ? (variant.price as number) : (variant.price as number))
       : (product.discount_price || product.price)
 
     let cartItem

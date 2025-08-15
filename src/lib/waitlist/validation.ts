@@ -3,7 +3,7 @@ import type { WaitlistValidation } from '@/types/waitlist'
 /**
  * Validates product data according to Swiss VFG business rules
  */
-export function validateProductData(data: any, oldData?: any): WaitlistValidation {
+export function validateProductData(data: Record<string, unknown>, oldData?: Record<string, unknown>): WaitlistValidation {
   const errors: string[] = []
   let requiresManualReview = false
   let priceDropPercentage: number | null = null
@@ -26,7 +26,7 @@ export function validateProductData(data: any, oldData?: any): WaitlistValidatio
   if (data.discount_price !== null && data.discount_price !== undefined) {
     if (typeof data.discount_price !== 'number') {
       errors.push('Discount price must be a number')
-    } else if (data.discount_price >= data.price) {
+    } else if (data.discount_price >= (data.price as number)) {
       errors.push('Discount price must be less than regular price')
       hasInvalidDiscount = true
       requiresManualReview = true
@@ -46,7 +46,7 @@ export function validateProductData(data: any, oldData?: any): WaitlistValidatio
   
   // Price drop validation (if updating existing product)
   if (oldData && oldData.price && data.price) {
-    priceDropPercentage = ((oldData.price - data.price) / oldData.price) * 100
+    priceDropPercentage = (((oldData.price as number) - (data.price as number)) / (oldData.price as number)) * 100
     
     // Flag significant price drops for manual review
     if (priceDropPercentage > 30) {
@@ -110,7 +110,7 @@ export function validateProductData(data: any, oldData?: any): WaitlistValidatio
     }
     
     // Validate individual variants
-    data.variants.forEach((variant: any, index: number) => {
+    data.variants.forEach((variant: Record<string, unknown>, index: number) => {
       if (!variant.sku || typeof variant.sku !== 'string') {
         errors.push(`Variant ${index + 1}: SKU is required and must be a string`)
       }
@@ -144,7 +144,7 @@ export function validateProductData(data: any, oldData?: any): WaitlistValidatio
 /**
  * Validates bulk operation request
  */
-export function validateBulkRequest(body: any): { valid: boolean; error?: string } {
+export function validateBulkRequest(body: Record<string, unknown>): { valid: boolean; error?: string } {
   if (!body || typeof body !== 'object') {
     return { valid: false, error: 'Request body is required' }
   }
@@ -174,7 +174,7 @@ export function validateBulkRequest(body: any): { valid: boolean; error?: string
 /**
  * Sanitizes product data before processing
  */
-export function sanitizeProductData(data: any): any {
+export function sanitizeProductData(data: Record<string, unknown>): Record<string, unknown> {
   return {
     ...data,
     name: typeof data.name === 'string' ? data.name.trim() : data.name,

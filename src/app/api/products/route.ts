@@ -142,8 +142,8 @@ export async function GET(request: NextRequest) {
           },
           // Admin-specific fields (only included if user is admin)
           ...(isAdmin && {
-            status: (product as any).status,
-            is_changeable: (product as any).is_changeable
+            status: (product as unknown as Record<string, unknown>).status,
+            is_changeable: (product as unknown as Record<string, unknown>).is_changeable
           }),
           // Brand ve category bilgileri view'dan geliyor ama nested object formatında değil
           brand: product.brand_name ? {

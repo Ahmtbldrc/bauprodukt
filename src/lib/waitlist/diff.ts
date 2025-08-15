@@ -3,7 +3,7 @@ import type { WaitlistDiff } from '@/types/waitlist'
 /**
  * Calculates the difference between current and proposed product data
  */
-export function calculateProductDiff(currentData: any, proposedData: any): WaitlistDiff {
+export function calculateProductDiff(currentData: Record<string, unknown>, proposedData: Record<string, unknown>): WaitlistDiff {
   const diff: WaitlistDiff = {}
   
   // Important fields to track changes for
@@ -49,13 +49,13 @@ export function calculateProductDiff(currentData: any, proposedData: any): Waitl
 /**
  * Creates a human-readable summary of changes
  */
-export function createDiffSummary(diff: WaitlistDiff): any {
-  const summary: any = {
+export function createDiffSummary(diff: WaitlistDiff): Record<string, unknown> {
+  const summary = {
     total_changes: Object.keys(diff).length,
-    price_changes: [],
-    content_changes: [],
-    status_changes: [],
-    significant_changes: []
+    price_changes: [] as Array<Record<string, unknown>>,
+    content_changes: [] as Array<Record<string, unknown>>,
+    status_changes: [] as Array<Record<string, unknown>>,
+    significant_changes: [] as Array<Record<string, unknown>>
   }
   
   Object.entries(diff).forEach(([field, change]) => {
@@ -156,7 +156,7 @@ export function generateTextSummary(diff: WaitlistDiff): string {
 /**
  * Checks if two values are equal (handles null, undefined, and type differences)
  */
-function isEqual(a: any, b: any): boolean {
+function isEqual(a: unknown, b: unknown): boolean {
   // Handle null/undefined cases
   if (a === null || a === undefined) {
     return b === null || b === undefined
@@ -176,12 +176,12 @@ function isEqual(a: any, b: any): boolean {
   
   // Handle objects
   if (typeof a === 'object' && typeof b === 'object') {
-    const keysA = Object.keys(a)
-    const keysB = Object.keys(b)
+    const keysA = Object.keys(a as Record<string, unknown>)
+    const keysB = Object.keys(b as Record<string, unknown>)
     
     if (keysA.length !== keysB.length) return false
     
-    return keysA.every(key => isEqual(a[key], b[key]))
+    return keysA.every(key => isEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key]))
   }
   
   // Handle string/number type coercion for common cases
@@ -198,7 +198,7 @@ function isEqual(a: any, b: any): boolean {
 /**
  * Determines the type of value change
  */
-function getValueType(currentValue: any, proposedValue: any): 'numeric' | 'text' | 'boolean' | 'object' {
+function getValueType(currentValue: unknown, proposedValue: unknown): 'numeric' | 'text' | 'boolean' | 'object' {
   if (typeof currentValue === 'number' && typeof proposedValue === 'number') {
     return 'numeric'
   }

@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       try {
         const fromDate = new Date(from).toISOString()
         query = query.gte('timestamp', fromDate)
-      } catch (error) {
+      } catch {
         return NextResponse.json(
           { error: 'Invalid from date format' },
           { status: 400 }
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
       try {
         const toDate = new Date(to).toISOString()
         query = query.lte('timestamp', toDate)
-      } catch (error) {
+      } catch {
         return NextResponse.json(
           { error: 'Invalid to date format' },
           { status: 400 }
@@ -118,7 +118,7 @@ function categorizeAction(action: string): string {
 }
 
 // Helper function to create target summaries
-function getTargetSummary(targetType: string, targetId: string, afterState: any): string {
+function getTargetSummary(targetType: string, targetId: string, afterState: Record<string, unknown> | null): string {
   switch (targetType) {
     case 'product':
       return afterState?.name ? `Product: ${afterState.name}` : `Product ID: ${targetId}`

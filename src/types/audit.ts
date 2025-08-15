@@ -6,8 +6,8 @@ export interface AuditLogEntry {
   action: string
   target_type: string
   target_id: string
-  before_state: any
-  after_state: any
+  before_state: Record<string, unknown> | null
+  after_state: Record<string, unknown> | null
   timestamp: string
   reason: string | null
 }
@@ -81,8 +81,8 @@ export interface AuditLogEntryDetailed extends AuditLogEntry {
 
 export interface AuditStateDiff {
   [key: string]: {
-    before: any
-    after: any
+    before: unknown
+    after: unknown
     type: 'added' | 'removed' | 'type_changed' | 'value_changed' | 'text_changed' | 'boolean_changed' | 'modified'
     percentage_change?: number
   }
@@ -99,7 +99,7 @@ export interface AuditLogFilter {
   limit?: number
 }
 
-export interface AuditApiResponse<T = any> {
+export interface AuditApiResponse<T = unknown> {
   success: boolean
   data?: T
   error?: string

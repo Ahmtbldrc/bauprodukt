@@ -1,16 +1,16 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
 import type { WaitlistEntry, WaitlistStats } from '@/types/waitlist'
 
 /**
  * Formats waitlist entries for API responses
  */
-export function formatWaitlistEntry(entry: any): WaitlistEntry {
-  return {
+export function formatWaitlistEntry(entry: Record<string, unknown>): WaitlistEntry {
+  const formatted = {
     ...entry,
     type: entry.product_id ? 'update' : 'new',
     created_at: entry.created_at,
     updated_at: entry.updated_at || entry.created_at,
   }
+  return formatted as unknown as WaitlistEntry
 }
 
 /**
@@ -68,7 +68,7 @@ export function formatTimestamp(timestamp: string, locale: string = 'en-US'): st
       minute: '2-digit',
       timeZoneName: 'short'
     })
-  } catch (error) {
+  } catch {
     return timestamp
   }
 }
@@ -93,7 +93,7 @@ export function getRelativeTime(timestamp: string): string {
     if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`
     
     return formatTimestamp(timestamp)
-  } catch (error) {
+  } catch {
     return timestamp
   }
 }
@@ -141,7 +141,7 @@ export function categorizeWaitlistReason(reason: string): string {
 /**
  * Creates a standardized error response
  */
-export function createErrorResponse(error: string, status: number = 500, details?: any) {
+export function createErrorResponse(error: string, status: number = 500, details?: Record<string, unknown>) {
   return {
     error,
     status,
@@ -194,9 +194,9 @@ export async function retryOperation<T>(
 /**
  * Safely parses JSON with fallback
  */
-export function safeJsonParse(jsonString: string, fallback: any = null): any {
+export function safeJsonParse<T = unknown>(jsonString: string, fallback: T = null as T): T {
   try {
-    return JSON.parse(jsonString)
+    return JSON.parse(jsonString) as T
   } catch (error) {
     console.warn('Failed to parse JSON:', error)
     return fallback
@@ -231,7 +231,7 @@ export function groupBy<T>(array: T[], keyFn: (item: T) => string): Record<strin
 /**
  * Debounces a function call
  */
-export function debounce<T extends (...args: any[]) => any>(
+export function debounce<T extends (...args: unknown[]) => unknown>(
   func: T,
   waitMs: number
 ): (...args: Parameters<T>) => void {
@@ -239,6 +239,6 @@ export function debounce<T extends (...args: any[]) => any>(
   
   return (...args: Parameters<T>) => {
     clearTimeout(timeoutId)
-    timeoutId = setTimeout(() => func.apply(null, args), waitMs)
+    timeoutId = setTimeout(() => func(...args), waitMs)
   }
 }

@@ -17,7 +17,7 @@ export async function middleware(request: NextRequest) {
         get(name: string) {
           return request.cookies.get(name)?.value
         },
-        set(name: string, value: string, options: any) {
+        set(name: string, value: string, options: Record<string, unknown>) {
           request.cookies.set({
             name,
             value,
@@ -34,7 +34,7 @@ export async function middleware(request: NextRequest) {
             ...options,
           })
         },
-        remove(name: string, options: any) {
+        remove(name: string, options: Record<string, unknown>) {
           request.cookies.set({
             name,
             value: '',
@@ -103,7 +103,7 @@ export async function middleware(request: NextRequest) {
       .eq('user_id', session.user.id)
       .single()
     
-    if (profile?.role?.slug !== 'admin') {
+    if ((profile?.role as unknown as { slug: string } | null)?.slug !== 'admin') {
       return NextResponse.json(
         { error: 'Admin access required for product modifications' },
         { status: 403 }
@@ -136,7 +136,7 @@ export async function middleware(request: NextRequest) {
         .eq('user_id', session.user.id)
         .single()
       
-      if (profile?.role?.slug !== 'admin') {
+      if ((profile?.role as unknown as { slug: string } | null)?.slug !== 'admin') {
         return NextResponse.json(
           { error: 'Admin access required' },
           { status: 403 }
@@ -172,7 +172,7 @@ export async function middleware(request: NextRequest) {
       
       response.headers.set('x-user-id', session.user.id)
       response.headers.set('x-user-email', session.user.email || '')
-      response.headers.set('x-user-role', profile?.role?.slug === 'admin' ? 'admin' : 'user')
+      response.headers.set('x-user-role', (profile?.role as unknown as { slug: string } | null)?.slug === 'admin' ? 'admin' : 'user')
       
       return response
     }

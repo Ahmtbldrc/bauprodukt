@@ -4,23 +4,7 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react'
 import { FavoriteProduct, FavoritesContextType, FavoritesAction } from '@/types/favorites'
 import { useAuth } from '@/contexts/AuthContext'
 
-// Get favorites from localStorage
-const getFavoritesFromStorage = (): FavoriteProduct[] => {
-  if (typeof window === 'undefined') {
-    return []
-  }
-
-  try {
-    const stored = localStorage.getItem('favorites_data')
-    if (stored) {
-      return JSON.parse(stored)
-    }
-  } catch (error) {
-    console.error('Error parsing favorites from localStorage:', error)
-  }
-
-  return []
-}
+// Get favorites from localStorage function was removed as it was unused
 
 // Save favorites to localStorage
 const saveFavoritesToStorage = (favorites: FavoriteProduct[]) => {
@@ -32,7 +16,7 @@ const saveFavoritesToStorage = (favorites: FavoriteProduct[]) => {
 // Favorites reducer
 const favoritesReducer = (state: FavoriteProduct[], action: FavoritesAction): FavoriteProduct[] => {
   if (process.env.NODE_ENV === 'development') {
-    console.log('Favorites reducer called with action:', action.type, 'payload:', (action as any).payload)
+    console.log('Favorites reducer called with action:', action.type, 'payload:', (action as { payload?: unknown }).payload)
     console.log('Current state:', state)
   }
   
@@ -40,13 +24,13 @@ const favoritesReducer = (state: FavoriteProduct[], action: FavoritesAction): Fa
   
   switch (action.type) {
     case 'SET_FAVORITES':
-      newState = (action as any).payload || []
+      newState = (action as { payload: FavoriteProduct[] }).payload || []
       if (process.env.NODE_ENV === 'development') {
         console.log('SET_FAVORITES - New state:', newState)
       }
       return newState
     case 'ADD_FAVORITE': {
-      const { product } = (action as any).payload;
+      const { product } = (action as { payload: { product: FavoriteProduct } }).payload;
       // Check if already in favorites
       if (state.some(fav => fav.id === product.id)) {
         if (process.env.NODE_ENV === 'development') {
@@ -66,7 +50,7 @@ const favoritesReducer = (state: FavoriteProduct[], action: FavoritesAction): Fa
       return newState;
     }
     case 'REMOVE_FAVORITE': {
-      const { productId } = (action as any).payload
+      const { productId } = (action as { payload: { productId: string } }).payload
       newState = state.filter(fav => fav.id !== productId)
       if (process.env.NODE_ENV === 'development') {
         console.log('REMOVE_FAVORITE - New state:', newState)
@@ -82,7 +66,7 @@ const favoritesReducer = (state: FavoriteProduct[], action: FavoritesAction): Fa
       return []
     }
     default: {
-      const actionType = (action as any).type
+      const actionType = (action as { type: string }).type
       if (process.env.NODE_ENV === 'development') {
         console.log('Favorites reducer - Unknown action type:', actionType)
       }
@@ -162,7 +146,7 @@ export const FavoritesProvider: React.FC<FavoritesProviderProps> = ({ children }
       }
     }
     load()
-  }, [isAuthenticated, user?.id])
+  }, [isAuthenticated, user])
 
   // Debug: Log favorites state changes
   useEffect(() => {

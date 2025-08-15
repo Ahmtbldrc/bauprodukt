@@ -69,7 +69,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 // Helper function to get related audit entries
-async function getRelatedEntries(supabase: any, entry: any) {
+async function getRelatedEntries(supabase: ReturnType<typeof createClient>, entry: Record<string, unknown>) {
   try {
     // Get other entries for the same target
     const { data: sameTargetEntries } = await supabase
@@ -83,7 +83,7 @@ async function getRelatedEntries(supabase: any, entry: any) {
     
     // Get other entries by the same actor in the same time period (±1 hour)
     const timeWindow = 60 * 60 * 1000 // 1 hour in milliseconds
-    const entryTime = new Date(entry.timestamp).getTime()
+    const entryTime = new Date(entry.timestamp as string).getTime()
     const startTime = new Date(entryTime - timeWindow).toISOString()
     const endTime = new Date(entryTime + timeWindow).toISOString()
     
@@ -108,12 +108,17 @@ async function getRelatedEntries(supabase: any, entry: any) {
 }
 
 // Helper function to calculate state differences
-function calculateStateDiff(beforeState: any, afterState: any) {
+function calculateStateDiff(beforeState: Record<string, unknown> | null, afterState: Record<string, unknown> | null) {
   if (!beforeState && !afterState) return null
   if (!beforeState) return { added: afterState }
   if (!afterState) return { removed: beforeState }
   
-  const diff: any = {}
+  const diff: Record<string, {
+    before: unknown
+    after: unknown
+    type: string
+    percentage_change?: number
+  }> = {}
   const allKeys = new Set([...Object.keys(beforeState), ...Object.keys(afterState)])
   
   allKeys.forEach(key => {
@@ -121,7 +126,7 @@ function calculateStateDiff(beforeState: any, afterState: any) {
     const after = afterState[key]
     
     if (before !== after) {
-      diff[key] = {
+      const changeEntry = {
         before,
         after,
         type: getChangeType(before, after)
@@ -129,8 +134,10 @@ function calculateStateDiff(beforeState: any, afterState: any) {
       
       // Calculate percentage change for numeric values
       if (typeof before === 'number' && typeof after === 'number' && before !== 0) {
-        diff[key].percentage_change = Math.round(((after - before) / before) * 100 * 100) / 100
+        (changeEntry as typeof changeEntry & { percentage_change: number }).percentage_change = Math.round(((after - before) / before) * 100 * 100) / 100
       }
+      
+      diff[key] = changeEntry
     }
   })
   
@@ -138,7 +145,7 @@ function calculateStateDiff(beforeState: any, afterState: any) {
 }
 
 // Helper function to determine change type
-function getChangeType(before: any, after: any): string {
+function getChangeType(before: unknown, after: unknown): string {
   if (before === null || before === undefined) return 'added'
   if (after === null || after === undefined) return 'removed'
   if (typeof before !== typeof after) return 'type_changed'
@@ -159,7 +166,7 @@ function categorizeAction(action: string): string {
   return 'other'
 }
 
-function getTargetSummary(targetType: string, targetId: string, afterState: any): string {
+function getTargetSummary(targetType: string, targetId: string, afterState: Record<string, unknown> | null): string {
   switch (targetType) {
     case 'product':
       return afterState?.name ? `Product: ${afterState.name}` : `Product ID: ${targetId}`

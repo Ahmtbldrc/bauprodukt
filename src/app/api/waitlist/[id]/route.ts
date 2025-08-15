@@ -92,27 +92,37 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 // Helper function to calculate diff between current and proposed product data
-function calculateDiff(currentData: any, proposedData: any) {
-  const diff: any = {}
+function calculateDiff(currentData: Record<string, unknown> | null, proposedData: Record<string, unknown>) {
+  const diff: Record<string, unknown> = {}
   const importantFields = [
     'name', 'price', 'discount_price', 'stock', 'description', 
     'stock_code', 'image_url', 'brand_id', 'category_id', 'status'
   ]
   
   importantFields.forEach(field => {
-    if (currentData[field] !== proposedData[field]) {
+    const currentValue = currentData?.[field]
+    const proposedValue = proposedData[field]
+    
+    if (currentValue !== proposedValue) {
+      const changeType = typeof currentValue === 'number' && typeof proposedValue === 'number'
+        ? 'numeric'
+        : 'text'
+      
       diff[field] = {
-        current: currentData[field],
-        proposed: proposedData[field],
-        type: typeof currentData[field] === 'number' && typeof proposedData[field] === 'number'
-          ? 'numeric'
-          : 'text'
+        current: currentValue,
+        proposed: proposedValue,
+        type: changeType
       }
       
       // Calculate percentage change for numeric fields
-      if (diff[field].type === 'numeric' && currentData[field] && proposedData[field]) {
-        const percentageChange = ((proposedData[field] - currentData[field]) / currentData[field]) * 100
-        diff[field].percentage_change = Math.round(percentageChange * 100) / 100
+      if (changeType === 'numeric' && currentValue && proposedValue) {
+        const percentageChange = ((proposedValue as number) - (currentValue as number)) / (currentValue as number) * 100
+        diff[field] = {
+          current: currentValue,
+          proposed: proposedValue,
+          type: changeType,
+          percentage_change: Math.round(percentageChange * 100) / 100
+        }
       }
     }
   })

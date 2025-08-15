@@ -3,7 +3,7 @@
 import { AddToCartButton } from '@/components/cart'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { ChevronUp, ChevronDown, Download, Heart, ShoppingCart } from 'lucide-react'
+import { ChevronUp, ChevronDown, Download, ShoppingCart } from 'lucide-react'
 import { 
   useBrandBySlug, 
   useCategoryBySlug, 
