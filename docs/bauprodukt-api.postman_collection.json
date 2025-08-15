@@ -1,12 +1,12 @@
 {
   "info": {
     "name": "Bauprodukt Demo API",
-    "description": "Complete API collection for testing Bauprodukt Demo application with Enhanced Content System and intelligent variant support. Includes Cart management, Order processing, Product variant management, and Swiss VFG enhanced products with structured content tabs (BESCHREIBUNG, TECHNISCHE DATEN, ZUBEHÖR) and PDF attachments. All products support both variant and non-variant modes seamlessly.",
+    "description": "Complete API collection for testing Bauprodukt Demo application with Enhanced Content System, Waitlist Management, and Audit Logging. Includes Cart management, Order processing, Product variant management, Swiss VFG enhanced products with structured content tabs (BESCHREIBUNG, TECHNISCHE DATEN, ZUBEHÖR), PDF attachments, Waitlist workflow for product approval, and comprehensive Audit logging. All products support both variant and non-variant modes seamlessly.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "bauprodukt-demo",
     "version": {
       "major": 1,
-      "minor": 4,
+      "minor": 5,
       "patch": 0
     }
   },
@@ -2503,6 +2503,279 @@
         }
       ],
       "description": "Enhanced Content System endpoints for Swiss VFG scraped products with structured content tabs and PDF management"
+    },
+    {
+      "name": "Waitlist Management",
+      "item": [
+        {
+          "name": "Get Waitlist Entries",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/waitlist?page=1&limit=10&type=all&requires_review=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "waitlist"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit", 
+                  "value": "10",
+                  "description": "Number of items per page"
+                },
+                {
+                  "key": "type",
+                  "value": "all",
+                  "description": "Filter by type: new, update, or all"
+                },
+                {
+                  "key": "requires_review",
+                  "value": "false",
+                  "description": "Filter entries requiring manual review",
+                  "disabled": true
+                },
+                {
+                  "key": "has_invalid_discount",
+                  "value": "false", 
+                  "description": "Filter entries with invalid discounts",
+                  "disabled": true
+                },
+                {
+                  "key": "reason",
+                  "value": "",
+                  "description": "Filter by waitlist reason",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get paginated list of waitlist entries with optional filtering by type, review status, and reason. Admin access required."
+          }
+        },
+        {
+          "name": "Get Waitlist Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/waitlist/stats",
+              "host": ["{{base_url}}"],
+              "path": ["api", "waitlist", "stats"]
+            },
+            "description": "Get comprehensive waitlist statistics including queue health, error rates, and recent entries. Admin access required."
+          }
+        },
+        {
+          "name": "Get Waitlist Entry Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/waitlist/{{waitlist_entry_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "waitlist", "{{waitlist_entry_id}}"]
+            },
+            "description": "Get detailed information about a specific waitlist entry including diff analysis. Admin access required."
+          }
+        },
+        {
+          "name": "Approve Waitlist Entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Product meets quality standards and pricing requirements\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/waitlist/{{waitlist_entry_id}}/approve",
+              "host": ["{{base_url}}"],
+              "path": ["api", "waitlist", "{{waitlist_entry_id}}", "approve"]
+            },
+            "description": "Approve a waitlist entry, creating or updating the associated product. Admin access required."
+          }
+        },
+        {
+          "name": "Reject Waitlist Entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Product does not meet quality standards or pricing is incorrect\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/waitlist/{{waitlist_entry_id}}/reject",
+              "host": ["{{base_url}}"],
+              "path": ["api", "waitlist", "{{waitlist_entry_id}}", "reject"]
+            },
+            "description": "Reject a waitlist entry with a reason. Admin access required."
+          }
+        },
+        {
+          "name": "Bulk Approve Waitlist Entries",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\"{{waitlist_entry_id}}\", \"waitlist_entry_id_2\"],\n  \"reason\": \"Bulk approval of validated products\",\n  \"skipInvalid\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/waitlist/bulk/approve",
+              "host": ["{{base_url}}"],
+              "path": ["api", "waitlist", "bulk", "approve"]
+            },
+            "description": "Approve multiple waitlist entries in a single operation. Admin access required."
+          }
+        },
+        {
+          "name": "Bulk Reject Waitlist Entries",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ids\": [\"{{waitlist_entry_id}}\", \"waitlist_entry_id_2\"],\n  \"reason\": \"Bulk rejection due to quality standards\",\n  \"skipInvalid\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/waitlist/bulk/reject",
+              "host": ["{{base_url}}"],
+              "path": ["api", "waitlist", "bulk", "reject"]
+            },
+            "description": "Reject multiple waitlist entries in a single operation. Admin access required."
+          }
+        }
+      ],
+      "description": "Waitlist management endpoints for handling product approval workflows, including individual and bulk operations"
+    },
+    {
+      "name": "Audit Log",
+      "item": [
+        {
+          "name": "Get Audit Log Entries",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/audit?page=1&limit=25&actor=admin@example.com&action=approve_new",
+              "host": ["{{base_url}}"],
+              "path": ["api", "audit"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "25",
+                  "description": "Number of items per page"
+                },
+                {
+                  "key": "actor",
+                  "value": "admin@example.com",
+                  "description": "Filter by user email",
+                  "disabled": true
+                },
+                {
+                  "key": "action",
+                  "value": "approve_new",
+                  "description": "Filter by action type",
+                  "disabled": true
+                },
+                {
+                  "key": "target_type",
+                  "value": "",
+                  "description": "Filter by target type (product, waitlist_update, etc.)",
+                  "disabled": true
+                },
+                {
+                  "key": "target_id",
+                  "value": "",
+                  "description": "Filter by specific target ID",
+                  "disabled": true
+                },
+                {
+                  "key": "from",
+                  "value": "",
+                  "description": "Start date filter (ISO format)",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "",
+                  "description": "End date filter (ISO format)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Get paginated list of audit log entries with extensive filtering options. Admin access required."
+          }
+        },
+        {
+          "name": "Get Audit Log Entry Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/audit/{{audit_entry_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "audit", "{{audit_entry_id}}"]
+            },
+            "description": "Get detailed information about a specific audit log entry including state differences and related entries. Admin access required."
+          }
+        }
+      ],
+      "description": "Audit log endpoints for tracking all administrative actions and changes in the system"
     }
   ],
   "variable": [
@@ -2580,6 +2853,16 @@
       "key": "pdf_url",
       "value": "",
       "description": "PDF URL for testing (copy from product PDF response)"
+    },
+    {
+      "key": "waitlist_entry_id",
+      "value": "",
+      "description": "Waitlist entry ID for testing (copy from waitlist entry response)"
+    },
+    {
+      "key": "audit_entry_id",
+      "value": "",
+      "description": "Audit log entry ID for testing (copy from audit entry response)"
     }
   ],
   "event": [
