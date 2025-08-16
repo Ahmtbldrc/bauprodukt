@@ -26,7 +26,7 @@ export async function createStripeSession(request: PaymentSessionRequest): Promi
     }
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
+      payment_method_types: ['card', 'twint'],
       payment_method_options: {
         card: {
           setup_future_usage: 'off_session'
