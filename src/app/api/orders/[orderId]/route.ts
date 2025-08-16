@@ -17,11 +17,25 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Siparişi detaylarıyla getir
+    // Get order with payment fields and items
     const { data: orderData, error } = await supabase
-      .from('order_details')
-      .select('*')
+      .from('orders')
+      .select(`
+        *,
+        order_items (
+          id,
+          product_id,
+          quantity,
+          unit_price,
+          total_price,
+          products (
+            name,
+            slug
+          )
+        )
+      `)
       .eq('id', orderId)
+      .single()
 
     if (error) {
       console.error('Order fetch error:', error)
@@ -31,50 +45,58 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    if (!orderData || orderData.length === 0) {
+    if (!orderData) {
       return NextResponse.json(
         { error: 'Order not found' },
         { status: 404 }
       )
     }
 
-    // Ana order bilgilerini al (ilk kayıttan)
-    const orderInfo = orderData[0]
-
     // Order items'ları organize et
-    const items = orderData
-      .filter(item => item.item_id !== null)
-      .map(item => ({
-        id: item.item_id,
-        product_id: item.product_id,
-        product_name: item.product_name,
-        product_slug: item.product_slug,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total_price: item.item_total
-      }))
+    const items = orderData.order_items?.map((item: any) => ({
+      id: item.id,
+      product_id: item.product_id,
+      product_name: item.products?.name,
+      product_slug: item.products?.slug,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total_price: item.total_price
+    })) || []
 
-    return NextResponse.json({
-      id: orderInfo.id,
-      order_number: orderInfo.order_number,
-      customer_name: orderInfo.customer_name,
-      customer_email: orderInfo.customer_email,
-      customer_phone: orderInfo.customer_phone,
-      shipping_province: orderInfo.shipping_province,
-      shipping_district: orderInfo.shipping_district,
-      shipping_postal_code: orderInfo.shipping_postal_code,
-      shipping_address: orderInfo.shipping_address,
-      billing_province: orderInfo.billing_province,
-      billing_district: orderInfo.billing_district,
-      billing_postal_code: orderInfo.billing_postal_code,
-      billing_address: orderInfo.billing_address,
-      status: orderInfo.status,
-      total_amount: orderInfo.total_amount,
-      notes: orderInfo.notes,
-      created_at: orderInfo.created_at,
-      updated_at: orderInfo.updated_at,
-      items
+    const response = NextResponse.json({
+      id: orderData.id,
+      order_number: orderData.order_number,
+      customer_name: orderData.customer_name,
+      customer_email: orderData.customer_email,
+      customer_phone: orderData.customer_phone,
+      shipping_province: orderData.shipping_province,
+      shipping_district: orderData.shipping_district,
+      shipping_postal_code: orderData.shipping_postal_code,
+      shipping_address: orderData.shipping_address,
+      billing_province: orderData.billing_province,
+      billing_district: orderData.billing_district,
+      billing_postal_code: orderData.billing_postal_code,
+      billing_address: orderData.billing_address,
+      status: orderData.status,
+      total_amount: orderData.total_amount,
+      notes: orderData.notes,
+      payment_provider: orderData.payment_provider,
+      payment_status: orderData.payment_status,
+      currency: orderData.currency,
+      provider_session_id: orderData.provider_session_id,
+      provider_payment_id: orderData.provider_payment_id,
+      paid_at: orderData.paid_at,
+      created_at: orderData.created_at,
+      updated_at: orderData.updated_at,
+      order_items: items
     })
+
+    // Prevent caching to ensure real-time order status updates
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+
+    return response
   } catch (error) {
     console.error('Order API error:', error)
     return NextResponse.json(
@@ -151,54 +173,69 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Güncellenmiş siparişi detaylarıyla getir
+    // Get updated order with payment fields and items
     const { data: orderWithItems, error: fetchOrderError } = await supabase
-      .from('order_details')
-      .select('*')
+      .from('orders')
+      .select(`
+        *,
+        order_items (
+          id,
+          product_id,
+          quantity,
+          unit_price,
+          total_price,
+          products (
+            name,
+            slug
+          )
+        )
+      `)
       .eq('id', orderId)
+      .single()
 
     if (fetchOrderError) {
       console.error('Updated order fetch error:', fetchOrderError)
-      // En azından temel order bilgisini döndür
+      // Return basic order info if fetch fails
       return NextResponse.json(updatedOrder)
     }
 
-    // Ana order bilgilerini al (ilk kayıttan)
-    const orderInfo = orderWithItems[0]
-
     // Order items'ları organize et
-    const items = orderWithItems
-      .filter(item => item.item_id !== null)
-      .map(item => ({
-        id: item.item_id,
-        product_id: item.product_id,
-        product_name: item.product_name,
-        product_slug: item.product_slug,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total_price: item.item_total
-      }))
+    const items = orderWithItems.order_items?.map((item: any) => ({
+      id: item.id,
+      product_id: item.product_id,
+      product_name: item.products?.name,
+      product_slug: item.products?.slug,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total_price: item.total_price
+    })) || []
 
     return NextResponse.json({
-      id: orderInfo.id,
-      order_number: orderInfo.order_number,
-      customer_name: orderInfo.customer_name,
-      customer_email: orderInfo.customer_email,
-      customer_phone: orderInfo.customer_phone,
-      shipping_province: orderInfo.shipping_province,
-      shipping_district: orderInfo.shipping_district,
-      shipping_postal_code: orderInfo.shipping_postal_code,
-      shipping_address: orderInfo.shipping_address,
-      billing_province: orderInfo.billing_province,
-      billing_district: orderInfo.billing_district,
-      billing_postal_code: orderInfo.billing_postal_code,
-      billing_address: orderInfo.billing_address,
-      status: orderInfo.status,
-      total_amount: orderInfo.total_amount,
-      notes: orderInfo.notes,
-      created_at: orderInfo.created_at,
-      updated_at: orderInfo.updated_at,
-      items
+      id: orderWithItems.id,
+      order_number: orderWithItems.order_number,
+      customer_name: orderWithItems.customer_name,
+      customer_email: orderWithItems.customer_email,
+      customer_phone: orderWithItems.customer_phone,
+      shipping_province: orderWithItems.shipping_province,
+      shipping_district: orderWithItems.shipping_district,
+      shipping_postal_code: orderWithItems.shipping_postal_code,
+      shipping_address: orderWithItems.shipping_address,
+      billing_province: orderWithItems.billing_province,
+      billing_district: orderWithItems.billing_district,
+      billing_postal_code: orderWithItems.billing_postal_code,
+      billing_address: orderWithItems.billing_address,
+      status: orderWithItems.status,
+      total_amount: orderWithItems.total_amount,
+      notes: orderWithItems.notes,
+      payment_provider: orderWithItems.payment_provider,
+      payment_status: orderWithItems.payment_status,
+      currency: orderWithItems.currency,
+      provider_session_id: orderWithItems.provider_session_id,
+      provider_payment_id: orderWithItems.provider_payment_id,
+      paid_at: orderWithItems.paid_at,
+      created_at: orderWithItems.created_at,
+      updated_at: orderWithItems.updated_at,
+      order_items: items
     })
   } catch (error) {
     console.error('Order update API error:', error)

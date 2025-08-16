@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { sendEmail, generateOrderConfirmationEmail } from '@/lib/email'
 
 interface OrderItemRequest {
   product: {
@@ -82,7 +81,7 @@ export async function POST(request: NextRequest) {
     // Generate order number
     const orderNumber = `BP${Math.floor(Math.random() * 999999 + 1).toString().padStart(6, '0')}`
 
-    // Create order
+    // Create draft order (no emails will be sent)
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert({
@@ -100,7 +99,9 @@ export async function POST(request: NextRequest) {
         billing_address: billingAddress || shippingAddress,
         notes: notes || '',
         total_amount: totalAmount,
-        status: 'pending'
+        status: 'pending',
+        payment_status: 'pending', // Add payment status
+        currency: 'CHF' // Default currency
       })
       .select()
       .single()
@@ -142,28 +143,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Send order confirmation email
-    try {
-      const emailData = generateOrderConfirmationEmail({
-        orderNumber,
-        customerName: customerName,
-        customerEmail: customerEmail,
-        totalAmount,
-        items: orderItems.map((item: OrderItemData) => ({
-          product_name: item.product_name,
-          quantity: item.quantity,
-          unit_price: item.unit_price,
-          total_price: item.total_price
-        })),
-        shippingAddress: shippingAddress,
-        createdAt: order.created_at
-      })
-      
-      await sendEmail(emailData)
-    } catch (emailError) {
-      console.error('Failed to send order confirmation email:', emailError)
-      // Don't fail the order creation if email fails
-    }
+    // Don't send email on order creation - emails are sent after payment confirmation
+    // Email sending is handled by payment webhooks
 
     return NextResponse.json({
       success: true,

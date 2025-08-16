@@ -542,9 +542,8 @@ export default function CheckoutPage() {
 
       if (response.ok) {
         const result = await response.json()
-        setOrderNumber(result.orderNumber)
-        setOrderSuccess(true)
-        await clearCart() // Clear cart after successful order
+        // Redirect to payment page with order ID
+        router.push(`/checkout/payment?orderId=${result.orderId}`)
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
         console.error('Order API error:', errorData)
@@ -914,7 +913,7 @@ export default function CheckoutPage() {
                   className="w-full px-6 py-3 text-white font-medium rounded-md transition-colors hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{backgroundColor: isFormValid() ? '#F39236' : '#d1d5db'}}
                 >
-                  {isSubmitting ? 'Wird verarbeitet...' : 'Bestellung aufgeben'}
+                  {isSubmitting ? 'Wird verarbeitet...' : 'Zur Zahlung'}
                 </button>
               </div>
             </div>
