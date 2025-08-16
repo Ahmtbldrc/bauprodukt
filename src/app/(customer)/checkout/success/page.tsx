@@ -4,17 +4,20 @@ import React, { useState, useEffect } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Check, AlertCircle, RefreshCw } from 'lucide-react'
+import { useCart } from '@/contexts/CartContext'
 
 export default function CheckoutSuccessPage() {
   const searchParams = useSearchParams()
   const orderId = searchParams.get('orderId')
   const provider = searchParams.get('provider')
+  const { clearCart } = useCart()
 
   const [order, setOrder] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [paymentStatus, setPaymentStatus] = useState<string>('processing')
   const [pollCount, setPollCount] = useState(0)
+  const [cartCleared, setCartCleared] = useState(false)
 
   useEffect(() => {
     if (orderId) {
@@ -24,6 +27,15 @@ export default function CheckoutSuccessPage() {
       setLoading(false)
     }
   }, [orderId])
+
+  // Clear cart when component mounts if payment is already confirmed
+  useEffect(() => {
+    if (orderId && paymentStatus === 'paid' && !cartCleared && clearCart) {
+      clearCart()
+      setCartCleared(true)
+      console.log('Cart cleared on success page load - payment already confirmed')
+    }
+  }, [orderId, paymentStatus, cartCleared, clearCart])
 
   const pollOrderStatus = async () => {
     if (!orderId) return
@@ -50,6 +62,13 @@ export default function CheckoutSuccessPage() {
       if (orderData.payment_status === 'paid') {
         setPaymentStatus('paid')
         setLoading(false)
+        
+        // Clear cart when payment is confirmed as paid
+        if (!cartCleared && clearCart) {
+          clearCart()
+          setCartCleared(true)
+          console.log('Cart cleared after successful payment')
+        }
       } else if (orderData.payment_status === 'failed' || orderData.payment_status === 'cancelled') {
         setPaymentStatus('failed')
         setError('Die Zahlung konnte nicht verarbeitet werden')
@@ -250,7 +269,8 @@ export default function CheckoutSuccessPage() {
               <strong>Was passiert als nächstes?</strong><br />
               • Sie erhalten eine Bestätigungs-E-Mail mit allen Details<br />
               • Ihre Bestellung wird bearbeitet und versendet<br />
-              • Sie erhalten eine Versandbestätigung mit Tracking-Informationen
+              • Sie erhalten eine Versandbestätigung mit Tracking-Informationen<br />
+              {cartCleared && <span>• Ihr Warenkorb wurde automatisch geleert</span>}
             </p>
           </div>
         </div>

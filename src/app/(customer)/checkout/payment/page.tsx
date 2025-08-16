@@ -154,11 +154,9 @@ export default function PaymentCheckoutPage() {
 
       const { redirectUrl } = await response.json()
 
-      // Clear cart before redirecting
-      if (cart) {
-        await cart.clearCart?.()
-      }
-
+      // Don't clear cart here - only clear after successful payment confirmation
+      // This prevents cart loss if user abandons payment or payment fails
+      
       // Redirect to payment provider
       window.location.href = redirectUrl
     } catch (error) {
