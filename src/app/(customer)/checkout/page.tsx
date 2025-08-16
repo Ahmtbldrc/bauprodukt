@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useCart } from '@/contexts/CartContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { ArrowLeft, Check, CreditCard, User } from 'lucide-react'
+import { ArrowLeft, CreditCard, User } from 'lucide-react'
+import ProviderSelector from '@/components/payment/ProviderSelector'
 
 interface Address {
   id?: string
@@ -20,16 +21,6 @@ interface Address {
   isDefault?: boolean
 }
 
-interface PaymentMethod {
-  id?: string
-  type: 'card' | 'bank_transfer'
-  cardNumber?: string
-  cardHolderName?: string
-  expiryMonth?: string
-  expiryYear?: string
-  cvv?: string
-  isDefault?: boolean
-}
 
 interface CheckoutFormData {
   // Address Selection
@@ -39,31 +30,21 @@ interface CheckoutFormData {
   // New Address Data (if creating new)
   newAddress: Address
   
-  // Payment Method
-  selectedPaymentMethod: string | null // 'new' or payment method ID
-  newPaymentMethod: PaymentMethod
-  
   // Order Notes
   notes: string
 }
 
 export default function CheckoutPage() {
   const router = useRouter()
-  const { cart, getTotalAmount, clearCart, isLoading } = useCart()
+  const { cart, getTotalAmount, isLoading } = useCart()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [orderSuccess, setOrderSuccess] = useState(false)
-  const [orderNumber, setOrderNumber] = useState('')
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [showAddressDialog, setShowAddressDialog] = useState(false)
-  const [showPaymentDialog, setShowPaymentDialog] = useState(false)
+  const [selectedProvider, setSelectedProvider] = useState<'stripe' | 'datatrans' | null>(null)
   
   // Store previous selections to restore if dialog is closed without saving
   const [previousShippingAddress, setPreviousShippingAddress] = useState<string | null>(null)
-  const [previousPaymentMethod, setPreviousPaymentMethod] = useState<string | null>(null)
-  
-  // Credit card preview state
-  const [showCardBack, setShowCardBack] = useState(false)
   
   // Mock data for saved addresses and payment methods
   const [savedAddresses] = useState<Address[]>([
@@ -93,30 +74,6 @@ export default function CheckoutPage() {
     }
   ])
   
-  const [savedPaymentMethods] = useState<PaymentMethod[]>([
-    {
-      id: '1',
-      type: 'card',
-      cardNumber: '**** **** **** 1234',
-      cardHolderName: 'Max Mustermann',
-      expiryMonth: '12',
-      expiryYear: '2025',
-      cvv: '123',
-      isDefault: true
-    },
-    {
-      id: '2',
-      type: 'card',
-      cardNumber: '**** **** **** 5678',
-      cardHolderName: 'Anna Schmidt',
-      expiryMonth: '06',
-      expiryYear: '2026',
-      cvv: '456',
-      isDefault: false
-    }
-  ])
-  
-  const [paymentMethodsScrollPosition, setPaymentMethodsScrollPosition] = useState(0)
   const [addressesScrollPosition, setAddressesScrollPosition] = useState(0)
   
   const [formData, setFormData] = useState<CheckoutFormData>({
@@ -131,15 +88,6 @@ export default function CheckoutPage() {
       district: '',
       postalCode: '',
       address: ''
-    },
-    selectedPaymentMethod: '1', // Default to first payment method
-    newPaymentMethod: {
-      type: 'card',
-      cardNumber: '',
-      cardHolderName: '',
-      expiryMonth: '',
-      expiryYear: '',
-      cvv: ''
     },
     notes: ''
   })
@@ -183,30 +131,11 @@ export default function CheckoutPage() {
       }
     }
     
-    if (!authLoading && isAuthenticated && savedPaymentMethods.length > 0) {
-      const defaultPaymentMethod = savedPaymentMethods.find(pm => pm.isDefault) || savedPaymentMethods[0]
-      if (defaultPaymentMethod) {
-        setFormData(prev => ({
-          ...prev,
-          selectedPaymentMethod: defaultPaymentMethod.id!,
-          // Keep newPaymentMethod empty for new entries
-          newPaymentMethod: {
-            type: 'card',
-            cardNumber: '',
-            cardHolderName: '',
-            expiryMonth: '',
-            expiryYear: '',
-            cvv: ''
-          }
-        }))
-      }
-    }
-  }, [authLoading, isAuthenticated, savedAddresses, savedPaymentMethods])
+  }, [authLoading, isAuthenticated, savedAddresses])
 
   function handleInputChange(field: 'newAddress', value: Address): void
-  function handleInputChange(field: 'newPaymentMethod', value: PaymentMethod): void
   function handleInputChange(
-    field: 'selectedShippingAddress' | 'selectedBillingAddress' | 'selectedPaymentMethod',
+    field: 'selectedShippingAddress' | 'selectedBillingAddress',
     value: string | null
   ): void
   function handleInputChange(field: 'notes', value: string): void
@@ -216,11 +145,6 @@ export default function CheckoutPage() {
         return {
           ...prev,
           newAddress: value as Address
-        }
-      } else if (field === 'newPaymentMethod') {
-        return {
-          ...prev,
-          newPaymentMethod: value as PaymentMethod
         }
       } else {
         return {
@@ -261,64 +185,7 @@ export default function CheckoutPage() {
     }))
   }
 
-  const handlePaymentMethodSelect = (paymentMethodId: string) => {
-    const selectedPaymentMethod = savedPaymentMethods.find(pm => pm.id === paymentMethodId)
-    if (selectedPaymentMethod) {
-      setFormData(prev => ({
-        ...prev,
-        selectedPaymentMethod: paymentMethodId,
-        newPaymentMethod: { ...selectedPaymentMethod }
-      }))
-    }
-  }
 
-  const handleNewPaymentMethodSelect = () => {
-    // Store current selection before switching to new
-    setPreviousPaymentMethod(formData.selectedPaymentMethod)
-    setFormData(prev => ({
-      ...prev,
-      selectedPaymentMethod: 'new',
-      newPaymentMethod: {
-        type: 'card',
-        cardNumber: '',
-        cardHolderName: '',
-        expiryMonth: '',
-        expiryYear: '',
-        cvv: ''
-      }
-    }))
-  }
-
-  // Format card number with spaces every 4 digits
-  const formatCardNumber = (value: string) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '')
-    const matches = v.match(/\d{4,16}/g)
-    const match = matches && matches[0] || ''
-    const parts = []
-    
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4))
-    }
-    
-    if (parts.length) {
-      return parts.join(' ')
-    } else {
-      return v
-    }
-  }
-
-  const scrollPaymentMethods = (direction: 'left' | 'right') => {
-    const container = document.getElementById('payment-methods-container')
-    if (container) {
-      const scrollAmount = 200 // Scroll 200px at a time
-      const currentScroll = container.scrollLeft
-      const newPosition = direction === 'left' 
-        ? Math.max(0, currentScroll - scrollAmount)
-        : Math.min(container.scrollWidth - container.clientWidth, currentScroll + scrollAmount)
-      
-      container.scrollTo({ left: newPosition, behavior: 'smooth' })
-    }
-  }
 
   const scrollAddresses = (direction: 'left' | 'right') => {
     const container = document.getElementById('addresses-container')
@@ -333,22 +200,6 @@ export default function CheckoutPage() {
     }
   }
 
-  // Track scroll position for button states
-  React.useEffect(() => {
-    const container = document.getElementById('payment-methods-container')
-    if (container) {
-      const handleScroll = () => {
-        setPaymentMethodsScrollPosition(container.scrollLeft)
-      }
-      
-      container.addEventListener('scroll', handleScroll)
-      
-      // Initial check
-      handleScroll()
-      
-      return () => container.removeEventListener('scroll', handleScroll)
-    }
-  }, [savedPaymentMethods.length])
 
   // Track addresses scroll position for button states
   React.useEffect(() => {
@@ -400,28 +251,9 @@ export default function CheckoutPage() {
       }
     }
     
-    // Check if a payment method is selected or new payment method is filled
-    if (!formData.selectedPaymentMethod) {
-      errors.paymentMethod = 'Bitte wählen Sie eine Zahlungsmethode aus oder fügen Sie eine neue hinzu'
-    } else if (formData.selectedPaymentMethod === 'new') {
-      // Validate new payment method fields
-      if (formData.newPaymentMethod.type === 'card') {
-        if (!formData.newPaymentMethod.cardHolderName?.trim()) {
-          errors.cardHolderName = 'Name auf der Karte ist erforderlich'
-        }
-        if (!formData.newPaymentMethod.cardNumber?.trim()) {
-          errors.cardNumber = 'Kartennummer ist erforderlich'
-        }
-        if (!formData.newPaymentMethod.expiryMonth?.trim()) {
-          errors.expiryMonth = 'Monat ist erforderlich'
-        }
-        if (!formData.newPaymentMethod.expiryYear?.trim()) {
-          errors.expiryYear = 'Jahr ist erforderlich'
-        }
-        if (!formData.newPaymentMethod.cvv?.trim()) {
-          errors.cvv = 'CVV ist erforderlich'
-        }
-      }
+    // Check if a payment provider is selected
+    if (!selectedProvider) {
+      errors.paymentProvider = 'Bitte wählen Sie einen Zahlungsanbieter aus'
     }
     
     setValidationErrors(errors)
@@ -451,21 +283,9 @@ export default function CheckoutPage() {
       }
     }
     
-    // Check if a payment method is selected
-    if (!formData.selectedPaymentMethod) {
+    // Check if a payment provider is selected
+    if (!selectedProvider) {
       return false
-    }
-    
-    // If new payment method is selected, validate required fields
-    if (formData.selectedPaymentMethod === 'new') {
-      if (formData.newPaymentMethod.type === 'card') {
-        return (formData.newPaymentMethod.cardHolderName?.trim() || '') !== '' &&
-               (formData.newPaymentMethod.cardNumber?.trim() || '') !== '' &&
-               (formData.newPaymentMethod.expiryMonth?.trim() || '') !== '' &&
-               (formData.newPaymentMethod.expiryYear?.trim() || '') !== '' &&
-               (formData.newPaymentMethod.cvv?.trim() || '') !== ''
-      }
-      // For bank transfer, no additional validation needed
     }
     
     return true
@@ -528,7 +348,7 @@ export default function CheckoutPage() {
 
       console.log('Shipping address:', shippingAddress)
       console.log('Billing address:', billingAddress)
-      console.log('Payment method:', formData.selectedPaymentMethod)
+      console.log('Selected provider:', selectedProvider)
 
       console.log('Submitting order data:', orderData)
 
@@ -542,8 +362,27 @@ export default function CheckoutPage() {
 
       if (response.ok) {
         const result = await response.json()
-        // Redirect to payment page with order ID
-        router.push(`/checkout/payment?orderId=${result.orderId}`)
+        
+        // Create payment session directly with selected provider
+        const paymentResponse = await fetch(`/api/payments/${selectedProvider}/session`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            orderId: result.orderId,
+          }),
+        })
+
+        if (!paymentResponse.ok) {
+          const errorData = await paymentResponse.json()
+          throw new Error(errorData.error || 'Fehler beim Erstellen der Zahlungssitzung')
+        }
+
+        const { redirectUrl } = await paymentResponse.json()
+
+        // Redirect to payment provider
+        window.location.href = redirectUrl
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
         console.error('Order API error:', errorData)
@@ -588,49 +427,6 @@ export default function CheckoutPage() {
     )
   }
 
-  if (orderSuccess) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto text-center">
-          <div className="mb-8">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Check className="h-8 w-8 text-green-600" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
-              Bestellung erfolgreich!
-            </h1>
-            <p className="text-gray-600 mb-6">
-              Vielen Dank für Ihre Bestellung. Ihre Bestellnummer ist:
-            </p>
-            <div className="bg-gray-100 rounded-lg p-4 mb-6">
-              <p className="text-2xl font-bold" style={{color: '#F39236'}}>
-                {orderNumber}
-              </p>
-            </div>
-            <p className="text-gray-600 mb-8">
-              Sie erhalten eine Bestätigungs-E-Mail mit weiteren Details zu Ihrer Bestellung.
-            </p>
-          </div>
-          
-          <div className="space-x-4">
-            <Link 
-              href="/" 
-              className="inline-flex items-center px-6 py-3 text-white font-medium rounded-md transition-colors hover:opacity-90"
-              style={{backgroundColor: '#F39236'}}
-            >
-              Zur Startseite
-            </Link>
-            <Link 
-              href="/products" 
-              className="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 transition-colors"
-            >
-              Weiter einkaufen
-            </Link>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -752,98 +548,22 @@ export default function CheckoutPage() {
 
                 
                                   
-                  {/* Payment Section */}
+                  {/* Payment Provider Selection */}
                   <div className="mt-8 pt-8 border-t border-gray-200">
                     <div className="flex items-center gap-3 mb-6">
                       <CreditCard className="h-6 w-6" style={{color: '#F39236'}} />
-                      <h2 className="text-xl font-semibold text-gray-900">Zahlung & Bestätigung</h2>
+                      <h2 className="text-xl font-semibold text-gray-900">Zahlungsanbieter wählen</h2>
                     </div>
                     
-                    {/* Saved Payment Methods */}
-                    {validationErrors.paymentMethod && (
-                      <p className="text-sm text-red-600 mb-3">{validationErrors.paymentMethod}</p>
+                    {validationErrors.paymentProvider && (
+                      <p className="text-sm text-red-600 mb-3">{validationErrors.paymentProvider}</p>
                     )}
                     
-                    {savedPaymentMethods.length > 0 && (
-                      <div className="mb-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="text-sm font-medium text-gray-700">Gespeicherte Zahlungsmethoden</h4>
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() => scrollPaymentMethods('left')}
-                              disabled={paymentMethodsScrollPosition <= 0}
-                              className="p-1 rounded-full border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                              </svg>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => scrollPaymentMethods('right')}
-                              disabled={paymentMethodsScrollPosition >= (savedPaymentMethods.length * 200 - 500)}
-                              className="p-1 rounded-full border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            >
-                              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                        
-                        <div 
-                          id="payment-methods-container"
-                          className="flex gap-3 overflow-x-auto scrollbar-hide pb-2"
-                          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-                        >
-                          {savedPaymentMethods.map((paymentMethod) => (
-                            <div
-                              key={paymentMethod.id}
-                              className={`flex-shrink-0 w-48 p-3 border rounded-lg cursor-pointer transition-colors ${
-                                formData.selectedPaymentMethod === paymentMethod.id
-                                  ? 'border-orange-500 bg-orange-50'
-                                  : 'border-gray-200 hover:border-gray-300'
-                              }`}
-                              onClick={() => handlePaymentMethodSelect(paymentMethod.id!)}
-                            >
-                              <div className="flex items-center justify-between mb-2">
-                                <input
-                                  type="radio"
-                                  name="paymentMethod"
-                                  checked={formData.selectedPaymentMethod === paymentMethod.id}
-                                  onChange={() => handlePaymentMethodSelect(paymentMethod.id!)}
-                                  className="h-3 w-3 text-red-700 focus:ring-red-700 border-gray-300"
-                                  style={{accentColor: '#A63F35'}}
-                                />
-                                {paymentMethod.isDefault && (
-                                  <span className="px-2 py-1 text-xs font-medium rounded-full" style={{backgroundColor: '#F3923620', color: '#F39236'}}>
-                                    Standard
-                                  </span>
-                                )}
-                              </div>
-                              <div className="text-center">
-                                <h5 className="font-medium text-gray-900 text-sm mb-1">{paymentMethod.cardHolderName}</h5>
-                                <p className="text-xs text-gray-600 mb-1">{paymentMethod.cardNumber}</p>
-                                <p className="text-xs text-gray-500">{paymentMethod.expiryMonth}/{paymentMethod.expiryYear}</p>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleNewPaymentMethodSelect()
-                        setShowPaymentDialog(true)
-                      }}
-                      className="px-4 py-2 text-sm font-medium text-white rounded-md transition-colors hover:opacity-90"
-                      style={{backgroundColor: '#F39236'}}
-                    >
-                      Neue Zahlungsmethode hinzufügen
-                    </button>
+                    <ProviderSelector
+                      selectedProvider={selectedProvider}
+                      onProviderSelect={setSelectedProvider}
+                      disabled={isSubmitting}
+                    />
                   </div>
                   
 
@@ -1171,313 +891,6 @@ export default function CheckoutPage() {
         </div>
       )}
 
-      {/* Payment Dialog */}
-      {showPaymentDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 backdrop-blur-md bg-gray-900/20 transition-all duration-300 opacity-100"
-            style={{
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)'
-            }}
-            onClick={() => {
-              // Restore previous selection when closing without saving
-              if (previousPaymentMethod) {
-                setFormData(prev => ({
-                  ...prev,
-                  selectedPaymentMethod: previousPaymentMethod
-                }))
-              }
-              setShowPaymentDialog(false)
-            }}
-          />
-          
-          {/* Dialog */}
-          <div className="relative bg-white/90 backdrop-blur-sm rounded-lg shadow-xl max-w-2xl w-full mx-4 p-6 max-h-[90vh] overflow-y-auto transition-all duration-300 transform opacity-100 scale-100 translate-y-0 border border-white/20">
-            {/* Close Button */}
-            <button
-              onClick={() => {
-                // Restore previous selection when closing without saving
-                if (previousPaymentMethod) {
-                  setFormData(prev => ({
-                    ...prev,
-                    selectedPaymentMethod: previousPaymentMethod
-                  }))
-                }
-                setShowPaymentDialog(false)
-              }}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            
-            <div className="flex items-center gap-3 mb-6">
-              <CreditCard className="h-6 w-6" style={{color: '#F39236'}} />
-              <h2 className="text-xl font-semibold text-gray-900">Neue Zahlungsmethode hinzufügen</h2>
-            </div>
-            
-            {/* Credit Card Preview */}
-            {formData.newPaymentMethod.type === 'card' && (
-              <div className="mb-6">
-                <div className="relative w-full max-w-sm mx-auto">
-                  <div 
-                    className={`relative w-full h-56 transition-transform duration-700 transform-style-preserve-3d cursor-pointer ${
-                      showCardBack ? 'rotate-y-180' : ''
-                    }`}
-                    style={{transformStyle: 'preserve-3d'}}
-                    onClick={() => setShowCardBack(!showCardBack)}
-                  >
-                    {/* Front of Card */}
-                    <div 
-                      className={`absolute w-full h-full rounded-xl p-6 text-white transition-all duration-300 ${
-                        showCardBack ? 'opacity-0' : 'opacity-100'
-                      }`}
-                      style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        backfaceVisibility: 'hidden',
-                        transform: 'rotateY(0deg)'
-                      }}
-                    >
-                      <div className="flex justify-between items-start mb-8">
-                        <div className="text-2xl font-bold">Bauprodukt</div>
-                        <div className="w-12 h-8 bg-white/20 rounded"></div>
-                      </div>
-                      
-                      <div className="mb-6">
-                        <div className="text-sm text-white/70 mb-2">Kartennummer</div>
-                        <div className="text-xl font-mono tracking-wider">
-                          {formData.newPaymentMethod.cardNumber || '•••• •••• •••• ••••'}
-                        </div>
-                      </div>
-                      
-                      <div className="flex justify-between items-end">
-                        <div>
-                          <div className="text-sm text-white/70 mb-1">Karteninhaber</div>
-                          <div className="text-lg font-medium">
-                            {formData.newPaymentMethod.cardHolderName || 'VORNAME NACHNAME'}
-                          </div>
-                        </div>
-                        <div>
-                          <div className="text-sm text-white/70 mb-1">Gültig bis</div>
-                          <div className="text-lg font-medium">
-                            {formData.newPaymentMethod.expiryMonth && formData.newPaymentMethod.expiryYear 
-                              ? `${formData.newPaymentMethod.expiryMonth}/${formData.newPaymentMethod.expiryYear}`
-                              : 'MM/JJ'
-                            }
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Back of Card */}
-                    <div 
-                      className={`absolute w-full h-full rounded-xl p-6 text-white transition-all duration-300 ${
-                        showCardBack ? 'opacity-100' : 'opacity-0'
-                      }`}
-                      style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        backfaceVisibility: 'hidden',
-                        transform: 'rotateY(180deg)'
-                      }}
-                    >
-                      <div className="w-full h-12 bg-black/30 mb-6"></div>
-                      
-                      <div className="flex justify-end mb-6">
-                        <div className="w-16 h-10 bg-white rounded flex items-center justify-center">
-                          <span className="text-black text-sm font-bold">
-                            {formData.newPaymentMethod.cvv || '•••'}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <div className="text-center text-sm text-white/70">
-                        Bauprodukt Bank
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Kartentyp
-                  </label>
-                  <select
-                    value={formData.newPaymentMethod.type}
-                    onChange={(e) => handleInputChange('newPaymentMethod', {...formData.newPaymentMethod, type: e.target.value as 'card' | 'bank_transfer'})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 transition-colors"
-                    style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                  >
-                    <option value="card">Kreditkarte</option>
-                    <option value="bank_transfer">Banküberweisung</option>
-                  </select>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Name auf der Karte *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.newPaymentMethod.cardHolderName}
-                    onChange={(e) => handleInputChange('newPaymentMethod', {...formData.newPaymentMethod, cardHolderName: e.target.value})}
-                    className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 transition-colors ${
-                      validationErrors.cardHolderName ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                    placeholder="MAX MUSTERMANN"
-                    maxLength={50}
-                    minLength={2}
-                    pattern="[A-Za-zÄäÖöÜüß\s]+"
-                    title="Nur Buchstaben und Leerzeichen erlaubt"
-                    required
-                  />
-                  {validationErrors.cardHolderName && (
-                    <p className="mt-1 text-sm text-red-600">{validationErrors.cardHolderName}</p>
-                  )}
-                </div>
-              </div>
-              
-              {formData.newPaymentMethod.type === 'card' && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Kartennummer *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.newPaymentMethod.cardNumber}
-                      onChange={(e) => handleInputChange('newPaymentMethod', {...formData.newPaymentMethod, cardNumber: formatCardNumber(e.target.value)})}
-                      onFocus={() => setShowCardBack(false)}
-                      className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 transition-colors ${
-                        validationErrors.cardNumber ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                      placeholder="1234 5678 9012 3456"
-                      maxLength={19}
-                      minLength={16}
-                      pattern="[0-9 ]+"
-                      title="Bitte geben Sie eine gültige Kartennummer ein (16-19 Ziffern)"
-                      required
-                    />
-                    {validationErrors.cardNumber && (
-                      <p className="mt-1 text-sm text-red-600">{validationErrors.cardNumber}</p>
-                    )}
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Monat *
-                      </label>
-                      <select
-                        value={formData.newPaymentMethod.expiryMonth}
-                        onChange={(e) => handleInputChange('newPaymentMethod', {...formData.newPaymentMethod, expiryMonth: e.target.value})}
-                        className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 transition-colors ${
-                          validationErrors.expiryMonth ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                        required
-                      >
-                        <option value="">MM</option>
-                        {Array.from({length: 12}, (_, i) => String(i + 1).padStart(2, '0')).map(month => (
-                          <option key={month} value={month}>{month}</option>
-                        ))}
-                      </select>
-                      {validationErrors.expiryMonth && (
-                        <p className="mt-1 text-sm text-red-600">{validationErrors.expiryMonth}</p>
-                      )}
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Jahr *
-                      </label>
-                      <select
-                        value={formData.newPaymentMethod.expiryYear}
-                        onChange={(e) => handleInputChange('newPaymentMethod', {...formData.newPaymentMethod, expiryYear: e.target.value})}
-                        className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 transition-colors ${
-                          validationErrors.expiryYear ? 'border-red-500' : 'border-gray-300'
-                        }`}
-                        style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                        required
-                      >
-                        <option value="">JJJJ</option>
-                        {Array.from({length: 10}, (_, i) => new Date().getFullYear() + i).map(year => (
-                          <option key={year} value={year}>{year}</option>
-                        ))}
-                      </select>
-                      {validationErrors.expiryYear && (
-                        <p className="mt-1 text-sm text-red-600">{validationErrors.expiryYear}</p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      CVV *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.newPaymentMethod.cvv}
-                      onChange={(e) => handleInputChange('newPaymentMethod', {...formData.newPaymentMethod, cvv: e.target.value})}
-                      onFocus={() => setShowCardBack(true)}
-                      className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 transition-colors ${
-                        validationErrors.cvv ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                      style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                      placeholder="123"
-                      maxLength={4}
-                      minLength={3}
-                      pattern="[0-9]+"
-                      title="Nur 3-4 Ziffern erlaubt"
-                      required
-                    />
-                    {validationErrors.cvv && (
-                      <p className="mt-1 text-sm text-red-600">{validationErrors.cvv}</p>
-                    )}
-                  </div>
-                </>
-              )}
-            </div>
-            
-            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-              <button
-                onClick={() => {
-                  // Restore previous selection when canceling
-                  if (previousPaymentMethod) {
-                    setFormData(prev => ({
-                      ...prev,
-                      selectedPaymentMethod: previousPaymentMethod
-                    }))
-                  }
-                  setShowPaymentDialog(false)
-                }}
-                className="px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Abbrechen
-              </button>
-              <button
-                onClick={() => {
-                  if (validateForm()) {
-                    setShowPaymentDialog(false)
-                  }
-                }}
-                className="px-4 py-2 text-white font-medium rounded-lg transition-colors hover:opacity-90"
-                style={{backgroundColor: '#F39236'}}
-              >
-                Zahlungsmethode speichern
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
