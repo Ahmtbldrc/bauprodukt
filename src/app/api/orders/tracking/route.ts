@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
+import { sendEmail, generateEmailId, generateShippingConfirmationEmail } from '@/lib/email'
 
 const updateTrackingSchema = z.object({
   order_number: z.string().min(1, 'Order number is required'),
@@ -34,10 +35,10 @@ export async function PUT(request: NextRequest) {
 
     const { order_number, tracking_url, tracking_number, expected_delivery_date } = validation.data
 
-    // Check if order exists
-    const { error: fetchError } = await supabase
+    // Check if order exists and get customer info
+    const { data: order, error: fetchError } = await supabase
       .from('orders')
-      .select('id, order_number, status')
+      .select('id, order_number, status, customer_name, customer_email')
       .eq('order_number', order_number)
       .single()
 
@@ -71,14 +72,31 @@ export async function PUT(request: NextRequest) {
     if (updateError) {
       console.error('Order tracking update error:', updateError)
       return NextResponse.json(
-        { error: 'Failed to update tracking URL' },
+        { error: 'Failed to update tracking information' },
         { status: 500 }
       )
     }
 
+    // Send shipping confirmation email to customer
+    const emailId = generateEmailId(updatedOrder.id.toString(), 'shipping-confirmation')
+    const shippingEmail = generateShippingConfirmationEmail({
+      orderNumber: updatedOrder.order_number,
+      customerName: order.customer_name,
+      customerEmail: order.customer_email,
+      trackingNumber: updatedOrder.tracking_number,
+      trackingUrl: updatedOrder.tracking_url,
+      expectedDeliveryDate: updatedOrder.expected_delivery_date,
+      updatedAt: updatedOrder.updated_at
+    })
+
+    // Send email in background (don't block response)
+    sendEmail(shippingEmail, emailId).catch(error => {
+      console.error(`Failed to send shipping confirmation email for order ${updatedOrder.order_number}:`, error)
+    })
+
     return NextResponse.json({
       success: true,
-      message: 'Tracking information added and order status updated to delivered',
+      message: 'Tracking information added, order status updated to delivered, and shipping confirmation email sent',
       data: {
         order_id: updatedOrder.id,
         order_number: updatedOrder.order_number,

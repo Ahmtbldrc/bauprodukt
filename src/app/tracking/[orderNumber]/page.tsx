@@ -14,6 +14,8 @@ interface Order {
   total_amount: number
   created_at: string
   tracking_url?: string
+  tracking_number?: string
+  expected_delivery_date?: string
 }
 
 export default function TrackingPage() {
@@ -24,6 +26,8 @@ export default function TrackingPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [trackingUrl, setTrackingUrl] = useState('')
+  const [trackingNumber, setTrackingNumber] = useState('')
+  const [expectedDeliveryDate, setExpectedDeliveryDate] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
@@ -42,6 +46,12 @@ export default function TrackingPage() {
         setOrder(data.orders[0])
         if (data.orders[0].tracking_url) {
           setTrackingUrl(data.orders[0].tracking_url)
+        }
+        if (data.orders[0].tracking_number) {
+          setTrackingNumber(data.orders[0].tracking_number)
+        }
+        if (data.orders[0].expected_delivery_date) {
+          setExpectedDeliveryDate(data.orders[0].expected_delivery_date)
         }
       } else {
         setError('Sipariş bulunamadı')
@@ -65,6 +75,16 @@ export default function TrackingPage() {
       return
     }
 
+    if (!trackingNumber.trim()) {
+      setError('Sendungsnummer ist erforderlich')
+      return
+    }
+
+    if (!expectedDeliveryDate.trim()) {
+      setError('Voraussichtliches Lieferdatum ist erforderlich')
+      return
+    }
+
     try {
       setSubmitting(true)
       setError(null)
@@ -77,7 +97,9 @@ export default function TrackingPage() {
         },
         body: JSON.stringify({
           order_number: orderNumber,
-          tracking_url: trackingUrl
+          tracking_url: trackingUrl,
+          tracking_number: trackingNumber,
+          expected_delivery_date: expectedDeliveryDate
         })
       })
 
@@ -87,13 +109,15 @@ export default function TrackingPage() {
       }
 
       await response.json()
-      setSuccessMessage('Kargo takip URL\'i başarıyla güncellendi ve sipariş durumu "teslim edildi" olarak işaretlendi!')
+      setSuccessMessage('Versandinformationen wurden erfolgreich aktualisiert und Bestellung als "geliefert" markiert!')
       
       if (order) {
         setOrder({
           ...order,
           tracking_url: trackingUrl,
-          status: 'delivered' // Update status to delivered when tracking URL is added
+          tracking_number: trackingNumber,
+          expected_delivery_date: expectedDeliveryDate,
+          status: 'delivered' // Update status to delivered when tracking info is added
         })
       }
       
@@ -138,7 +162,7 @@ export default function TrackingPage() {
     return null
   }
 
-  const hasTrackingUrl = !!order.tracking_url
+  const hasTrackingInfo = !!(order.tracking_url && order.tracking_number && order.expected_delivery_date)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -241,7 +265,7 @@ export default function TrackingPage() {
                 <h2 className="text-2xl font-semibold text-gray-900">Versandverfolgung</h2>
               </div>
 
-              {hasTrackingUrl ? (
+              {hasTrackingInfo ? (
                 <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 mb-8">
                                       <div className="flex items-start gap-4">
                       <CheckCircle className="h-6 w-6 text-blue-600 mt-0.5 flex-shrink-0" />
@@ -253,13 +277,36 @@ export default function TrackingPage() {
                          Für diese Bestellung ist bereits eine Versandverfolgung definiert. 
                          Die bestehende Tracking-URL kann nicht geändert werden.
                        </p>
-                      <div className="bg-white rounded-lg p-4 border border-blue-200">
-                                                 <dt className="text-sm font-medium text-blue-600 uppercase tracking-wide mb-2">
-                           Aktuelle Tracking-URL
-                         </dt>
-                                                 <dd className="text-xl font-mono text-blue-900 break-all">
-                           {order.tracking_url}
-                         </dd>
+                      <div className="bg-white rounded-lg p-4 border border-blue-200 space-y-4">
+                        <div>
+                          <dt className="text-sm font-medium text-blue-600 uppercase tracking-wide mb-2">
+                            Sendungsnummer
+                          </dt>
+                          <dd className="text-xl font-mono text-blue-900 break-all">
+                            {order.tracking_number}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-sm font-medium text-blue-600 uppercase tracking-wide mb-2">
+                            Voraussichtliche Lieferung
+                          </dt>
+                          <dd className="text-xl text-blue-900">
+                            {order.expected_delivery_date && new Date(order.expected_delivery_date).toLocaleDateString('de-DE', { 
+                              weekday: 'long', 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric' 
+                            })}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-sm font-medium text-blue-600 uppercase tracking-wide mb-2">
+                            Tracking-URL
+                          </dt>
+                          <dd className="text-lg font-mono text-blue-900 break-all">
+                            {order.tracking_url}
+                          </dd>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -281,24 +328,60 @@ export default function TrackingPage() {
                 </div>
               )}
 
-              {!hasTrackingUrl && (
+              {!hasTrackingInfo && (
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
                     <label htmlFor="trackingUrl" className="block text-base font-medium text-gray-700 mb-3">
                       Tracking-URL
                     </label>
-                                         <input
-                       type="url"
-                       id="trackingUrl"
-                       value={trackingUrl}
-                       onChange={(e) => setTrackingUrl(e.target.value)}
-                       placeholder="https://versand.example.ch/track/1234567890"
-                       className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                       required
-                     />
-                     <p className="mt-2 text-sm text-gray-500">
-                       Geben Sie die Tracking-URL von Ihrem Versandunternehmen ein
-                     </p>
+                    <input
+                      type="url"
+                      id="trackingUrl"
+                      value={trackingUrl}
+                      onChange={(e) => setTrackingUrl(e.target.value)}
+                      placeholder="https://versand.example.ch/track/1234567890"
+                      className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                    <p className="mt-2 text-sm text-gray-500">
+                      Geben Sie die Tracking-URL von Ihrem Versandunternehmen ein
+                    </p>
+                  </div>
+
+                  <div>
+                    <label htmlFor="trackingNumber" className="block text-base font-medium text-gray-700 mb-3">
+                      Sendungsnummer
+                    </label>
+                    <input
+                      type="text"
+                      id="trackingNumber"
+                      value={trackingNumber}
+                      onChange={(e) => setTrackingNumber(e.target.value)}
+                      placeholder="TRK123456789"
+                      className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                    <p className="mt-2 text-sm text-gray-500">
+                      Geben Sie die Sendungsnummer vom Versandunternehmen ein
+                    </p>
+                  </div>
+
+                  <div>
+                    <label htmlFor="expectedDeliveryDate" className="block text-base font-medium text-gray-700 mb-3">
+                      Voraussichtliches Lieferdatum
+                    </label>
+                    <input
+                      type="date"
+                      id="expectedDeliveryDate"
+                      value={expectedDeliveryDate}
+                      onChange={(e) => setExpectedDeliveryDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full px-4 py-3 text-lg border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                    <p className="mt-2 text-sm text-gray-500">
+                      Wählen Sie das voraussichtliche Lieferdatum
+                    </p>
                   </div>
 
                   {error && (
@@ -313,24 +396,24 @@ export default function TrackingPage() {
                     </div>
                   )}
 
-                                     <button
-                     type="submit"
-                     disabled={submitting || !trackingUrl.trim()}
-                     className="w-full flex justify-center py-4 px-6 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
-                   >
+                  <button
+                    type="submit"
+                    disabled={submitting || !trackingUrl.trim() || !trackingNumber.trim() || !expectedDeliveryDate.trim()}
+                    className="w-full flex justify-center py-4 px-6 border border-transparent rounded-lg shadow-lg text-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  >
                      {submitting ? (
                        <>
                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
                          Wird aktualisiert...
                        </>
                      ) : (
-                       'Tracking-URL hinzufügen'
+                       'Versandinformationen hinzufügen'
                      )}
                    </button>
                 </form>
               )}
 
-                             {hasTrackingUrl && (
+              {hasTrackingInfo && (
                 <div className="mt-8 pt-8 border-t border-gray-200">
                   <h3 className="text-lg font-medium text-gray-900 mb-4">Versandstatus</h3>
                   <div className="bg-gray-50 rounded-xl p-6">

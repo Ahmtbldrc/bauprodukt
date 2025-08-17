@@ -87,7 +87,7 @@ const MAX_RETRY_ATTEMPTS = 3
 const RETRY_DELAY_MS = 5000 // 5 seconds
 
 // Generate unique ID for emails to prevent duplicates
-function generateEmailId(orderId: string, template: string): string {
+export function generateEmailId(orderId: string, template: string): string {
   return `${orderId}-${template}-${Date.now()}`
 }
 
@@ -503,6 +503,77 @@ export function verifyEmailConfig(): { isValid: boolean; missingVars: string[] }
   return {
     isValid: missingVars.length === 0,
     missingVars
+  }
+}
+
+// Shipping confirmation email (when tracking info is added)
+export function generateShippingConfirmationEmail(orderData: {
+  orderNumber: string
+  customerName: string
+  customerEmail: string
+  trackingNumber: string
+  trackingUrl: string
+  expectedDeliveryDate: string
+  updatedAt: string
+}) {
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <title>Ihre Bestellung ist unterwegs</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #F39236; margin: 0;">Bauprodukt</h1>
+          <p style="color: #666; margin: 10px 0 0 0;">Ihre Bestellung ist unterwegs!</p>
+        </div>
+        
+        <div style="background: #e6f3ff; padding: 20px; border-radius: 8px; margin-bottom: 30px; border-left: 4px solid #3b82f6;">
+          <h2 style="margin: 0 0 20px 0; color: #1e40af;">📦 Versandbestätigung</h2>
+          <p style="font-size: 16px; margin: 0 0 15px 0;">Gute Nachrichten! Ihre Bestellung wurde versendet und ist auf dem Weg zu Ihnen.</p>
+        </div>
+        
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+          <h3 style="margin: 0 0 20px 0; color: #333;">Versanddetails</h3>
+          <p><strong>Bestellnummer:</strong> ${orderData.orderNumber}</p>
+          <p><strong>Sendungsnummer:</strong> <span style="font-family: monospace; background: #e5e7eb; padding: 2px 4px; border-radius: 4px;">${orderData.trackingNumber}</span></p>
+          <p><strong>Voraussichtliche Lieferung:</strong> ${new Date(orderData.expectedDeliveryDate).toLocaleDateString('de-DE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          <p><strong>Versendet am:</strong> ${new Date(orderData.updatedAt).toLocaleDateString('de-DE')}</p>
+        </div>
+        
+        <div style="text-align: center; margin-bottom: 30px;">
+          <a href="${orderData.trackingUrl}" 
+             style="display: inline-block; background: #F39236; color: white; padding: 15px 30px; 
+                    text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+            📱 Sendung verfolgen
+          </a>
+        </div>
+        
+        <div style="background: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+          <h3 style="margin: 0 0 15px 0; color: #333;">Was passiert als Nächstes?</h3>
+          <ul style="margin: 0; padding-left: 20px;">
+            <li>Ihre Bestellung wurde an den Versanddienstleister übergeben</li>
+            <li>Sie können den Versandfortschritt mit der obigen Sendungsnummer verfolgen</li>
+            <li>Bei Fragen zum Versand wenden Sie sich bitte an den Versanddienstleister</li>
+            <li>Ihr Paket sollte am angegebenen Datum bei Ihnen ankommen</li>
+          </ul>
+        </div>
+        
+        <div style="text-align: center; color: #666; font-size: 14px;">
+          <p>Sie können den Status Ihrer Bestellung auch jederzeit unter <a href="${process.env.NEXT_PUBLIC_APP_URL}/orders" style="color: #F39236;">unserer Website</a> verfolgen.</p>
+          <p>Vielen Dank für Ihren Einkauf bei Bauprodukt!</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+
+  return {
+    to: orderData.customerEmail,
+    subject: `📦 Ihre Bestellung ${orderData.orderNumber} ist unterwegs!`,
+    html
   }
 }
 
