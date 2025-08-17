@@ -50,12 +50,15 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Update tracking URL
+    // Update tracking URL and set status to delivered
     const { data: updatedOrder, error: updateError } = await supabase
       .from('orders')
-      .update({ tracking_url })
+      .update({ 
+        tracking_url,
+        status: 'delivered'
+      })
       .eq('order_number', order_number)
-      .select('id, order_number, tracking_url, updated_at')
+      .select('id, order_number, tracking_url, status, updated_at')
       .single()
 
     if (updateError) {
@@ -68,11 +71,12 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Tracking information updated successfully',
+      message: 'Tracking URL added and order status updated to delivered',
       data: {
         order_id: updatedOrder.id,
         order_number: updatedOrder.order_number,
         tracking_url: updatedOrder.tracking_url,
+        status: updatedOrder.status,
         updated_at: updatedOrder.updated_at
       }
     })
@@ -103,7 +107,7 @@ export async function GET(request: NextRequest) {
     // Get tracking URL for order
     const { data: order, error } = await supabase
       .from('orders')
-      .select('id, order_number, tracking_url')
+      .select('id, order_number, tracking_url, status')
       .eq('order_number', orderNumber)
       .single()
 
@@ -124,7 +128,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       order_id: order.id,
       order_number: order.order_number,
-      tracking_url: order.tracking_url
+      tracking_url: order.tracking_url,
+      status: order.status
     })
 
   } catch (error) {

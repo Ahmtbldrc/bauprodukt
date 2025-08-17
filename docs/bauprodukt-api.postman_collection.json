@@ -1977,7 +1977,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "orders", "tracking"]
             },
-            "description": "Update tracking URL for an order by order number. Public endpoint - no authentication required."
+            "description": "Update tracking URL for an order by order number and automatically set status to 'delivered'. Public endpoint - no authentication required."
           },
           "response": []
         },
