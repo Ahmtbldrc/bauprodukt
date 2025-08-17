@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import React, { useState, useEffect, useCallback } from 'react'
+import { useParams } from 'next/navigation'
 import { Package, Truck, AlertTriangle, CheckCircle, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
@@ -18,7 +18,6 @@ interface Order {
 
 export default function TrackingPage() {
   const params = useParams()
-  const router = useRouter()
   const orderNumber = params.orderNumber as string
   
   const [order, setOrder] = useState<Order | null>(null)
@@ -28,11 +27,7 @@ export default function TrackingPage() {
   const [submitting, setSubmitting] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetchOrder()
-  }, [orderNumber])
-
-  const fetchOrder = async () => {
+  const fetchOrder = useCallback(async () => {
     try {
       setLoading(true)
       const response = await fetch(`/api/orders?orderNumber=${orderNumber}`)
@@ -56,7 +51,11 @@ export default function TrackingPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [orderNumber])
+
+  useEffect(() => {
+    fetchOrder()
+  }, [fetchOrder])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -87,13 +86,14 @@ export default function TrackingPage() {
         throw new Error(errorData.error || 'Kargo takip URL\'i güncellenirken bir hata oluştu')
       }
 
-      const result = await response.json()
-      setSuccessMessage('Kargo takip URL\'i başarıyla güncellendi!')
+      await response.json()
+      setSuccessMessage('Kargo takip URL\'i başarıyla güncellendi ve sipariş durumu "teslim edildi" olarak işaretlendi!')
       
       if (order) {
         setOrder({
           ...order,
-          tracking_url: trackingUrl
+          tracking_url: trackingUrl,
+          status: 'delivered' // Update status to delivered when tracking URL is added
         })
       }
       
@@ -190,7 +190,21 @@ export default function TrackingPage() {
                 
                 <div>
                   <dt className="text-sm font-medium text-gray-500">Status</dt>
-                  <dd className="text-base text-gray-900 capitalize">{order.status}</dd>
+                  <dd className={`text-base capitalize font-medium ${
+                    order.status === 'delivered' 
+                      ? 'text-green-600 bg-green-50 px-3 py-2 rounded-lg inline-flex items-center' 
+                      : order.status === 'confirmed'
+                      ? 'text-blue-600 bg-blue-50 px-3 py-2 rounded-lg inline-flex items-center'
+                      : 'text-gray-900'
+                  }`}>
+                    {order.status}
+                    {order.status === 'delivered' && (
+                      <CheckCircle className="h-4 w-4 ml-2" />
+                    )}
+                    {order.status === 'confirmed' && (
+                      <CheckCircle className="h-4 w-4 ml-2" />
+                    )}
+                  </dd>
                 </div>
                 
                 <div>
