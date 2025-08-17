@@ -8,13 +8,13 @@ import {
   FolderTree, 
   Package, 
   ShoppingCart, 
-  Users, 
-  Home, 
-  Image as ImageIcon, 
-  Star, 
-  MessageCircle, 
-  BarChart3, 
-  Mail,
+  // Users, 
+  // Home, 
+  // Image as ImageIcon, 
+  // Star, 
+  // MessageCircle, 
+  // BarChart3, 
+  // Mail,
   Clock
 } from 'lucide-react'
 
@@ -59,49 +59,49 @@ export function AdminSidebar() {
       icon: <ShoppingCart className="w-5 h-5" strokeWidth={1.5} />,
       current: pathname.startsWith('/admin/orders')
     },
-    { 
-      name: 'Users', 
-      href: '/admin/users', 
-      icon: <Users className="w-5 h-5" strokeWidth={1.5} />,
-      current: pathname.startsWith('/admin/users')
-    },
-    { 
-      name: 'Home Sections', 
-      href: '/admin/home-sections', 
-      icon: <Home className="w-5 h-5" strokeWidth={1.5} />,
-      current: pathname.startsWith('/admin/home-sections')
-    },
-    { 
-      name: 'Banners', 
-      href: '/admin/banners', 
-      icon: <ImageIcon className="w-5 h-5" strokeWidth={1.5} />,
-      current: pathname.startsWith('/admin/banners')
-    },
-    { 
-      name: 'Featured Brands', 
-      href: '/admin/featured-brands', 
-      icon: <Star className="w-5 h-5" strokeWidth={1.5} />,
-      current: pathname.startsWith('/admin/featured-brands')
-    },
-    { 
-      name: 'Messages', 
-      href: '/admin/messages', 
-      icon: <MessageCircle className="w-5 h-5" strokeWidth={1.5} />,
-      current: pathname.startsWith('/admin/messages'),
-      hasNotification: true
-    },
-    { 
-      name: 'Analytics', 
-      href: '/admin/analytics', 
-      icon: <BarChart3 className="w-5 h-5" strokeWidth={1.5} />,
-      current: pathname.startsWith('/admin/analytics')
-    },
-    { 
-      name: 'Mail', 
-      href: '/admin/mail', 
-      icon: <Mail className="w-5 h-5" strokeWidth={1.5} />,
-      current: pathname.startsWith('/admin/mail')
-    }
+    // { 
+    //   name: 'Users', 
+    //   href: '/admin/users', 
+    //   icon: <Users className="w-5 h-5" strokeWidth={1.5} />,
+    //   current: pathname.startsWith('/admin/users')
+    // },
+    // { 
+    //   name: 'Home Sections', 
+    //   href: '/admin/home-sections', 
+    //   icon: <Home className="w-5 h-5" strokeWidth={1.5} />,
+    //   current: pathname.startsWith('/admin/home-sections')
+    // },
+    // { 
+    //   name: 'Banners', 
+    //   href: '/admin/banners', 
+    //   icon: <ImageIcon className="w-5 h-5" strokeWidth={1.5} />,
+    //   current: pathname.startsWith('/admin/banners')
+    // },
+    // { 
+    //   name: 'Featured Brands', 
+    //   href: '/admin/featured-brands', 
+    //   icon: <Star className="w-5 h-5" strokeWidth={1.5} />,
+    //   current: pathname.startsWith('/admin/featured-brands')
+    // },
+    // { 
+    //   name: 'Messages', 
+    //   href: '/admin/messages', 
+    //   icon: <MessageCircle className="w-5 h-5" strokeWidth={1.5} />,
+    //   current: pathname.startsWith('/admin/messages'),
+    //   hasNotification: true
+    // },
+    // { 
+    //   name: 'Analytics', 
+    //   href: '/admin/analytics', 
+    //   icon: <BarChart3 className="w-5 h-5" strokeWidth={1.5} />,
+    //   current: pathname.startsWith('/admin/analytics')
+    // },
+    // { 
+    //   name: 'Mail', 
+    //   href: '/admin/mail', 
+    //   icon: <Mail className="w-5 h-5" strokeWidth={1.5} />,
+    //   current: pathname.startsWith('/admin/mail')
+    // }
   ]
 
   return (

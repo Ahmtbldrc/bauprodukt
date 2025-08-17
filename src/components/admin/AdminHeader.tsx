@@ -535,14 +535,14 @@ export function AdminHeader() {
 
 
           {/* Help Button */}
-          <button className="relative flex items-center justify-center w-11 h-11 rounded-full bg-white/70 text-gray-600 hover:bg-white hover:text-gray-900 shadow-sm transition-all duration-200">
+          {/* <button className="relative flex items-center justify-center w-11 h-11 rounded-full bg-white/70 text-gray-600 hover:bg-white hover:text-gray-900 shadow-sm transition-all duration-200">
             <HelpCircle size={20} />
-          </button>
+          </button> */}
 
           {/* Settings Button */}
-          <button className="relative flex items-center justify-center w-11 h-11 rounded-full bg-white/70 text-gray-600 hover:bg-white hover:text-gray-900 shadow-sm transition-all duration-200">
+          {/* <button className="relative flex items-center justify-center w-11 h-11 rounded-full bg-white/70 text-gray-600 hover:bg-white hover:text-gray-900 shadow-sm transition-all duration-200">
             <Settings size={20} />
-          </button>
+          </button> */}
 
           {/* Logout Button */}
           <button 
