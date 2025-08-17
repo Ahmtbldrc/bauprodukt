@@ -1,94 +1,91 @@
-'use client'
+"use client";
 
-import React, { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
-import Link from 'next/link'
-import { Check, AlertCircle, RefreshCw } from 'lucide-react'
-import { useCart } from '@/contexts/CartContext'
+import React, { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { Check, AlertCircle, RefreshCw } from "lucide-react";
+import { useCart } from "@/contexts/CartContext";
 
 export default function CheckoutSuccessPage() {
-  const searchParams = useSearchParams()
-  const orderId = searchParams.get('orderId')
-  const provider = searchParams.get('provider')
-  const { clearCart } = useCart()
+  const searchParams = useSearchParams();
+  const orderId = searchParams.get("orderId");
+  const provider = searchParams.get("provider");
+  const { clearCart } = useCart();
 
-  const [order, setOrder] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [paymentStatus, setPaymentStatus] = useState<string>('processing')
-  const [pollCount, setPollCount] = useState(0)
-  const [cartCleared, setCartCleared] = useState(false)
+  const [order, setOrder] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<string>("processing");
+  const [pollCount, setPollCount] = useState(0);
+  const [cartCleared, setCartCleared] = useState(false);
 
   useEffect(() => {
     if (orderId) {
-      pollOrderStatus()
+      pollOrderStatus();
     } else {
-      setError('Keine Bestellnummer gefunden')
-      setLoading(false)
+      setError("Keine Bestellnummer gefunden");
+      setLoading(false);
     }
-  }, [orderId])
+  }, [orderId]);
 
   // Clear cart when component mounts if payment is already confirmed
   useEffect(() => {
-    if (orderId && paymentStatus === 'paid' && !cartCleared && clearCart) {
-      clearCart()
-      setCartCleared(true)
-      console.log('Cart cleared on success page load - payment already confirmed')
+    if (orderId && paymentStatus === "paid" && !cartCleared && clearCart) {
+      clearCart();
+      setCartCleared(true);
+      console.log(
+        "Cart cleared on success page load - payment already confirmed"
+      );
     }
-  }, [orderId, paymentStatus, cartCleared, clearCart])
+  }, [orderId, paymentStatus, cartCleared, clearCart]);
 
   const pollOrderStatus = async () => {
-    if (!orderId) return
+    if (!orderId) return;
 
     try {
       // Add cache-busting parameter to prevent caching issues
-      const response = await fetch(`/api/orders/${orderId}?t=${Date.now()}`)
+      const response = await fetch(`/api/orders/${orderId}?t=${Date.now()}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch order')
+        throw new Error("Failed to fetch order");
       }
 
-      const orderData = await response.json()
-      setOrder(orderData)
-
-      console.log('Order status check:', {
-        orderId,
-        payment_status: orderData.payment_status,
-        status: orderData.status,
-        pollCount,
-        timestamp: new Date().toISOString()
-      })
+      const orderData = await response.json();
+      setOrder(orderData);
 
       // Check payment status
-      if (orderData.payment_status === 'paid') {
-        setPaymentStatus('paid')
-        setLoading(false)
-        
+      if (orderData.payment_status === "paid") {
+        setPaymentStatus("paid");
+        setLoading(false);
+
         // Clear cart when payment is confirmed as paid
         if (!cartCleared && clearCart) {
-          clearCart()
-          setCartCleared(true)
-          console.log('Cart cleared after successful payment')
+          clearCart();
+          setCartCleared(true);
         }
-      } else if (orderData.payment_status === 'failed' || orderData.payment_status === 'cancelled') {
-        setPaymentStatus('failed')
-        setError('Die Zahlung konnte nicht verarbeitet werden')
-        setLoading(false)
-      } else if (pollCount < 24) { // Poll for up to 120 seconds (24 * 5s) - increased timeout
+      } else if (
+        orderData.payment_status === "failed" ||
+        orderData.payment_status === "cancelled"
+      ) {
+        setPaymentStatus("failed");
+        setError("Die Zahlung konnte nicht verarbeitet werden");
+        setLoading(false);
+      } else if (pollCount < 24) {
+        // Poll for up to 120 seconds (24 * 5s) - increased timeout
         setTimeout(() => {
-          setPollCount(prev => prev + 1)
-          pollOrderStatus()
-        }, 5000)
+          setPollCount((prev) => prev + 1);
+          pollOrderStatus();
+        }, 5000);
       } else {
         // Timeout after 120 seconds
-        setPaymentStatus('timeout')
-        setLoading(false)
+        setPaymentStatus("timeout");
+        setLoading(false);
       }
     } catch (error) {
-      console.error('Error fetching order:', error)
-      setError('Fehler beim Laden der Bestelldaten')
-      setLoading(false)
+      console.error("Error fetching order:", error);
+      setError("Fehler beim Laden der Bestelldaten");
+      setLoading(false);
     }
-  }
+  };
 
   if (loading) {
     return (
@@ -102,17 +99,19 @@ export default function CheckoutSuccessPage() {
               Zahlung wird verarbeitet...
             </h1>
             <p className="text-gray-600 mb-6">
-              Bitte warten Sie, während wir Ihre Zahlung bestätigen. Dies kann einige Sekunden dauern.
+              Bitte warten Sie, während wir Ihre Zahlung bestätigen. Dies kann
+              einige Sekunden dauern.
             </p>
-            
+
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800 mb-3">
-                <strong>Wichtig:</strong> Schließen Sie dieses Fenster nicht, bis die Zahlung bestätigt wurde.
+                <strong>Wichtig:</strong> Schließen Sie dieses Fenster nicht,
+                bis die Zahlung bestätigt wurde.
               </p>
-              <button 
+              <button
                 onClick={() => {
-                  setPollCount(0)
-                  pollOrderStatus()
+                  setPollCount(0);
+                  pollOrderStatus();
                 }}
                 className="text-sm text-blue-600 hover:text-blue-800 underline"
               >
@@ -122,10 +121,10 @@ export default function CheckoutSuccessPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
-  if (error || paymentStatus === 'failed') {
+  if (error || paymentStatus === "failed") {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto text-center">
@@ -137,19 +136,20 @@ export default function CheckoutSuccessPage() {
               Zahlung fehlgeschlagen
             </h1>
             <p className="text-gray-600 mb-6">
-              {error || 'Es gab ein Problem bei der Verarbeitung Ihrer Zahlung.'}
+              {error ||
+                "Es gab ein Problem bei der Verarbeitung Ihrer Zahlung."}
             </p>
-            
+
             <div className="space-x-4">
-              <Link 
+              <Link
                 href={`/checkout/payment?orderId=${orderId}`}
                 className="inline-flex items-center px-6 py-3 text-white font-medium rounded-md transition-colors hover:opacity-90"
-                style={{backgroundColor: '#F39236'}}
+                style={{ backgroundColor: "#F39236" }}
               >
                 Erneut versuchen
               </Link>
-              <Link 
-                href="/cart" 
+              <Link
+                href="/cart"
                 className="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 transition-colors"
               >
                 Zum Warenkorb
@@ -158,10 +158,10 @@ export default function CheckoutSuccessPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
-  if (paymentStatus === 'timeout') {
+  if (paymentStatus === "timeout") {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto text-center">
@@ -173,36 +173,39 @@ export default function CheckoutSuccessPage() {
               Zahlung wird noch verarbeitet
             </h1>
             <p className="text-gray-600 mb-6">
-              Die Zahlungsbestätigung dauert länger als gewöhnlich. Ihre Zahlung wird möglicherweise noch verarbeitet.
+              Die Zahlungsbestätigung dauert länger als gewöhnlich. Ihre Zahlung
+              wird möglicherweise noch verarbeitet.
             </p>
-            
+
             {order && (
               <div className="bg-gray-100 rounded-lg p-4 mb-6">
-                <p className="text-lg font-bold" style={{color: '#F39236'}}>
+                <p className="text-lg font-bold" style={{ color: "#F39236" }}>
                   Bestellnummer: {order.order_number}
                 </p>
               </div>
             )}
-            
+
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
               <p className="text-sm text-yellow-800">
-                <strong>Was Sie jetzt tun können:</strong><br />
-                • Überprüfen Sie Ihre E-Mails für eine Bestätigung<br />
-                • Kontaktieren Sie uns, wenn Sie keine Bestätigung erhalten<br />
-                • Laden Sie diese Seite in ein paar Minuten neu
+                <strong>Was Sie jetzt tun können:</strong>
+                <br />
+                • Überprüfen Sie Ihre E-Mails für eine Bestätigung
+                <br />
+                • Kontaktieren Sie uns, wenn Sie keine Bestätigung erhalten
+                <br />• Laden Sie diese Seite in ein paar Minuten neu
               </p>
             </div>
-            
+
             <div className="space-x-4">
-              <button 
+              <button
                 onClick={() => window.location.reload()}
                 className="inline-flex items-center px-6 py-3 text-white font-medium rounded-md transition-colors hover:opacity-90"
-                style={{backgroundColor: '#F39236'}}
+                style={{ backgroundColor: "#F39236" }}
               >
                 Seite neu laden
               </button>
-              <Link 
-                href="/" 
+              <Link
+                href="/"
                 className="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 transition-colors"
               >
                 Zur Startseite
@@ -211,7 +214,7 @@ export default function CheckoutSuccessPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   // Success state
@@ -226,35 +229,39 @@ export default function CheckoutSuccessPage() {
             Zahlung erfolgreich!
           </h1>
           <p className="text-gray-600 mb-6">
-            Vielen Dank für Ihre Bestellung. Die Zahlung wurde erfolgreich verarbeitet.
+            Vielen Dank für Ihre Bestellung. Die Zahlung wurde erfolgreich
+            verarbeitet.
           </p>
-          
+
           {order && (
             <>
               <div className="bg-gray-100 rounded-lg p-4 mb-6">
-                <p className="text-2xl font-bold" style={{color: '#F39236'}}>
+                <p className="text-2xl font-bold" style={{ color: "#F39236" }}>
                   Bestellnummer: {order.order_number}
                 </p>
                 <p className="text-gray-600 mt-2">
-                  Bezahlt über {provider === 'stripe' ? 'Stripe' : 'DataTrans (TWINT)'}
+                  Bezahlt über{" "}
+                  {provider === "stripe" ? "Stripe" : "DataTrans (TWINT)"}
                 </p>
               </div>
 
               {/* Order Summary */}
               <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6 text-left">
                 <h3 className="text-lg font-semibold mb-4">Bestellübersicht</h3>
-                
+
                 {order.order_items && order.order_items.length > 0 && (
                   <div className="space-y-2 mb-4">
                     {order.order_items.map((item: any) => (
                       <div key={item.id} className="flex justify-between">
-                        <span>{item.product_name} (x{item.quantity})</span>
+                        <span>
+                          {item.product_name} (x{item.quantity})
+                        </span>
                         <span>CHF {item.total_price.toFixed(2)}</span>
                       </div>
                     ))}
                   </div>
                 )}
-                
+
                 <hr className="border-gray-200 mb-4" />
                 <div className="flex justify-between font-semibold text-lg">
                   <span>Gesamtsumme:</span>
@@ -263,28 +270,34 @@ export default function CheckoutSuccessPage() {
               </div>
             </>
           )}
-          
+
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
             <p className="text-sm text-green-800">
-              <strong>Was passiert als nächstes?</strong><br />
-              • Sie erhalten eine Bestätigungs-E-Mail mit allen Details<br />
-              • Ihre Bestellung wird bearbeitet und versendet<br />
-              • Sie erhalten eine Versandbestätigung mit Tracking-Informationen<br />
-              {cartCleared && <span>• Ihr Warenkorb wurde automatisch geleert</span>}
+              <strong>Was passiert als nächstes?</strong>
+              <br />
+              • Sie erhalten eine Bestätigungs-E-Mail mit allen Details
+              <br />
+              • Ihre Bestellung wird bearbeitet und versendet
+              <br />
+              • Sie erhalten eine Versandbestätigung mit Tracking-Informationen
+              <br />
+              {cartCleared && (
+                <span>• Ihr Warenkorb wurde automatisch geleert</span>
+              )}
             </p>
           </div>
         </div>
-        
+
         <div className="space-x-4">
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             className="inline-flex items-center px-6 py-3 text-white font-medium rounded-md transition-colors hover:opacity-90"
-            style={{backgroundColor: '#F39236'}}
+            style={{ backgroundColor: "#F39236" }}
           >
             Zur Startseite
           </Link>
-          <Link 
-            href="/products" 
+          <Link
+            href="/products"
             className="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-md hover:bg-gray-50 transition-colors"
           >
             Weiter einkaufen
@@ -292,5 +305,5 @@ export default function CheckoutSuccessPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
