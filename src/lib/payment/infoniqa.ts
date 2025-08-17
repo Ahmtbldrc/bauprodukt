@@ -89,7 +89,7 @@ async function getInfoniqaAccessToken(): Promise<string> {
       'Failed to authenticate with Auth0',
       'AUTH0_ERROR',
       undefined,
-      error
+      error as Record<string, unknown>
     )
   }
 }
@@ -205,7 +205,8 @@ export async function createInfoniqaTransaction(order: OrderWithPayment): Promis
 /**
  * Retry Infoniqa sync for failed transactions
  */
-export async function retryInfoniqaSync(orderId: string): Promise<{
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function retryInfoniqaSync(_orderId: string): Promise<{
   success: boolean
   transactionId?: string
   error?: string
@@ -239,7 +240,7 @@ export async function retryInfoniqaSync(orderId: string): Promise<{
 export async function getInfoniqaTransactionStatus(transactionId: string): Promise<{
   exists: boolean
   status?: string
-  data?: any
+  data?: Record<string, unknown>
 }> {
   try {
     if (!INFONIQA_API_BASE) {

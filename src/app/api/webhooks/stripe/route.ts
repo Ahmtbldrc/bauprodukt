@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { verifyStripeWebhook, processStripeWebhook } from '@/lib/payment/stripe'
-import { PaymentProcessingError } from '@/lib/payment/types'
+// import { PaymentProcessingError } from '@/lib/payment/types'
 import { headers } from 'next/headers'
 
 export async function POST(request: NextRequest) {
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     let orderId: string | null = null
     
     if (webhookEvent.metadata?.order_id) {
-      orderId = webhookEvent.metadata.order_id
+      orderId = webhookEvent.metadata.order_id as string
     } else if (webhookEvent.sessionId) {
       // Look up order by session ID
       const { data: order } = await supabase
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
     // Update order status based on webhook event
     if (webhookEvent.status === 'paid') {
       // Update order to paid status
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         payment_status: 'paid',
         paid_at: new Date().toISOString(),
         status: 'confirmed',
@@ -164,7 +164,7 @@ export async function POST(request: NextRequest) {
 
     } else if (webhookEvent.status === 'failed' || webhookEvent.status === 'cancelled' || webhookEvent.status === 'expired') {
       // Update order status
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         payment_status: webhookEvent.status,
         updated_at: new Date().toISOString(),
       }
@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function queueOrderEmails(supabase: any, orderId: string) {
+async function queueOrderEmails(supabase: ReturnType<typeof createClient>, orderId: string) {
   try {
     // Fetch order details
     const { data: order } = await supabase

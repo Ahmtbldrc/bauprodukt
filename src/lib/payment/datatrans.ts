@@ -101,7 +101,7 @@ export async function createDataTransSession(request: PaymentSessionRequest): Pr
       'Failed to create DataTrans session',
       'DATATRANS_ERROR',
       'datatrans',
-      error
+      error as Record<string, unknown>
     )
   }
 }

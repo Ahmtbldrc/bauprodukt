@@ -79,7 +79,7 @@ export async function createStripeSession(request: PaymentSessionRequest): Promi
       throw error
     }
     
-    const stripeError = error as any
+    const stripeError = error as { code?: string; type?: string; message?: string; statusCode?: number; requestId?: string }
     throw new PaymentProcessingError(
       stripeError.message || 'Failed to create Stripe session',
       stripeError.code || 'STRIPE_ERROR',
@@ -133,7 +133,7 @@ export async function processStripeWebhook(event: Stripe.Event): Promise<Payment
     provider: 'stripe',
     eventType: event.type,
     status: 'pending',
-    rawPayload: event,
+    rawPayload: event as unknown as Record<string, unknown>,
   }
 
   switch (event.type) {
@@ -207,7 +207,7 @@ export async function retrieveStripeSession(sessionId: string): Promise<Stripe.C
     })
     return session
   } catch (error) {
-    const stripeError = error as any
+    const stripeError = error as { code?: string; type?: string; message?: string; statusCode?: number; requestId?: string }
     throw new PaymentProcessingError(
       'Failed to retrieve Stripe session',
       stripeError.code || 'RETRIEVE_SESSION_ERROR',
@@ -224,7 +224,7 @@ export async function cancelStripeSession(sessionId: string): Promise<void> {
   try {
     await stripe.checkout.sessions.expire(sessionId)
   } catch (error) {
-    const stripeError = error as any
+    const stripeError = error as { code?: string; type?: string; message?: string; statusCode?: number; requestId?: string }
     // If session is already expired or completed, don't throw error
     if (stripeError.code === 'checkout.session.cannot_expire') {
       return

@@ -53,7 +53,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Order items'ları organize et
-    const items = orderData.order_items?.map((item: any) => ({
+    const items = orderData.order_items?.map((item: { id: string; product_id: string; quantity: number; unit_price: number; total_price: number; products?: { name: string; slug: string } }) => ({
       id: item.id,
       product_id: item.product_id,
       product_name: item.products?.name,
@@ -200,7 +200,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Order items'ları organize et
-    const items = orderWithItems.order_items?.map((item: any) => ({
+    const items = orderWithItems.order_items?.map((item: { id: string; product_id: string; quantity: number; unit_price: number; total_price: number; products?: { name: string; slug: string } }) => ({
       id: item.id,
       product_id: item.product_id,
       product_name: item.products?.name,

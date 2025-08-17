@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AlertCircle, RefreshCw, XCircle } from "lucide-react";
@@ -11,18 +11,10 @@ export default function CheckoutFailurePage() {
   const provider = searchParams.get("provider");
   const code = searchParams.get("code");
 
-  const [order, setOrder] = useState<any>(null);
+  const [order, setOrder] = useState<{ order_number: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (orderId) {
-      loadOrder();
-    } else {
-      setLoading(false);
-    }
-  }, [orderId]);
-
-  const loadOrder = async () => {
+  const loadOrder = useCallback(async () => {
     if (!orderId) return;
 
     try {
@@ -36,7 +28,15 @@ export default function CheckoutFailurePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [orderId]);
+
+  useEffect(() => {
+    if (orderId) {
+      loadOrder();
+    } else {
+      setLoading(false);
+    }
+  }, [orderId, loadOrder]);
 
   const getFailureMessage = () => {
     switch (code) {

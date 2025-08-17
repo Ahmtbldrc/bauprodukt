@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     const contentType = headersList.get('content-type') || ''
     const signature = headersList.get('datatrans-signature')
     
-    let data: any
+    let data: Record<string, unknown>
     let rawBody: string
 
     // Handle multiple content types
@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-async function queueOrderEmails(supabase: any, orderId: string) {
+async function queueOrderEmails(supabase: ReturnType<typeof createClient>, orderId: string) {
   try {
     // Fetch order details
     const { data: order } = await supabase

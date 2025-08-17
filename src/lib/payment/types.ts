@@ -44,15 +44,15 @@ export interface PaymentWebhookEvent {
   status: PaymentStatus
   amount?: number
   currency?: string
-  metadata?: Record<string, any>
-  rawPayload?: any
+  metadata?: Record<string, unknown>
+  rawPayload?: Record<string, unknown>
 }
 
 export interface PaymentError {
   code: string
   message: string
   provider?: PaymentProvider
-  details?: any
+  details?: Record<string, unknown>
 }
 
 export interface InfoniqaTransaction {
@@ -126,7 +126,7 @@ export class PaymentProcessingError extends Error {
     message: string,
     public code: string,
     public provider?: PaymentProvider,
-    public details?: any
+    public details?: Record<string, unknown>
   ) {
     super(message)
     this.name = 'PaymentProcessingError'
@@ -161,11 +161,11 @@ export function mapDataTransStatus(dataTransStatus: string): PaymentStatus {
 }
 
 // Validation helpers
-export function isValidPaymentProvider(provider: any): provider is PaymentProvider {
+export function isValidPaymentProvider(provider: unknown): provider is PaymentProvider {
   return provider === 'stripe' || provider === 'datatrans'
 }
 
-export function isValidPaymentStatus(status: any): status is PaymentStatus {
+export function isValidPaymentStatus(status: unknown): status is PaymentStatus {
   const validStatuses: PaymentStatus[] = ['pending', 'processing', 'paid', 'failed', 'cancelled', 'expired']
-  return validStatuses.includes(status)
+  return validStatuses.includes(status as PaymentStatus)
 }

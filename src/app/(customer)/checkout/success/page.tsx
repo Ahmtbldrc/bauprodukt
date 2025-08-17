@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Check, AlertCircle, RefreshCw } from "lucide-react";
@@ -12,34 +12,25 @@ export default function CheckoutSuccessPage() {
   const provider = searchParams.get("provider");
   const { clearCart } = useCart();
 
-  const [order, setOrder] = useState<any>(null);
+  const [order, setOrder] = useState<{
+    order_number: string;
+    payment_status: string;
+    total_amount: number;
+    order_items: Array<{
+      id: string;
+      product_name: string;
+      quantity: number;
+      unit_price: number;
+      total_price: number;
+    }>;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<string>("processing");
   const [pollCount, setPollCount] = useState(0);
   const [cartCleared, setCartCleared] = useState(false);
 
-  useEffect(() => {
-    if (orderId) {
-      pollOrderStatus();
-    } else {
-      setError("Keine Bestellnummer gefunden");
-      setLoading(false);
-    }
-  }, [orderId]);
-
-  // Clear cart when component mounts if payment is already confirmed
-  useEffect(() => {
-    if (orderId && paymentStatus === "paid" && !cartCleared && clearCart) {
-      clearCart();
-      setCartCleared(true);
-      console.log(
-        "Cart cleared on success page load - payment already confirmed"
-      );
-    }
-  }, [orderId, paymentStatus, cartCleared, clearCart]);
-
-  const pollOrderStatus = async () => {
+  const pollOrderStatus = useCallback(async () => {
     if (!orderId) return;
 
     try {
@@ -85,7 +76,27 @@ export default function CheckoutSuccessPage() {
       setError("Fehler beim Laden der Bestelldaten");
       setLoading(false);
     }
-  };
+  }, [orderId, pollCount, cartCleared, clearCart]);
+
+  useEffect(() => {
+    if (orderId) {
+      pollOrderStatus();
+    } else {
+      setError("Keine Bestellnummer gefunden");
+      setLoading(false);
+    }
+  }, [orderId, pollOrderStatus]);
+
+  // Clear cart when component mounts if payment is already confirmed
+  useEffect(() => {
+    if (orderId && paymentStatus === "paid" && !cartCleared && clearCart) {
+      clearCart();
+      setCartCleared(true);
+      console.log(
+        "Cart cleared on success page load - payment already confirmed"
+      );
+    }
+  }, [orderId, paymentStatus, cartCleared, clearCart]);
 
   if (loading) {
     return (
@@ -250,14 +261,22 @@ export default function CheckoutSuccessPage() {
 
                 {order.order_items && order.order_items.length > 0 && (
                   <div className="space-y-2 mb-4">
-                    {order.order_items.map((item: any) => (
-                      <div key={item.id} className="flex justify-between">
-                        <span>
-                          {item.product_name} (x{item.quantity})
-                        </span>
-                        <span>CHF {item.total_price.toFixed(2)}</span>
-                      </div>
-                    ))}
+                    {order.order_items.map(
+                      (item: {
+                        id: string;
+                        product_name: string;
+                        quantity: number;
+                        unit_price: number;
+                        total_price: number;
+                      }) => (
+                        <div key={item.id} className="flex justify-between">
+                          <span>
+                            {item.product_name} (x{item.quantity})
+                          </span>
+                          <span>CHF {item.total_price.toFixed(2)}</span>
+                        </div>
+                      )
+                    )}
                   </div>
                 )}
 
@@ -277,12 +296,8 @@ export default function CheckoutSuccessPage() {
               • Sie erhalten eine Bestätigungs-E-Mail mit allen Details
               <br />
               • Ihre Bestellung wird bearbeitet und versendet
-              <br />
-              • Sie erhalten eine Versandbestätigung mit Tracking-Informationen
-              <br />
-              {cartCleared && (
-                <span>• Ihr Warenkorb wurde automatisch geleert</span>
-              )}
+              <br />• Sie erhalten eine Versandbestätigung mit
+              Tracking-Informationen
             </p>
           </div>
         </div>

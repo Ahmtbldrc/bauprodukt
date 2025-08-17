@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useCart } from '@/contexts/CartContext'
@@ -19,29 +19,12 @@ export default function PaymentCheckoutPage() {
   const [selectedProvider, setSelectedProvider] = useState<'stripe' | 'datatrans' | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [order, setOrder] = useState<any>(null)
+  const [order, setOrder] = useState<{ total_amount: number; order_items: Array<{ id: string; product?: { name: string }; product_name?: string; quantity: number; price?: number; unit_price?: number }> } | null>(null)
   const [loadingOrder, setLoadingOrder] = useState(false)
 
   const totalAmount = getTotalAmount()
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/login?redirect=/checkout')
-    }
-  }, [authLoading, isAuthenticated, router])
-
-  // Load order if orderId is provided
-  useEffect(() => {
-    if (orderId) {
-      loadOrder()
-    } else if (!cartLoading && (!cart || cart.items.length === 0)) {
-      // If no orderId and cart is empty, redirect to cart
-      router.push('/cart')
-    }
-  }, [orderId, cart, cartLoading])
-
-  const loadOrder = async () => {
+  const loadOrder = useCallback(async () => {
     if (!orderId) return
     
     setLoadingOrder(true)
@@ -58,7 +41,24 @@ export default function PaymentCheckoutPage() {
     } finally {
       setLoadingOrder(false)
     }
-  }
+  }, [orderId])
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/login?redirect=/checkout')
+    }
+  }, [authLoading, isAuthenticated, router])
+
+  // Load order if orderId is provided
+  useEffect(() => {
+    if (orderId) {
+      loadOrder()
+    } else if (!cartLoading && (!cart || cart.items.length === 0)) {
+      // If no orderId and cart is empty, redirect to cart
+      router.push('/cart')
+    }
+  }, [orderId, cart, cartLoading, loadOrder, router])
 
   const handleCreateOrder = async () => {
     if (!cart || cart.items.length === 0) {
@@ -248,7 +248,7 @@ export default function PaymentCheckoutPage() {
               {/* Items */}
               {displayItems && displayItems.length > 0 && (
                 <div className="space-y-3 mb-4">
-                  {displayItems.map((item: any) => (
+                  {displayItems.map((item: { id: string; product?: { name: string }; product_name?: string; quantity: number; price?: number; unit_price?: number }) => (
                     <div key={item.id} className="flex justify-between items-center">
                       <div className="flex-1">
                         <p className="text-sm font-medium text-gray-900">
@@ -257,7 +257,7 @@ export default function PaymentCheckoutPage() {
                         <p className="text-xs text-gray-500">Menge: {item.quantity}</p>
                       </div>
                       <p className="text-sm font-medium text-gray-900">
-                        CHF {((item.price || item.unit_price) * item.quantity).toFixed(2)}
+                        CHF {((item.price || item.unit_price || 0) * item.quantity).toFixed(2)}
                       </p>
                     </div>
                   ))}
