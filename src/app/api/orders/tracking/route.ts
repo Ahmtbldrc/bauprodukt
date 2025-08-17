@@ -4,7 +4,12 @@ import { z } from 'zod'
 
 const updateTrackingSchema = z.object({
   order_number: z.string().min(1, 'Order number is required'),
-  tracking_url: z.string().url('Valid tracking URL is required')
+  tracking_url: z.string().url('Valid tracking URL is required'),
+  tracking_number: z.string().min(1, 'Tracking number is required'),
+  expected_delivery_date: z.string().refine((date) => {
+    const parsed = new Date(date)
+    return !isNaN(parsed.getTime()) && parsed >= new Date()
+  }, 'Expected delivery date must be a valid future date')
 })
 
 export async function PUT(request: NextRequest) {
@@ -27,7 +32,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const { order_number, tracking_url } = validation.data
+    const { order_number, tracking_url, tracking_number, expected_delivery_date } = validation.data
 
     // Check if order exists
     const { error: fetchError } = await supabase
@@ -50,15 +55,17 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    // Update tracking URL and set status to delivered
+    // Update tracking information and set status to delivered
     const { data: updatedOrder, error: updateError } = await supabase
       .from('orders')
       .update({ 
         tracking_url,
+        tracking_number,
+        expected_delivery_date,
         status: 'delivered'
       })
       .eq('order_number', order_number)
-      .select('id, order_number, tracking_url, status, updated_at')
+      .select('id, order_number, tracking_url, tracking_number, expected_delivery_date, status, updated_at')
       .single()
 
     if (updateError) {
@@ -71,11 +78,13 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Tracking URL added and order status updated to delivered',
+      message: 'Tracking information added and order status updated to delivered',
       data: {
         order_id: updatedOrder.id,
         order_number: updatedOrder.order_number,
         tracking_url: updatedOrder.tracking_url,
+        tracking_number: updatedOrder.tracking_number,
+        expected_delivery_date: updatedOrder.expected_delivery_date,
         status: updatedOrder.status,
         updated_at: updatedOrder.updated_at
       }
@@ -104,10 +113,10 @@ export async function GET(request: NextRequest) {
 
     const supabase = createClient()
 
-    // Get tracking URL for order
+    // Get tracking information for order
     const { data: order, error } = await supabase
       .from('orders')
-      .select('id, order_number, tracking_url, status')
+      .select('id, order_number, tracking_url, tracking_number, expected_delivery_date, status')
       .eq('order_number', orderNumber)
       .single()
 
@@ -129,6 +138,8 @@ export async function GET(request: NextRequest) {
       order_id: order.id,
       order_number: order.order_number,
       tracking_url: order.tracking_url,
+      tracking_number: order.tracking_number,
+      expected_delivery_date: order.expected_delivery_date,
       status: order.status
     })
 
