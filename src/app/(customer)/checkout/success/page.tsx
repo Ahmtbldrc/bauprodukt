@@ -240,8 +240,7 @@ export default function CheckoutSuccessPage() {
                   Bestellnummer: {order.order_number}
                 </p>
                 <p className="text-gray-600 mt-2">
-                  Bezahlt über{" "}
-                  {provider === "stripe" ? "Stripe" : "DataTrans (TWINT)"}
+                  Bezahlt über {provider === "stripe" ? "Stripe" : "DataTrans"}
                 </p>
               </div>
 
