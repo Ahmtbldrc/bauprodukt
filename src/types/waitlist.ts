@@ -5,7 +5,7 @@ export interface WaitlistEntry {
   product_slug: string
   product_id: string | null
   payload_json: Record<string, unknown>
-  diff_summary: Record<string, unknown> | null
+  diff_summary: WaitlistDiff | null
   created_at: string
   updated_at: string | null
   created_by: string

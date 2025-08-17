@@ -5,7 +5,8 @@ import Image from 'next/image'
 import { useWaitlist } from '@/hooks/useWaitlist'
 import { WaitlistEntry } from '@/types/waitlist'
 import { useAdminSearch } from '@/contexts/AdminSearchContext'
-import { Clock, AlertTriangle, CheckCircle, XCircle, Check, X, Package, Edit, X as CloseIcon } from 'lucide-react'
+import { ProductDetailView } from './ProductDetailView'
+import { Clock, AlertTriangle, CheckCircle, XCircle, Check, X, Package, Edit } from 'lucide-react'
 
 export function WaitlistTable() {
   const { waitlistFilters } = useAdminSearch()
@@ -132,6 +133,8 @@ export function WaitlistTable() {
     }
     return 'Ausstehend'
   }
+
+
 
   if (isLoading) {
     return (
@@ -388,183 +391,13 @@ export function WaitlistTable() {
 
       {/* Product Detail Dialog */}
       {showProductDialog && selectedEntry && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 backdrop-blur-md bg-gray-900/20 transition-all duration-300 opacity-100"
-            style={{
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)'
-            }}
-            onClick={closeProductDialog}
-          />
-          
-          {/* Dialog */}
-          <div className="relative bg-white/90 backdrop-blur-sm rounded-lg shadow-xl max-w-4xl w-full mx-4 p-6 max-h-[90vh] overflow-y-auto transition-all duration-300 transform opacity-100 scale-100 translate-y-0 border border-white/20">
-            {/* Close Button */}
-            <button
-              onClick={closeProductDialog}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <CloseIcon className="w-6 h-6" />
-            </button>
-            
-            <div className="flex items-center gap-3 mb-6">
-              <Package className="h-6 w-6" style={{color: '#F39236'}} />
-              <h2 className="text-xl font-semibold text-gray-900">Produktdetails</h2>
-            </div>
-            
-            <div className="space-y-6">
-              {/* Product Image and Basic Info */}
-              <div className="flex items-start space-x-6">
-                <div className="flex-shrink-0">
-                  <div className="relative h-32 w-32 bg-gray-200 rounded-xl overflow-hidden shadow-lg">
-                    {selectedEntry.products?.image_url && selectedEntry.products.image_url.startsWith('http') ? (
-                      <Image
-                        src={selectedEntry.products.image_url}
-                        alt={selectedEntry.products.name || selectedEntry.product_slug}
-                        fill
-                        className="object-cover"
-                        sizes="128px"
-                        unoptimized
-                      />
-                    ) : (
-                      <div className="h-full w-full flex items-center justify-center">
-                        {selectedEntry.product_id ? (
-                          <Edit className="h-12 w-12 text-gray-500" />
-                        ) : (
-                          <Package className="h-12 w-12 text-gray-500" />
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex-1 space-y-4">
-                  <div>
-                    <h4 className="text-2xl font-bold text-gray-900 mb-2">
-                      {selectedEntry.products?.name || selectedEntry.product_slug}
-                    </h4>
-                    <p className="text-gray-600">
-                      Produkt ID: {selectedEntry.product_id || 'Neues Produkt'}
-                    </p>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-3">
-                      <span className="text-sm font-medium text-gray-500">Typ:</span>
-                      <span className={`inline-flex px-3 py-1 text-sm font-semibold rounded-full ${
-                        selectedEntry.product_id 
-                          ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' 
-                          : 'bg-green-100 text-green-800 border border-green-200'
-                      }`}>
-                        {selectedEntry.product_id ? 'Update' : 'Neues Produkt'}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center space-x-3">
-                      <span className="text-sm font-medium text-gray-500">Status:</span>
-                      <div className="flex items-center space-x-2">
-                        {getStatusIcon(selectedEntry)}
-                        <span className="text-sm font-medium text-gray-900">
-                          {getStatusText(selectedEntry)}
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-3">
-                      <span className="text-sm font-medium text-gray-500">Datum:</span>
-                      <span className="text-sm font-medium text-gray-900">
-                        {new Date(selectedEntry.created_at).toLocaleDateString('de-CH', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center space-x-3">
-                      <span className="text-sm font-medium text-gray-500">Slug:</span>
-                      <span className="text-sm font-mono text-gray-900 bg-gray-100 px-2 py-1 rounded">
-                        {selectedEntry.product_slug}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Reason and Details */}
-              <div className="border-t border-gray-200 pt-6">
-                <h5 className="text-lg font-semibold text-gray-900 mb-4">Änderungsdetails</h5>
-                <div className="space-y-4">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-start space-x-3">
-                      <AlertTriangle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1">
-                        <h6 className="text-sm font-medium text-blue-900 mb-1">Grund:</h6>
-                        <p className="text-sm text-blue-800">
-                          {selectedEntry.reason?.replace(/_/g, ' ') || 'Unbekannt'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {selectedEntry.diff_summary && (
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                      <h6 className="text-sm font-medium text-gray-900 mb-3">Änderungszusammenfassung:</h6>
-                      <div className="bg-white rounded border p-3 max-h-40 overflow-y-auto">
-                        <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono">
-                          {JSON.stringify(selectedEntry.diff_summary, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedEntry.payload_json && (
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                      <h6 className="text-sm font-medium text-gray-900 mb-3">Produktdaten:</h6>
-                      <div className="bg-white rounded border p-3 max-h-40 overflow-y-auto">
-                        <pre className="text-sm text-gray-800 whitespace-pre-wrap font-mono">
-                          {JSON.stringify(selectedEntry.payload_json, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="border-t border-gray-200 pt-6 flex items-center justify-end space-x-3">
-                                  <button
-                    onClick={() => {
-                      handleReject(selectedEntry.id, 'Von Admin abgelehnt')
-                      closeProductDialog()
-                    }}
-                    disabled={isProcessing}
-                    className="inline-flex items-center px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Ablehnen
-                  </button>
-                
-                <button
-                  onClick={() => {
-                    handleApprove(selectedEntry.id)
-                    closeProductDialog()
-                  }}
-                  disabled={isProcessing}
-                  className="inline-flex items-center px-6 py-3 text-white font-medium rounded-lg transition-colors hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                  style={{backgroundColor: '#F39236'}}
-                >
-                  <Check className="h-4 w-4 mr-2" />
-                  Genehmigen
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ProductDetailView
+          entry={selectedEntry}
+          onApprove={handleApprove}
+          onReject={handleReject}
+          isProcessing={isProcessing}
+          onClose={closeProductDialog}
+        />
       )}
     </div>
   )

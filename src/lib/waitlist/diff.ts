@@ -1,5 +1,38 @@
 import type { WaitlistDiff } from '@/types/waitlist'
 
+export interface DiffSummary {
+  total_changes: number
+  price_changes: Array<{
+    field: string
+    from: unknown
+    to: unknown
+    type: 'numeric' | 'text' | 'boolean' | 'object'
+    percentage_change?: number
+  }>
+  content_changes: Array<{
+    field: string
+    from: unknown
+    to: unknown
+    type: 'numeric' | 'text' | 'boolean' | 'object'
+    percentage_change?: number
+  }>
+  status_changes: Array<{
+    field: string
+    from: unknown
+    to: unknown
+    type: 'numeric' | 'text' | 'boolean' | 'object'
+    percentage_change?: number
+  }>
+  significant_changes: Array<{
+    field: string
+    from: unknown
+    to: unknown
+    type: 'numeric' | 'text' | 'boolean' | 'object'
+    percentage_change?: number
+    significance?: string
+  }>
+}
+
 /**
  * Calculates the difference between current and proposed product data
  */
@@ -49,13 +82,38 @@ export function calculateProductDiff(currentData: Record<string, unknown>, propo
 /**
  * Creates a human-readable summary of changes
  */
-export function createDiffSummary(diff: WaitlistDiff): Record<string, unknown> {
-  const summary = {
+export function createDiffSummary(diff: WaitlistDiff): DiffSummary {
+  const summary: DiffSummary = {
     total_changes: Object.keys(diff).length,
-    price_changes: [] as Array<Record<string, unknown>>,
-    content_changes: [] as Array<Record<string, unknown>>,
-    status_changes: [] as Array<Record<string, unknown>>,
-    significant_changes: [] as Array<Record<string, unknown>>
+    price_changes: [] as Array<{
+      field: string
+      from: unknown
+      to: unknown
+      type: 'numeric' | 'text' | 'boolean' | 'object'
+      percentage_change?: number
+    }>,
+    content_changes: [] as Array<{
+      field: string
+      from: unknown
+      to: unknown
+      type: 'numeric' | 'text' | 'boolean' | 'object'
+      percentage_change?: number
+    }>,
+    status_changes: [] as Array<{
+      field: string
+      from: unknown
+      to: unknown
+      type: 'numeric' | 'text' | 'boolean' | 'object'
+      percentage_change?: number
+    }>,
+    significant_changes: [] as Array<{
+      field: string
+      from: unknown
+      to: unknown
+      type: 'numeric' | 'text' | 'boolean' | 'object'
+      percentage_change?: number
+      significance?: string
+    }>
   }
   
   Object.entries(diff).forEach(([field, change]) => {
