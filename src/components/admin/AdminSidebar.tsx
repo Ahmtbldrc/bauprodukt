@@ -14,7 +14,8 @@ import {
   Star, 
   MessageCircle, 
   BarChart3, 
-  Mail 
+  Mail,
+  Clock
 } from 'lucide-react'
 
 export function AdminSidebar() {
@@ -44,6 +45,13 @@ export function AdminSidebar() {
       href: '/admin/products', 
       icon: <Package className="w-5 h-5" strokeWidth={1.5} />,
       current: pathname.startsWith('/admin/products')
+    },
+    { 
+      name: 'Waitlist', 
+      href: '/admin/waitlist', 
+      icon: <Clock className="w-5 h-5" strokeWidth={1.5} />,
+      current: pathname.startsWith('/admin/waitlist'),
+      hasNotification: true
     },
     { 
       name: 'Orders', 

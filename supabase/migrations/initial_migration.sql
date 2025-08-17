@@ -79,11 +79,22 @@ CREATE TABLE products (
     slug VARCHAR(255) UNIQUE NOT NULL,
     description TEXT,
     price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
+    currency VARCHAR(3) NOT NULL DEFAULT 'CHF',
     stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
+    stock_code VARCHAR(100),
     image_url TEXT,
+    source_url TEXT,
+    images JSONB DEFAULT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'active',
+    is_changeable BOOLEAN NOT NULL DEFAULT true,
+    language VARCHAR(10) NOT NULL DEFAULT 'de',
+    raw_variant_data JSONB DEFAULT NULL,
     brand_id UUID REFERENCES brands(id) ON DELETE SET NULL,
     category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    category_slug VARCHAR(255),
+    attribute_data JSONB DEFAULT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Products tablosu için indexler
@@ -91,9 +102,19 @@ CREATE INDEX idx_products_slug ON products(slug);
 CREATE INDEX idx_products_name ON products(name);
 CREATE INDEX idx_products_brand_id ON products(brand_id);
 CREATE INDEX idx_products_category_id ON products(category_id);
+CREATE INDEX idx_products_category_slug ON products(category_slug);
+CREATE INDEX idx_products_currency ON products(currency);
+CREATE INDEX idx_products_stock_code ON products(stock_code);
+CREATE INDEX idx_products_source_url ON products(source_url);
+CREATE INDEX idx_products_status ON products(status);
+CREATE INDEX idx_products_is_changeable ON products(is_changeable);
+CREATE INDEX idx_products_language ON products(language);
+CREATE INDEX idx_products_raw_variant_data ON products USING GIN (raw_variant_data);
+CREATE INDEX idx_products_images ON products USING GIN (images);
 CREATE INDEX idx_products_price ON products(price);
 CREATE INDEX idx_products_stock ON products(stock);
 CREATE INDEX idx_products_created_at ON products(created_at);
+CREATE INDEX idx_products_updated_at ON products(updated_at);
 
 -- Filtering için composite indexler
 CREATE INDEX idx_products_brand_category ON products(brand_id, category_id);
@@ -102,6 +123,9 @@ CREATE INDEX idx_products_brand_price ON products(brand_id, price);
 
 -- Text search için trigram index (extension yüklendikten sonra)
 CREATE INDEX idx_products_name_gin ON products USING GIN (name gin_trgm_ops);
+
+-- Attribute data için GIN index
+CREATE INDEX idx_products_attribute_data ON products USING GIN (attribute_data);
 
 -- Products tablosu için RLS
 ALTER TABLE products ENABLE ROW LEVEL SECURITY;

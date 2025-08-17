@@ -4,8 +4,9 @@ export {
   useProducts, 
   useProductsByCategory, 
   useProductById, 
-  useProductBySlug, 
+ useProductBySlug, 
   useProductByBrandCategorySlug, 
   useProductsByBrand 
 } from './useProducts'
-export { useBanners, useActiveBanners } from './useBanners' 
+export { useBanners, useActiveBanners } from './useBanners'
+export { useWaitlist } from './useWaitlist' 

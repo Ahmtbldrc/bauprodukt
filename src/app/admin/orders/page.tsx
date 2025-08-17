@@ -262,7 +262,7 @@ export default function AdminOrdersPage() {
 
       {/* Orders Table */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
@@ -360,39 +360,72 @@ export default function AdminOrdersPage() {
 
       {/* Order Detail Modal */}
       {showOrderModal && selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Bestellung #{selectedOrder.order_number}
-                </h2>
-                <button
-                  onClick={closeOrderModal}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <XCircle className="h-6 w-6" />
-                </button>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 backdrop-blur-md bg-gray-900/20 transition-all duration-300 opacity-100"
+            style={{
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)'
+            }}
+            onClick={closeOrderModal}
+          />
+          
+          {/* Dialog */}
+          <div className="relative bg-white/90 backdrop-blur-sm rounded-lg shadow-xl max-w-5xl w-full mx-4 p-6 max-h-[90vh] overflow-y-auto transition-all duration-300 transform opacity-100 scale-100 translate-y-0 border border-white/20">
+            {/* Close Button */}
+            <button
+              onClick={closeOrderModal}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <XCircle className="w-6 h-6" />
+            </button>
+            
+            <div className="flex items-center gap-3 mb-6">
+              <Package className="h-6 w-6" style={{color: '#F39236'}} />
+              <h2 className="text-xl font-semibold text-gray-900">
+                Bestellung #{selectedOrder.order_number}
+              </h2>
             </div>
 
-            <div className="p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <div className="space-y-6">
+              {/* Customer and Shipping Information */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Customer Information */}
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-3">Kundeninformationen</h3>
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <p><strong>Name:</strong> {selectedOrder.customer_name}</p>
-                    <p><strong>E-Mail:</strong> {selectedOrder.customer_email}</p>
-                    <p><strong>Telefon:</strong> {selectedOrder.customer_phone}</p>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    Kundeninformationen
+                  </h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-blue-700 font-medium">Name:</span>
+                      <span className="text-blue-900">{selectedOrder.customer_name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-blue-700 font-medium">E-Mail:</span>
+                      <span className="text-blue-900">{selectedOrder.customer_email}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-blue-700 font-medium">Telefon:</span>
+                      <span className="text-blue-900">{selectedOrder.customer_phone}</span>
+                    </div>
                   </div>
                 </div>
 
                 {/* Shipping Address */}
-                <div>
-                  <h3 className="font-medium text-gray-900 mb-3">Lieferadresse</h3>
-                  <div className="text-sm text-gray-600">
-                    <p>{selectedOrder.shipping_address}</p>
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-green-900 mb-3 flex items-center gap-2">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Lieferadresse
+                  </h3>
+                  <div className="space-y-1 text-sm text-green-900">
+                    <p className="font-medium">{selectedOrder.shipping_address}</p>
                     <p>{selectedOrder.shipping_postal_code} {selectedOrder.shipping_district}</p>
                     <p>{selectedOrder.shipping_province}</p>
                   </div>
@@ -400,29 +433,41 @@ export default function AdminOrdersPage() {
               </div>
 
               {/* Order Items */}
-              <div className="mb-6">
-                <h3 className="font-medium text-gray-900 mb-3">Bestellte Artikel</h3>
-                <div className="space-y-2">
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                  Bestellte Artikel
+                </h3>
+                <div className="space-y-3">
                   {selectedOrder.order_items.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                    <div key={item.id} className="bg-white rounded-lg border border-gray-200 p-3 flex items-center justify-between">
                       <div className="flex-1">
                         <p className="font-medium text-gray-900">{item.product_name}</p>
                         <p className="text-sm text-gray-500">
                           Menge: {item.quantity} × {formatPrice(item.unit_price)}
                         </p>
                       </div>
-                      <p className="font-medium text-gray-900">
-                        {formatPrice(item.total_price)}
-                      </p>
+                      <div className="text-right">
+                        <p className="font-semibold text-gray-900">
+                          {formatPrice(item.total_price)}
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>
               </div>
 
               {/* Status Update */}
-              <div className="mb-6">
-                <h3 className="font-medium text-gray-900 mb-3">Status aktualisieren</h3>
-                <div className="flex gap-2">
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                <h3 className="font-semibold text-orange-900 mb-4 flex items-center gap-2">
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Status aktualisieren
+                </h3>
+                <div className="flex flex-wrap gap-2">
                   {Object.entries(statusConfig).map(([status, config]) => {
                     const StatusIcon = config.icon
                     const isCurrentStatus = selectedOrder.status === status
@@ -432,13 +477,13 @@ export default function AdminOrdersPage() {
                         key={status}
                         onClick={() => updateOrderStatus(selectedOrder.id, status as Order['status'])}
                         disabled={isUpdatingStatus || isCurrentStatus}
-                        className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                           isCurrentStatus
-                            ? `${config.bgColor} ${config.color} ${config.borderColor}`
-                            : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-                        } disabled:opacity-50`}
+                            ? `${config.bgColor} ${config.color} ${config.borderColor} shadow-md`
+                            : 'border border-gray-300 text-gray-700 hover:bg-white hover:shadow-sm hover:border-gray-400'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-2">
                           <StatusIcon className="h-4 w-4" />
                           {config.label}
                         </div>
@@ -450,23 +495,39 @@ export default function AdminOrdersPage() {
 
               {/* Order Notes */}
               {selectedOrder.notes && (
-                <div className="mb-6">
-                  <h3 className="font-medium text-gray-900 mb-2">Bestellnotizen</h3>
-                  <p className="text-sm text-gray-600">{selectedOrder.notes}</p>
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-purple-900 mb-3 flex items-center gap-2">
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Bestellnotizen
+                  </h3>
+                  <p className="text-sm text-purple-800 bg-white rounded border p-3">
+                    {selectedOrder.notes}
+                  </p>
                 </div>
               )}
 
               {/* Order Summary */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-gray-600">Bestelldatum: {formatDate(selectedOrder.created_at)}</p>
-                    <p className="text-sm text-gray-600">Letzte Aktualisierung: {formatDate(selectedOrder.updated_at)}</p>
+              <div className="bg-gradient-to-r from-gray-50 to-gray-100 border border-gray-200 rounded-lg p-6">
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Clock className="h-4 w-4" />
+                      <span>Bestelldatum: {formatDate(selectedOrder.created_at)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span>Letzte Aktualisierung: {formatDate(selectedOrder.updated_at)}</span>
+                    </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold" style={{color: '#F39236'}}>
+                    <p className="text-2xl font-bold" style={{color: '#F39236'}}>
                       {formatPrice(selectedOrder.total_amount)}
                     </p>
+                    <p className="text-sm text-gray-500">Gesamtbetrag</p>
                   </div>
                 </div>
               </div>

@@ -5,9 +5,10 @@ import { useRouter, useParams } from 'next/navigation'
 import { useProductById, useProductVariants, useProductImages } from '@/hooks/useProducts'
 import { useAllBrands } from '@/hooks/useBrands'
 import { useAllCategories } from '@/hooks/useCategories'
-import { ArrowLeft, Save, X, Loader2, Plus, Trash2, Image as ImageIcon, Package, Info, GripVertical } from 'lucide-react'
+import { ArrowLeft, Save, X, Loader2, Plus, Trash2, Image as ImageIcon, Package, Info, GripVertical, Clock, AlertTriangle } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { supabase } from '@/lib/supabase'
 
 interface Variant {
   id?: string
@@ -93,6 +94,15 @@ export default function EditProductPage() {
     position: 0
   })
 
+  // Waitlist durumu için state
+  const [waitlistInfo, setWaitlistInfo] = useState<{
+    id: string
+    product_slug: string
+    product_id: string
+    reason: string
+    requires_manual_review: boolean
+  } | null>(null)
+
   // Populate form when product data is loaded
   useEffect(() => {
     if (product) {
@@ -141,6 +151,28 @@ export default function EditProductPage() {
       setImages(loadedImages)
     }
   }, [imagesResponse])
+
+  // Ürünün waitlist durumunu kontrol et
+  useEffect(() => {
+    const checkWaitlistStatus = async () => {
+      if (product) {
+        try {
+          const { data } = await supabase
+            .from('waitlist_updates')
+            .select('*')
+            .eq('product_id', product.id)
+            .single()
+          
+          setWaitlistInfo(data)
+        } catch {
+          // Ürün için waitlist entry yoksa hata olur, bu normal
+          setWaitlistInfo(null)
+        }
+      }
+    }
+    
+    checkWaitlistStatus()
+  }, [product])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -360,6 +392,35 @@ export default function EditProductPage() {
           {/* Sağ tarafta boş alan - gelecekte eklenebilir */}
         </div>
       </div>
+
+      {/* Waitlist Durumu */}
+      {waitlistInfo && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <div className="flex items-center space-x-2">
+            <Clock className="h-5 w-5 text-yellow-600" />
+            <h3 className="text-lg font-medium text-yellow-800">
+              Waitlist&apos;te Bekleyen Güncellemeler
+            </h3>
+          </div>
+          <p className="text-yellow-700 mt-2">
+            Bu ürün için <strong>{waitlistInfo.reason?.replace('_', ' ')}</strong> nedeniyle bekleyen değişiklikler bulunmaktadır.
+          </p>
+          <div className="mt-3 flex space-x-2">
+            <Link
+              href={`/admin/waitlist?product_id=${product.id}`}
+              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-yellow-800 bg-yellow-100 hover:bg-yellow-200 transition-colors"
+            >
+              Waitlist&apos;i Görüntüle
+            </Link>
+            {waitlistInfo.requires_manual_review && (
+              <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                Manuel İnceleme Gerekli
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="border-b border-gray-200">

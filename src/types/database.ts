@@ -123,12 +123,21 @@ export interface Product {
   slug: string
   description: string | null
   price: number
+  currency: string
   discount_price: number | null
   stock: number
   stock_code: string | null
   image_url: string | null
+  source_url: string | null
+  images: Record<string, unknown>[] | null
+  status: string
+  is_changeable: boolean
+  language: string
+  raw_variant_data: Record<string, unknown> | null
   brand_id: string | null
   category_id: string | null
+  category_slug: string | null
+  attribute_data: Record<string, unknown> | null
   // Enhanced content system
   features_list: FeaturesListStructure | null
   created_at: string

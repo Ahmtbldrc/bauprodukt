@@ -16,6 +16,11 @@ export interface WaitlistEntry {
   requires_manual_review: boolean
   price_drop_percentage: number | null
   has_invalid_discount: boolean
+  products?: {
+    id: string
+    name: string
+    image_url: string
+  } | null
 }
 
 export enum WaitlistReason {
