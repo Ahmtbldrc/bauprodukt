@@ -1957,6 +1957,55 @@
             "description": "Delete order (only pending or cancelled orders can be deleted)"
           },
           "response": []
+        },
+        {
+          "name": "Update Tracking URL",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"order_number\": \"{{order_number}}\",\n  \"tracking_url\": \"https://tracking.example.com/track/ABC123XYZ\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/orders/tracking",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "tracking"]
+            },
+            "description": "Update tracking URL for an order by order number. Public endpoint - no authentication required."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tracking URL",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/orders/tracking?order_number={{order_number}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "orders", "tracking"],
+              "query": [
+                {
+                  "key": "order_number",
+                  "value": "{{order_number}}",
+                  "description": "Order number to get tracking URL for"
+                }
+              ]
+            },
+            "description": "Get tracking URL for an order by order number. Public endpoint - no authentication required."
+          },
+          "response": []
         }
       ],
       "description": "Order management endpoints"
