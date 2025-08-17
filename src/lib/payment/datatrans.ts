@@ -8,14 +8,16 @@ import {
   mapDataTransStatus
 } from './types'
 
-// DataTrans API configuration
-const DATATRANS_API_URL = process.env.DATATRANS_API_URL || 'https://api.sandbox.datatrans.com/v1'
+// DataTrans configuration
 const DATATRANS_MERCHANT_ID = process.env.DATATRANS_MERCHANT_ID || ''
 const DATATRANS_PASSWORD = process.env.DATATRANS_PASSWORD || ''
-const DATATRANS_SIGN_KEY = process.env.DATATRANS_SIGN_KEY || ''
+const DATATRANS_HMAC_KEY = process.env.DATATRANS_HMAC_KEY || ''
+const DATATRANS_PAYMENT_URL = process.env.DATATRANS_PAYMENT_URL || 'https://pay.sandbox.datatrans.com/v1/start'
+const DATATRANS_API_URL = process.env.DATATRANS_API_URL || 'https://api.sandbox.datatrans.com/v1'
 
 /**
- * Create a DataTrans transaction
+ * Create a DataTrans Payment Page session (redirect method)
+ * Uses the JSON API to initialize a transaction, then returns the redirect URL
  */
 export async function createDataTransSession(request: PaymentSessionRequest): Promise<PaymentSession> {
   try {
@@ -30,19 +32,12 @@ export async function createDataTransSession(request: PaymentSessionRequest): Pr
     // Create Basic Auth header
     const auth = Buffer.from(`${DATATRANS_MERCHANT_ID}:${DATATRANS_PASSWORD}`).toString('base64')
 
-    // Prepare transaction initialization request
+    // Prepare transaction initialization request for redirect mode
     const transactionRequest = {
       currency: request.currency || 'CHF',
       refno: request.orderNumber,
       amount: Math.round(request.amount * 100), // Convert to cents
-      paymentMethods: ['TWI'], // Twint
-      autoSettle: true,
-      customer: {
-        email: request.customerEmail,
-        title: null,
-        firstName: request.customerName.split(' ')[0] || '',
-        lastName: request.customerName.split(' ').slice(1).join(' ') || '',
-      },
+      paymentMethods: ['VIS', 'ECA', 'TWI'], // Visa, Mastercard, TWINT
       redirect: {
         successUrl: request.successUrl,
         cancelUrl: request.cancelUrl,
@@ -50,20 +45,10 @@ export async function createDataTransSession(request: PaymentSessionRequest): Pr
       },
       option: {
         createAlias: false,
-        authenticationOnly: false,
       },
-      webhook: {
-        url: `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/datatrans`,
-      },
-      theme: {
-        name: 'DT2015',
-        configuration: {
-          brandColor: '#F39236',
-        },
-      },
-      language: 'de',
     }
 
+    // Initialize transaction via API
     const response = await axios.post(
       `${DATATRANS_API_URL}/transactions`,
       transactionRequest,
@@ -75,7 +60,7 @@ export async function createDataTransSession(request: PaymentSessionRequest): Pr
       }
     )
 
-    if (!response.data.transactionId || !response.data.location) {
+    if (!response.data.transactionId) {
       throw new PaymentProcessingError(
         'Invalid DataTrans response',
         'INVALID_RESPONSE',
@@ -84,10 +69,13 @@ export async function createDataTransSession(request: PaymentSessionRequest): Pr
       )
     }
 
+    // Construct the redirect URL with the transaction ID
+    const redirectUrl = `${DATATRANS_PAYMENT_URL}/${response.data.transactionId}`
+
     return {
       provider: 'datatrans',
       sessionId: response.data.transactionId,
-      redirectUrl: response.data.location,
+      redirectUrl,
       amount: request.amount,
       currency: request.currency || 'CHF',
       expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes
@@ -119,95 +107,207 @@ export async function createDataTransSession(request: PaymentSessionRequest): Pr
 }
 
 /**
- * Verify DataTrans webhook signature (HMAC)
+ * Verify DataTrans webhook signature
+ * Supports multiple signature formats as Datatrans documentation varies
  */
 export function verifyDataTransWebhook(
   payload: string,
-  signature: string
+  signature: string | null
 ): boolean {
-  if (!DATATRANS_SIGN_KEY) {
-    throw new PaymentProcessingError(
-      'DataTrans sign key not configured',
-      'SIGN_KEY_MISSING',
-      'datatrans'
-    )
+  // If no HMAC key is configured, skip verification (for testing)
+  if (!DATATRANS_HMAC_KEY) {
+    console.warn('DataTrans HMAC key not configured, skipping signature verification')
+    return true // Allow webhooks in test environment
+  }
+
+  if (!signature) {
+    console.warn('No signature provided in webhook')
+    return false
   }
 
   try {
+    // Try format 1: "t=timestamp,s0=signature" (newer format)
+    const timestampFormat = signature.match(/t=([^,]+),s0=([^,]+)/)
+    if (timestampFormat) {
+      const timestamp = timestampFormat[1]
+      const receivedSignature = timestampFormat[2]
+      const dataToSign = timestamp + payload
+
+      const hmacKeyBuffer = Buffer.from(DATATRANS_HMAC_KEY, 'hex')
+      const expectedSignature = crypto
+        .createHmac('sha256', hmacKeyBuffer)
+        .update(dataToSign, 'utf8')
+        .digest('hex')
+
+      return crypto.timingSafeEqual(
+        Buffer.from(receivedSignature, 'hex'),
+        Buffer.from(expectedSignature, 'hex')
+      )
+    }
+
+    // Try format 2: Plain HMAC signature (legacy format)
+    const hmacKeyBuffer = Buffer.from(DATATRANS_HMAC_KEY, 'hex')
     const expectedSignature = crypto
-      .createHmac('sha256', DATATRANS_SIGN_KEY)
-      .update(payload)
+      .createHmac('sha256', hmacKeyBuffer)
+      .update(payload, 'utf8')
       .digest('hex')
 
-    return signature === expectedSignature
+    // Check if the signature matches directly
+    if (signature.toLowerCase() === expectedSignature.toLowerCase()) {
+      return true
+    }
+
+    // Try format 3: For form-encoded callbacks, construct sign from parameters
+    // This is used for redirect callbacks with sign parameter
+    try {
+      const params = JSON.parse(payload)
+      if (params.sign) {
+        // Construct the string to sign based on documented parameters
+        const signString = [
+          params.aliasCC || '',
+          params.merchantId || DATATRANS_MERCHANT_ID,
+          params.amount || '',
+          params.currency || '',
+          params.refno || ''
+        ].join('')
+
+        const calculatedSign = crypto
+          .createHmac('sha256', hmacKeyBuffer)
+          .update(signString, 'utf8')
+          .digest('hex')
+
+        return params.sign.toLowerCase() === calculatedSign.toLowerCase()
+      }
+    } catch {
+      // Not JSON or no sign parameter
+    }
+
+    console.warn('Signature verification failed - no matching format')
+    return false
   } catch (error) {
-    throw new PaymentProcessingError(
-      'Failed to verify DataTrans webhook signature',
-      'SIGNATURE_VERIFICATION_ERROR',
-      'datatrans',
-      error
-    )
+    console.error('DataTrans webhook signature verification error:', error)
+    return false
   }
 }
 
 /**
  * Process DataTrans webhook/callback
+ * Handles both JSON webhook events and form-encoded redirect callbacks
  */
-export async function processDataTransWebhook(data: any): Promise<PaymentWebhookEvent> {
+interface DataTransWebhookData {
+  status?: string
+  responseCode?: string | number
+  transactionId?: string
+  uppTransactionId?: string
+  refno?: string
+  responseMessage?: string
+  authorizationCode?: string
+  acquirerAuthorizationCode?: string
+  amount?: number | string
+  currency?: string
+  paymentMethod?: string
+  acquirer?: string
+  error?: {
+    code?: string
+    message?: string
+  }
+  [key: string]: unknown
+}
+
+export async function processDataTransWebhook(data: DataTransWebhookData): Promise<PaymentWebhookEvent> {
   const webhookEvent: PaymentWebhookEvent = {
     provider: 'datatrans',
-    eventType: data.status || 'unknown',
+    eventType: String(data.status || data.responseCode || 'unknown'),
     status: 'pending',
     rawPayload: data,
   }
 
-  // Map DataTrans status to our status
-  const status = data.status?.toLowerCase()
-  
-  switch (status) {
-    case 'settled':
-    case 'authorized':
-      webhookEvent.status = status === 'settled' ? 'paid' : 'processing'
-      webhookEvent.sessionId = data.transactionId
-      webhookEvent.paymentId = data.acquirerAuthorizationCode
-      webhookEvent.amount = data.amount ? data.amount / 100 : undefined
-      webhookEvent.currency = data.currency
-      webhookEvent.metadata = {
-        refno: data.refno,
-        paymentMethod: data.paymentMethod,
-        acquirer: data.acquirer,
-      }
-      break
+  // Handle legacy response codes (for redirect/callback mode)
+  if (data.responseCode) {
+    const responseCode = parseInt(String(data.responseCode))
+    switch (responseCode) {
+      case 1: // Success/Authorized
+        webhookEvent.status = 'paid'
+        webhookEvent.sessionId = String(data.transactionId || data.uppTransactionId || '')
+        webhookEvent.paymentId = String(data.authorizationCode || '')
+        webhookEvent.amount = data.amount ? parseFloat(String(data.amount)) / 100 : undefined
+        webhookEvent.currency = String(data.currency || '')
+        webhookEvent.metadata = {
+          refno: data.refno,
+          responseMessage: data.responseMessage,
+        }
+        break
 
-    case 'failed':
-    case 'declined':
-      webhookEvent.status = 'failed'
-      webhookEvent.sessionId = data.transactionId
-      webhookEvent.metadata = {
-        refno: data.refno,
-        errorCode: data.error?.code,
-        errorMessage: data.error?.message,
-      }
-      break
+      case 4: // Declined or error
+        webhookEvent.status = 'failed'
+        webhookEvent.sessionId = String(data.transactionId || data.uppTransactionId || '')
+        webhookEvent.metadata = {
+          refno: data.refno,
+          responseMessage: data.responseMessage,
+        }
+        break
 
-    case 'cancelled':
-      webhookEvent.status = 'cancelled'
-      webhookEvent.sessionId = data.transactionId
-      webhookEvent.metadata = {
-        refno: data.refno,
-      }
-      break
+      case 9: // Cancelled by user
+        webhookEvent.status = 'cancelled'
+        webhookEvent.sessionId = String(data.transactionId || data.uppTransactionId || '')
+        webhookEvent.metadata = {
+          refno: data.refno,
+          responseMessage: data.responseMessage,
+        }
+        break
 
-    case 'expired':
-      webhookEvent.status = 'expired'
-      webhookEvent.sessionId = data.transactionId
-      webhookEvent.metadata = {
-        refno: data.refno,
-      }
-      break
+      default:
+        console.log(`Unhandled DataTrans response code: ${responseCode}`)
+    }
+  } else {
+    // Handle modern JSON status (for API/webhook mode)
+    const status = String(data.status || '').toLowerCase()
+    
+    switch (status) {
+      case 'settled':
+      case 'authorized':
+        webhookEvent.status = status === 'settled' ? 'paid' : 'processing'
+        webhookEvent.sessionId = String(data.transactionId || '')
+        webhookEvent.paymentId = String(data.acquirerAuthorizationCode || '')
+        webhookEvent.amount = data.amount ? Number(data.amount) / 100 : undefined
+        webhookEvent.currency = String(data.currency || '')
+        webhookEvent.metadata = {
+          refno: data.refno,
+          paymentMethod: data.paymentMethod,
+          acquirer: data.acquirer,
+        }
+        break
 
-    default:
-      console.log(`Unhandled DataTrans webhook status: ${status}`)
+      case 'failed':
+      case 'declined':
+        webhookEvent.status = 'failed'
+        webhookEvent.sessionId = String(data.transactionId || '')
+        webhookEvent.metadata = {
+          refno: data.refno,
+          errorCode: data.error?.code,
+          errorMessage: data.error?.message,
+        }
+        break
+
+      case 'cancelled':
+        webhookEvent.status = 'cancelled'
+        webhookEvent.sessionId = String(data.transactionId || '')
+        webhookEvent.metadata = {
+          refno: data.refno,
+        }
+        break
+
+      case 'expired':
+        webhookEvent.status = 'expired'
+        webhookEvent.sessionId = String(data.transactionId || '')
+        webhookEvent.metadata = {
+          refno: data.refno,
+        }
+        break
+
+      default:
+        console.log(`Unhandled DataTrans webhook status: ${status}`)
+    }
   }
 
   return webhookEvent

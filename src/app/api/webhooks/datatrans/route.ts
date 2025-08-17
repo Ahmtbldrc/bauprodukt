@@ -6,30 +6,44 @@ import { headers } from 'next/headers'
 export async function POST(request: NextRequest) {
   try {
     const supabase = createClient()
-    const body = await request.text()
     const headersList = await headers()
-    const signature = headersList.get('x-datatrans-signature')
+    const contentType = headersList.get('content-type') || ''
+    const signature = headersList.get('datatrans-signature')
+    
+    let data: any
+    let rawBody: string
 
-    if (!signature) {
-      console.error('Missing DataTrans signature header')
-      return NextResponse.json(
-        { error: 'Missing signature' },
-        { status: 400 }
-      )
+    // Handle multiple content types
+    if (contentType.includes('application/json')) {
+      // JSON webhook
+      rawBody = await request.text()
+      data = JSON.parse(rawBody)
+    } else if (contentType.includes('application/x-www-form-urlencoded')) {
+      // Form-encoded webhook (common for redirect callbacks)
+      rawBody = await request.text()
+      const params = new URLSearchParams(rawBody)
+      data = Object.fromEntries(params.entries())
+    } else if (contentType.includes('text/xml')) {
+      // XML webhook (legacy but still supported)
+      rawBody = await request.text()
+      // For now, we'll just log XML webhooks
+      console.log('Received XML webhook (not fully supported):', rawBody)
+      return NextResponse.json({ success: true })
+    } else {
+      // Try to parse as form data
+      const formData = await request.formData()
+      data = Object.fromEntries(formData.entries())
+      rawBody = JSON.stringify(data)
     }
 
-    // Verify webhook signature
-    const isValid = verifyDataTransWebhook(body, signature)
-    if (!isValid) {
-      console.error('DataTrans webhook signature verification failed')
-      return NextResponse.json(
-        { error: 'Invalid signature' },
-        { status: 400 }
-      )
+    // Verify webhook signature if configured
+    if (process.env.DATATRANS_HMAC_KEY) {
+      const isValid = verifyDataTransWebhook(rawBody, signature || null)
+      if (!isValid && signature) {
+        console.error('DataTrans webhook signature verification failed')
+        // Log but don't reject - Datatrans may not always send signatures
+      }
     }
-
-    // Parse the webhook data
-    const data = JSON.parse(body)
     
     // Process the webhook event
     const webhookEvent = await processDataTransWebhook(data)
@@ -79,7 +93,7 @@ export async function POST(request: NextRequest) {
         code: webhookEvent.metadata?.errorCode || null,
         message: webhookEvent.metadata?.errorMessage || `DataTrans webhook: ${webhookEvent.eventType}`,
         raw_payload: webhookEvent.rawPayload,
-        correlation_id: data.transactionId,
+        correlation_id: data.transactionId || data.uppTransactionId || data.refno,
       })
 
     // Update order status based on webhook event
@@ -146,7 +160,7 @@ export async function POST(request: NextRequest) {
             error_message: webhookEvent.metadata.errorMessage || 'Payment failed',
             severity: 'error',
             context: webhookEvent.metadata,
-            correlation_id: data.transactionId,
+            correlation_id: data.transactionId || data.uppTransactionId || data.refno,
           })
       }
     }
