@@ -188,7 +188,8 @@ export const updateOrderSchema = z.object({
   billing_address: z.string().max(2000, 'Adres çok uzun').optional(),
   
   notes: z.string().max(1000, 'Not çok uzun').optional(),
-  status: orderStatusSchema.optional()
+  status: orderStatusSchema.optional(),
+  tracking_url: z.string().url('Geçerli bir takip URL\'i giriniz').optional()
 })
 
 // Role schemas
