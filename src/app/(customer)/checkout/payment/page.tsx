@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useCart } from '@/contexts/CartContext'
@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { ArrowLeft } from 'lucide-react'
 import ProviderSelector from '@/components/payment/ProviderSelector'
 
-export default function PaymentCheckoutPage() {
+function PaymentCheckoutContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const orderId = searchParams.get('orderId')
@@ -293,5 +293,13 @@ export default function PaymentCheckoutPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PaymentCheckoutPage() {
+  return (
+    <Suspense fallback={<div>Lädt...</div>}>
+      <PaymentCheckoutContent />
+    </Suspense>
   )
 }

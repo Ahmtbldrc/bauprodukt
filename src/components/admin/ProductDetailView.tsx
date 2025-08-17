@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import Image from 'next/image'
 import { WaitlistEntry } from '@/types/waitlist'
 import { createDiffSummary, generateTextSummary, DiffSummary } from '@/lib/waitlist/diff'
-import { Clock, AlertTriangle, CheckCircle, XCircle, Package, Edit, TrendingUp, TrendingDown, Minus, Plus, X } from 'lucide-react'
+import { Clock, AlertTriangle, CheckCircle, XCircle, Package, Edit, TrendingUp, Minus } from 'lucide-react'
 
 interface ProductDetailViewProps {
   entry: WaitlistEntry
@@ -108,7 +109,7 @@ export function ProductDetailView({
               Wichtige Änderungen
             </h4>
             <div className="space-y-2">
-              {summary.significant_changes.map((change: any, index: number) => (
+              {summary.significant_changes.map((change, index: number) => (
                 <div key={index} className="flex items-center justify-between p-2 bg-white rounded border">
                   <span className="text-sm font-medium text-amber-800">
                     {formatFieldName(change.field)}
@@ -128,7 +129,7 @@ export function ProductDetailView({
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
           <h4 className="text-lg font-semibold text-gray-900 mb-3">Detaillierte Änderungen</h4>
           <div className="space-y-3">
-            {Object.entries(entry.diff_summary).map(([field, change]: [string, any]) => (
+            {Object.entries(entry.diff_summary).map(([field, change]) => (
               <div key={field} className="bg-white rounded-lg border p-3">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-medium text-gray-900">{formatFieldName(field)}</span>
@@ -250,10 +251,13 @@ export function ProductDetailView({
           <div className="flex-shrink-0">
             <div className="relative h-32 w-32 bg-gray-200 rounded-xl overflow-hidden shadow-lg">
               {entry.products?.image_url && entry.products.image_url.startsWith('http') ? (
-                <img
+                <Image
                   src={entry.products.image_url}
                   alt={entry.products.name || entry.product_slug}
-                  className="h-full w-full object-cover"
+                  fill
+                  className="object-cover"
+                  sizes="128px"
+                  unoptimized
                 />
               ) : (
                 <div className="h-full w-full flex items-center justify-center">
@@ -345,7 +349,7 @@ export function ProductDetailView({
             ].map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id as 'summary' | 'details' | 'changes')}
                 className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center space-x-2 ${
                   activeTab === tab.id
                     ? 'border-orange-500 text-orange-600'
