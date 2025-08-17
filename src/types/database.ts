@@ -363,6 +363,7 @@ export interface Order {
   status: OrderStatus
   total_amount: number
   notes: string | null
+  tracking_url: string | null
   created_at: string
   updated_at: string
 }

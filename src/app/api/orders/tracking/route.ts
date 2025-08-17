@@ -68,7 +68,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Tracking URL updated successfully',
+      message: 'Tracking information updated successfully',
       data: {
         order_id: updatedOrder.id,
         order_number: updatedOrder.order_number,
