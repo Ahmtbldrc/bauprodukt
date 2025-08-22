@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Package, Plus, GripVertical, Edit, Trash2, Settings, Palette, Ruler, Hammer, Tag } from 'lucide-react'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+
 
 interface Attribute {
   name: string
@@ -33,6 +33,7 @@ interface VariantsTabProps {
   setVariants: (variants: Variant[]) => void
   productId: string
   isSaving?: boolean
+  openDeleteDialog: (index: number) => void
 }
 
 // Predefined attribute types
@@ -117,7 +118,8 @@ export default function VariantsTab({
   variants,
   setVariants,
   productId,
-  isSaving = false
+  isSaving = false,
+  openDeleteDialog
 }: VariantsTabProps) {
   console.log('🔄 VariantsTab rendered')
   console.log('variants prop:', variants)
@@ -139,11 +141,7 @@ export default function VariantsTab({
     attributes: []
   })
   
-  // State for dialog and toast
-  const [deleteDialog, setDeleteDialog] = useState<{
-    isOpen: boolean
-    index: number | null
-  }>({ isOpen: false, index: null })
+  // State for toast
   
   const [toast, setToast] = useState<{
     isVisible: boolean
@@ -151,7 +149,7 @@ export default function VariantsTab({
     type: 'success' | 'error'
   }>({ isVisible: false, message: '', type: 'success' })
 
-  console.log('deleteDialog state:', deleteDialog)
+
 
   const addVariant = () => {
     const newVariant: Variant = {
@@ -184,48 +182,9 @@ export default function VariantsTab({
     }, 4000)
   }
 
-  const openDeleteDialog = (index: number) => {
-    console.log('🗑️ Opening delete dialog for index:', index)
-    setDeleteDialog({ isOpen: true, index })
-  }
 
-  const closeDeleteDialog = () => {
-    setDeleteDialog({ isOpen: false, index: null })
-  }
 
-  const confirmDelete = async () => {
-    if (deleteDialog.index !== null) {
-      const index = deleteDialog.index
-      const variantToDelete = variants[index]
-      
-      try {
-        console.log('🗑️ Deleting variant:', variantToDelete)
-        
-        // Delete from API
-        const response = await fetch(`/api/products/${productId}/variants/${variantToDelete.id}`, {
-          method: 'DELETE',
-        })
 
-        if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.error || 'Varyant silinemedi')
-        }
-
-        console.log('✅ Variant deleted from API')
-        
-        // Remove from local state
-        const newVariants = variants.filter((_, i) => i !== index)
-        setVariants(newVariants)
-        
-        closeDeleteDialog()
-        showToast('Varyant başarıyla silindi!', 'success')
-      } catch (error) {
-        console.error('Varyant silme hatası:', error)
-        showToast(`Hata: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`, 'error')
-        closeDeleteDialog()
-      }
-    }
-  }
 
   const removeVariant = (index: number) => {
     openDeleteDialog(index)
@@ -274,7 +233,7 @@ export default function VariantsTab({
 
         if (!response.ok) {
           const error = await response.json()
-          throw new Error(error.error || 'Varyant güncellenemedi')
+          throw new Error(error.error || 'Variante konnte nicht aktualisiert werden')
         }
 
         const updatedVariant = await response.json()
@@ -285,7 +244,7 @@ export default function VariantsTab({
         newVariants[editingVariantIndex] = updatedVariant
         setVariants(newVariants)
         
-        showToast('Varyant başarıyla güncellendi!', 'success')
+        showToast('Variante erfolgreich aktualisiert!', 'success')
       } else {
         // Add new variant - POST request
         console.log('➕ Creating new variant:', editingVariant)
@@ -310,7 +269,7 @@ export default function VariantsTab({
 
         if (!response.ok) {
           const error = await response.json()
-          throw new Error(error.error || 'Varyant eklenemedi')
+          throw new Error(error.error || 'Variante konnte nicht hinzugefügt werden')
         }
 
         const newVariant = await response.json()
@@ -319,12 +278,12 @@ export default function VariantsTab({
         // Add to local state
         setVariants([...variants, newVariant])
         
-        showToast('Varyant başarıyla eklendi!', 'success')
+        showToast('Variante erfolgreich hinzugefügt!', 'success')
       }
       
       closeVariantDialog()
     } catch (error) {
-      console.error('Varyant kaydetme hatası:', error)
+              console.error('Fehler beim Speichern der Variante:', error)
       showToast(`Hata: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`, 'error')
     }
   }
@@ -381,7 +340,7 @@ export default function VariantsTab({
       .map(attr => attr.display_value)
       .join(' - ')
     
-    return attributeValues || 'Yeni Varyant'
+    return attributeValues || 'Neue Variante'
   }
 
   // Auto-generate title when attributes change
@@ -397,7 +356,7 @@ export default function VariantsTab({
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <Package className="h-6 w-6 text-[#F39236]" />
-          <h3 className="text-xl font-semibold text-gray-900">Varyantlar</h3>
+          <h3 className="text-xl font-semibold text-gray-900">Varianten</h3>
         </div>
         <button
           type="button"
@@ -406,15 +365,15 @@ export default function VariantsTab({
           style={{backgroundColor: '#F39236'}}
         >
           <Plus className="h-4 w-4" />
-          Varyant Ekle
+                      Variante hinzufügen
         </button>
       </div>
 
       {variants.length === 0 ? (
         <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg">
           <Package className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-          <p className="text-sm font-medium text-gray-900 mb-1">Henüz varyant eklenmemiş</p>
-          <p className="text-xs">Varyant eklemek için yukarıdaki butona tıklayın</p>
+                      <p className="text-sm font-medium text-gray-900 mb-1">Noch keine Varianten hinzugefügt</p>
+            <p className="text-xs">Klicken Sie auf den obigen Button, um eine Variante hinzuzufügen</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -433,7 +392,7 @@ export default function VariantsTab({
                     type="button"
                     onClick={() => editVariant(index)}
                     className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 p-1 rounded transition-colors"
-                    title="Varyantı düzenle"
+                    title="Variante bearbeiten"
                   >
                     <Edit className="w-4 h-4" />
                   </button>
@@ -441,7 +400,7 @@ export default function VariantsTab({
                     type="button"
                     onClick={() => removeVariant(index)}
                     className="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition-colors"
-                    title="Varyantı sil"
+                    title="Variante löschen"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -474,25 +433,25 @@ export default function VariantsTab({
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-500">Fiyat:</span>
+                  <span className="text-gray-500">Preis:</span>
                   <span className="ml-2 font-medium">{variant.price} CHF</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Stok:</span>
+                  <span className="text-gray-500">Lagerbestand:</span>
                   <span className="ml-2 font-medium">{variant.stock_quantity}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Durum:</span>
+                  <span className="text-gray-500">Status:</span>
                   <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
                     variant.is_active 
                       ? 'bg-green-100 text-green-800' 
                       : 'bg-red-100 text-red-800'
                   }`}>
-                    {variant.is_active ? 'Aktif' : 'Pasif'}
+                    {variant.is_active ? 'Aktiv' : 'Inaktiv'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Sıra:</span>
+                  <span className="text-gray-500">Reihenfolge:</span>
                   <span className="ml-2 font-medium">{variant.position}</span>
                 </div>
               </div>
@@ -529,14 +488,14 @@ export default function VariantsTab({
             <div className="flex items-center gap-3 mb-6">
               <Package className="h-6 w-6" style={{color: '#F39236'}} />
               <h2 className="text-xl font-semibold text-gray-900">
-                {editingVariantIndex !== null ? 'Varyant Düzenle' : 'Varyant Ekle'}
+                {editingVariantIndex !== null ? 'Variante bearbeiten' : 'Variante hinzufügen'}
               </h2>
             </div>
             
             <div className="space-y-6">
               {/* Basic Information */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Temel Bilgiler</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-4"></h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="edit_sku" className="block text-sm font-medium text-gray-700 mb-2">
@@ -554,9 +513,9 @@ export default function VariantsTab({
                   </div>
                   
                   <div>
-                    <label htmlFor="edit_title" className="block text-sm font-medium text-gray-700 mb-2">
-                      Başlık (Otomatik)
-                    </label>
+                                    <label htmlFor="edit_title" className="block text-sm font-medium text-gray-700 mb-2">
+                  Titel (Automatisch)
+                </label>
                     <input
                       id="edit_title"
                       type="text"
@@ -569,9 +528,9 @@ export default function VariantsTab({
                   </div>
                   
                   <div>
-                    <label htmlFor="edit_price" className="block text-sm font-medium text-gray-700 mb-2">
-                      Fiyat (CHF) *
-                    </label>
+                                    <label htmlFor="edit_price" className="block text-sm font-medium text-gray-700 mb-2">
+                  Preis (CHF) *
+                </label>
                     <input
                       id="edit_price"
                       type="number"
@@ -587,7 +546,7 @@ export default function VariantsTab({
                   
                   <div>
                     <label htmlFor="edit_compare_price" className="block text-sm font-medium text-gray-700 mb-2">
-                      Karşılaştırma Fiyatı (CHF)
+                      Vergleichspreis (CHF)
                     </label>
                     <input
                       id="edit_compare_price"
@@ -603,7 +562,7 @@ export default function VariantsTab({
                   
                   <div>
                     <label htmlFor="edit_stock" className="block text-sm font-medium text-gray-700 mb-2">
-                      Stok Miktarı
+                      Lagerbestand
                     </label>
                     <input
                       id="edit_stock"
@@ -618,7 +577,7 @@ export default function VariantsTab({
                   
                   <div>
                     <label htmlFor="edit_position" className="block text-sm font-medium text-gray-700 mb-2">
-                      Sıra
+                      Position
                     </label>
                     <input
                       id="edit_position"
@@ -636,7 +595,7 @@ export default function VariantsTab({
               {/* Attributes Section */}
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-medium text-gray-900">Özellikler</h3>
+                  <h3 className="text-lg font-medium text-gray-900">Eigenschaften</h3>
                   <div className="flex gap-2">
                     {PREDEFINED_ATTRIBUTES.map((attrType) => {
                       const Icon = attrType.icon
@@ -780,7 +739,7 @@ export default function VariantsTab({
                     className="w-4 h-4 text-[#F39236] border-gray-300 rounded focus:ring-[#F39236]"
                   />
                   <label htmlFor="edit_track_inventory" className="text-sm font-medium text-gray-700">
-                    Stok takibi yap
+                    Lagerbestand verfolgen
                   </label>
                 </div>
                 
@@ -793,7 +752,7 @@ export default function VariantsTab({
                     className="w-4 h-4 text-[#F39236] border-gray-300 rounded focus:ring-[#F39236]"
                   />
                   <label htmlFor="edit_continue_selling" className="text-sm font-medium text-gray-700">
-                    Stok bittiğinde satışa devam et
+                    Weiterverkauf bei Lagerbestandsmangel
                   </label>
                 </div>
                 
@@ -806,43 +765,33 @@ export default function VariantsTab({
                     className="w-4 h-4 text-[#F39236] border-gray-300 rounded focus:ring-[#F39236]"
                   />
                   <label htmlFor="edit_is_active" className="text-sm font-medium text-gray-700">
-                    Aktif
+                    Aktiv
                   </label>
                 </div>
               </div>
             </div>
             
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-              <button
-                type="button"
-                onClick={closeVariantDialog}
-                className="px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                İptal
-              </button>
+                              <button
+                  type="button"
+                  onClick={closeVariantDialog}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Abbrechen
+                </button>
               <button
                 type="button"
                 onClick={saveVariant}
                 className="px-4 py-2 bg-[#F39236] text-white font-medium rounded-lg hover:bg-[#E67E22] transition-colors"
               >
-                {editingVariantIndex !== null ? 'Güncelle' : 'Ekle'}
+                {editingVariantIndex !== null ? 'Aktualisieren' : 'Hinzufügen'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={deleteDialog.isOpen}
-        onClose={closeDeleteDialog}
-        onConfirm={confirmDelete}
-        title="Varyantı Sil"
-        message="Bu varyantı silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
-        confirmText="Evet, Sil"
-        cancelText="İptal"
-        variant="danger"
-      />
+
 
       {/* Toast Notifications */}
       <Toast

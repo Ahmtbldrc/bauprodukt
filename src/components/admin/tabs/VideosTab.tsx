@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Play, Upload, Loader2, Trash2 } from 'lucide-react'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { validateFile } from '@/lib/upload'
@@ -21,6 +21,8 @@ interface VideosTabProps {
   videos: Video[]
   setVideos: (videos: Video[]) => void
   openVideoDialog: (video: Video) => void
+  openDeleteDialog: (index: number) => void
+  productId: string
 }
 
 // Simple Toast Component for VideosTab
@@ -56,21 +58,47 @@ function Toast({ message, type, isVisible, onClose }: {
   )
 }
 
-export default function VideosTab({ videos, setVideos, openVideoDialog }: VideosTabProps) {
+export default function VideosTab({ videos, setVideos, openVideoDialog, openDeleteDialog, productId }: VideosTabProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [uploadingVideo, setUploadingVideo] = useState(false)
   
-  // State for dialog and toast
-  const [deleteDialog, setDeleteDialog] = useState<{
-    isOpen: boolean
-    index: number | null
-  }>({ isOpen: false, index: null })
+  // Remove local delete dialog state since it's now managed by parent
   
   const [toast, setToast] = useState<{
     isVisible: boolean
     message: string
     type: 'success' | 'error'
   }>({ isVisible: false, message: '', type: 'success' })
+
+  // Function to refresh videos from API
+  const refreshVideos = async () => {
+    try {
+      const response = await fetch(`/api/products/${productId}/videos`)
+      if (response.ok) {
+        const data = await response.json()
+        const refreshedVideos = (data.data || []).map((video: any) => ({
+          id: video.id,
+          title: video.title,
+          file: null,
+          description: '',
+          previewUrl: video.video_url,
+          video_url: video.video_url,
+          thumbnail_url: video.thumbnail_url,
+          duration: video.duration,
+          file_size: video.file_size
+        }))
+        console.log('Refreshing videos from API:', refreshedVideos)
+        setVideos(refreshedVideos)
+      }
+    } catch (error) {
+      console.error('Error refreshing videos:', error)
+    }
+  }
+
+  // Debug: Log videos state changes
+  useEffect(() => {
+    console.log('Videos state changed:', videos)
+  }, [videos])
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -95,7 +123,7 @@ export default function VideosTab({ videos, setVideos, openVideoDialog }: Videos
     if (videoFiles.length > 0) {
       videoFiles.forEach(file => handleVideoFileUpload(file))
     } else {
-      showToast('Lütfen geçerli bir video dosyası sürükleyin', 'error')
+      showToast('Bitte ziehen Sie eine gültige Videodatei hierher', 'error')
     }
   }
 
@@ -139,11 +167,34 @@ export default function VideosTab({ videos, setVideos, openVideoDialog }: Videos
         file_size: result.data[0].file_size
       }
       
-      setVideos([...videos, newVideo])
-      showToast('Video başarıyla yüklendi!', 'success')
+      // Immediately add the new video to local state for instant UI feedback
+      const newVideoForState: Video = {
+        id: result.data[0].id,
+        title: result.data[0].title,
+        file: file,
+        description: '',
+        previewUrl: result.data[0].video_url || URL.createObjectURL(file),
+        video_url: result.data[0].video_url,
+        thumbnail_url: result.data[0].thumbnail_url,
+        duration: result.data[0].duration,
+        file_size: result.data[0].file_size
+      }
+      
+      console.log('Uploading video, updating state:', { 
+        originalCount: videos.length, 
+        newCount: videos.length + 1, 
+        newVideo: newVideoForState 
+      })
+      setVideos([...videos, newVideoForState])
+      showToast('Video erfolgreich hochgeladen!', 'success')
+      
+      // Optionally refresh from API to ensure consistency
+      setTimeout(() => {
+        refreshVideos()
+      }, 100)
     } catch (error) {
       console.error('Video upload error:', error)
-      showToast(`Video yüklenirken hata oluştu: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`, 'error')
+              showToast(`Fehler beim Hochladen des Videos: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`, 'error')
     } finally {
       setUploadingVideo(false)
     }
@@ -156,24 +207,10 @@ export default function VideosTab({ videos, setVideos, openVideoDialog }: Videos
     }, 4000)
   }
 
-  const openDeleteDialog = (index: number) => {
-    setDeleteDialog({ isOpen: true, index })
-  }
-
-  const closeDeleteDialog = () => {
-    setDeleteDialog({ isOpen: false, index: null })
-  }
-
-  const confirmDelete = () => {
-    if (deleteDialog.index !== null) {
-      const index = deleteDialog.index
-      setVideos(videos.filter((_, i) => i !== index))
-      closeDeleteDialog()
-      showToast('Video başarıyla silindi!', 'success')
-    }
-  }
+  // Remove local dialog management functions since they're no longer needed
 
   const removeVideo = (index: number) => {
+    // Use the parent's openDeleteDialog function instead of local state
     openDeleteDialog(index)
   }
 
@@ -181,7 +218,10 @@ export default function VideosTab({ videos, setVideos, openVideoDialog }: Videos
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
         <Play className="h-6 w-6 text-[#F39236]" />
-        <h3 className="text-xl font-semibold text-gray-900">Ürün Videoları</h3>
+        <h3 className="text-xl font-semibold text-gray-900">Produktvideos</h3>
+        <div className="ml-auto text-sm text-gray-500">
+          {videos.length} video{videos.length !== 1 ? 's' : ''}
+        </div>
       </div>
 
       {/* Drag & Drop Area */}
@@ -202,7 +242,7 @@ export default function VideosTab({ videos, setVideos, openVideoDialog }: Videos
                 <Loader2 className="h-8 w-8 animate-spin" />
               </div>
             </div>
-            <h4 className="text-lg font-medium text-gray-900">Video yükleniyor...</h4>
+            <h4 className="text-lg font-medium text-gray-900">Video wird hochgeladen...</h4>
           </div>
         ) : videos.length === 0 ? (
           <div className="space-y-4">
@@ -212,11 +252,11 @@ export default function VideosTab({ videos, setVideos, openVideoDialog }: Videos
               </div>
             </div>
             <div>
-              <h4 className="text-lg font-medium text-gray-900 mb-2">
-                Video dosyalarını buraya sürükleyin
-              </h4>
+                              <h4 className="text-lg font-medium text-gray-900 mb-2">
+                  Videodateien hierher ziehen
+                </h4>
               <p className="text-gray-600 mb-4">
-                MP4, AVI, MOV, WMV, FLV, WebM, MKV formatlarını destekler
+                                  Unterstützt MP4, AVI, MOV, WMV, FLV, WebM, MKV Formate
               </p>
               <div className="flex items-center justify-center gap-4">
                 <div className="text-sm text-gray-500">
@@ -234,7 +274,7 @@ export default function VideosTab({ videos, setVideos, openVideoDialog }: Videos
                     className="hidden"
                   />
                   <span className="px-4 py-2 bg-[#F39236] text-white rounded-lg hover:bg-[#E67E22] transition-colors">
-                    Dosya Seç
+                    Datei auswählen
                   </span>
                 </label>
               </div>
@@ -245,7 +285,7 @@ export default function VideosTab({ videos, setVideos, openVideoDialog }: Videos
             {/* Uploaded Videos Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
               {videos.map((video, index) => (
-                <div key={index} className="relative group">
+                <div key={video.id} className="relative group">
                   {/* Video Preview Card */}
                   <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 hover:border-[#F39236] transition-colors cursor-pointer" onClick={() => openVideoDialog(video)}>
                     {video.file || video.previewUrl ? (
@@ -286,7 +326,7 @@ export default function VideosTab({ videos, setVideos, openVideoDialog }: Videos
                     type="button"
                     onClick={() => removeVideo(index)}
                     className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                    title="Videoyu sil"
+                    title="Video löschen"
                   >
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -311,7 +351,7 @@ export default function VideosTab({ videos, setVideos, openVideoDialog }: Videos
                 />
                 <span className="px-6 py-3 bg-[#F39236] text-white rounded-lg hover:bg-[#E67E22] transition-colors flex items-center gap-2">
                   <Upload className="h-4 w-4" />
-                  Daha Fazla Video Ekle
+                  Weitere Videos hinzufügen
                 </span>
               </label>
             </div>
@@ -319,17 +359,7 @@ export default function VideosTab({ videos, setVideos, openVideoDialog }: Videos
         )}
       </div>
 
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={deleteDialog.isOpen}
-        onClose={closeDeleteDialog}
-        onConfirm={confirmDelete}
-        title="Videoyu Sil"
-        message="Bu videoyu silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
-        confirmText="Evet, Sil"
-        cancelText="İptal"
-        variant="danger"
-      />
+      {/* Remove the local ConfirmDialog since it's now managed by parent */}
 
       {/* Toast Notifications */}
       <Toast

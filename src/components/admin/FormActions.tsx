@@ -19,11 +19,11 @@ export default function FormActions({
   isSaving, 
   onCancel, 
   cancelUrl = '/admin',
-  saveText = 'Kaydet',
-  savingText = 'Kaydediliyor...',
-  cancelText = 'İptal',
+  saveText = 'Speichern',
+  savingText = 'Wird gespeichert...',
+  cancelText = 'Abbrechen',
   isGeneratingPdf = false,
-  pdfGenerationText = 'PDF Oluşturuluyor...',
+  pdfGenerationText = 'PDF wird erstellt...',
   onSubmit
 }: FormActionsProps) {
   return (

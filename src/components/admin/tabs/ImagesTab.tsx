@@ -3,7 +3,7 @@
 import { Image as ImageIcon, Plus, Star, Trash2, Upload, GripVertical, CheckCircle, X } from 'lucide-react'
 import Image from 'next/image'
 import { useRef, useState } from 'react'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+
 import { AnimatedList } from '@/components/magicui/animated-list'
 import {
   DndContext,
@@ -35,6 +35,7 @@ interface ImagesTabProps {
   images: ProductImage[]
   setImages: (images: ProductImage[]) => void
   refetchImages?: () => void
+  openDeleteDialog: (index: number) => void
 }
 
 // Toast notification item for AnimatedList
@@ -160,7 +161,7 @@ function SortableImageItem({ image, index, onRemove, onSetCover, onImageChange }
                 <div className="w-12 h-12 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mx-auto mb-2 group-hover:scale-105 transition-transform duration-200">
                   <Upload className="h-5 w-5 text-orange-600" />
                 </div>
-                <p className="text-xs text-gray-600 font-medium">Resim seçmek için tıklayın</p>
+                <p className="text-xs text-gray-600 font-medium">Klicken Sie, um ein Bild auszuwählen</p>
               </div>
             </div>
           )}
@@ -187,7 +188,7 @@ function SortableImageItem({ image, index, onRemove, onSetCover, onImageChange }
           {image.is_cover && (
             <div className="absolute top-2 right-2 bg-orange-500 text-white px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-lg">
               <Star className="h-3 w-3 fill-current" />
-              Kapak
+              Titelbild
             </div>
           )}
           
@@ -198,7 +199,7 @@ function SortableImageItem({ image, index, onRemove, onSetCover, onImageChange }
                 type="button"
                 onClick={() => onSetCover(index)}
                 className="bg-blue-500 text-white p-2 rounded-lg hover:bg-blue-600 transition-colors duration-150 shadow-lg transform hover:scale-105"
-                title="Kapak resmi yap"
+                title="Als Titelbild festlegen"
               >
                 <Star className="h-3 w-3" />
               </button>
@@ -207,7 +208,7 @@ function SortableImageItem({ image, index, onRemove, onSetCover, onImageChange }
               type="button"
               onClick={() => onRemove(index)}
               className="bg-red-500 text-white p-2 rounded-lg hover:bg-red-600 transition-colors duration-150 shadow-lg transform hover:scale-105"
-              title="Resmi sil"
+                              title="Bild löschen"
             >
               <Trash2 className="h-3 w-3" />
             </button>
@@ -250,9 +251,9 @@ function SortableImageItem({ image, index, onRemove, onSetCover, onImageChange }
                   <Star className="h-2.5 w-2.5 text-white fill-current" />
                 )}
               </div>
-              <span className="text-xs font-medium transition-colors duration-150">
-                Kapak resmi
-              </span>
+                              <span className="text-xs font-medium transition-colors duration-150">
+                  Titelbild
+                </span>
             </label>
           </div>
         </div>
@@ -261,7 +262,7 @@ function SortableImageItem({ image, index, onRemove, onSetCover, onImageChange }
   )
 }
 
-export default function ImagesTab({ images, setImages, refetchImages }: ImagesTabProps) {
+export default function ImagesTab({ images, setImages, refetchImages, openDeleteDialog }: ImagesTabProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -275,11 +276,7 @@ export default function ImagesTab({ images, setImages, refetchImages }: ImagesTa
 
   const fileInputRef = useRef<HTMLInputElement>(null)
   
-  // State for dialog and toast
-  const [deleteDialog, setDeleteDialog] = useState<{
-    isOpen: boolean
-    index: number | null
-  }>({ isOpen: false, index: null })
+  // State for toast
   
   const [toasts, setToasts] = useState<Array<{
     id: string
@@ -322,7 +319,7 @@ export default function ImagesTab({ images, setImages, refetchImages }: ImagesTa
             setImages([...images, newImage])
             
             // Show success toast
-            showToast('Resim başarıyla eklendi!', 'success')
+            showToast('Bild erfolgreich hinzugefügt!', 'success')
           }
         }
         img.src = result
@@ -345,22 +342,7 @@ export default function ImagesTab({ images, setImages, refetchImages }: ImagesTa
     setToasts(prev => prev.filter(toast => toast.id !== id))
   }
 
-  const openDeleteDialog = (index: number) => {
-    setDeleteDialog({ isOpen: true, index })
-  }
 
-  const closeDeleteDialog = () => {
-    setDeleteDialog({ isOpen: false, index: null })
-  }
-
-  const confirmDelete = () => {
-    if (deleteDialog.index !== null) {
-      const index = deleteDialog.index
-      setImages(images.filter((_, i) => i !== index))
-      closeDeleteDialog()
-      showToast('Resim başarıyla silindi!', 'success')
-    }
-  }
 
   const removeImage = (index: number) => {
     openDeleteDialog(index)
@@ -370,7 +352,7 @@ export default function ImagesTab({ images, setImages, refetchImages }: ImagesTa
     try {
       const targetImage = images[index]
       if (!targetImage.id) {
-        showToast('Resim ID bulunamadı!', 'error')
+        showToast('Bild-ID nicht gefunden!', 'error')
         return
       }
 
@@ -385,7 +367,7 @@ export default function ImagesTab({ images, setImages, refetchImages }: ImagesTa
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Kapak resmi güncellenirken hata oluştu')
+        throw new Error(error.error || 'Fehler beim Aktualisieren des Titelbilds')
       }
 
       const result = await response.json()
@@ -408,9 +390,9 @@ export default function ImagesTab({ images, setImages, refetchImages }: ImagesTa
         refetchImages()
       }
       
-      showToast('Kapak resmi güncellendi!', 'success')
+      showToast('Titelbild aktualisiert!', 'success')
     } catch (error) {
-      console.error('Kapak resmi güncelleme hatası:', error)
+              console.error('Fehler beim Aktualisieren des Titelbilds:', error)
       showToast(`Hata: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`, 'error')
     }
   }
@@ -419,7 +401,7 @@ export default function ImagesTab({ images, setImages, refetchImages }: ImagesTa
     const newImages = [...images]
     newImages[index] = { ...newImages[index], image_url: imageUrl }
     setImages(newImages)
-    showToast('Resim güncellendi!', 'success')
+          showToast('Bild aktualisiert!', 'success')
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -430,7 +412,7 @@ export default function ImagesTab({ images, setImages, refetchImages }: ImagesTa
       const newIndex = parseInt(over.id.toString().split('-')[1])
       
       setImages(arrayMove(images, oldIndex, newIndex))
-      showToast('Resim sırası güncellendi!', 'success')
+      showToast('Bildreihenfolge aktualisiert!', 'success')
     }
   }
 
@@ -439,7 +421,7 @@ export default function ImagesTab({ images, setImages, refetchImages }: ImagesTa
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <ImageIcon className="h-6 w-6 text-[#F39236]" />
-          <h3 className="text-xl font-semibold text-gray-900">Ürün Resimleri</h3>
+          <h3 className="text-xl font-semibold text-gray-900">Produktbilder</h3>
         </div>
         <button
           type="button"
@@ -448,7 +430,7 @@ export default function ImagesTab({ images, setImages, refetchImages }: ImagesTa
           style={{backgroundColor: '#F39236'}}
         >
           <Plus className="h-4 w-4" />
-          Resim Ekle
+                      Bild hinzufügen
         </button>
         {/* Hidden file input for main add button */}
         <input
@@ -463,8 +445,8 @@ export default function ImagesTab({ images, setImages, refetchImages }: ImagesTa
       {images.length === 0 ? (
         <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg">
           <ImageIcon className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-          <p className="text-sm font-medium text-gray-900 mb-1">Henüz resim eklenmemiş</p>
-          <p className="text-xs">Resim eklemek için yukarıdaki butona tıklayın</p>
+                      <p className="text-sm font-medium text-gray-900 mb-1">Noch keine Bilder hinzugefügt</p>
+            <p className="text-xs">Klicken Sie auf den obigen Button, um ein Bild hinzuzufügen</p>
         </div>
       ) : (
         <DndContext
@@ -492,17 +474,7 @@ export default function ImagesTab({ images, setImages, refetchImages }: ImagesTa
         </DndContext>
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={deleteDialog.isOpen}
-        onClose={closeDeleteDialog}
-        onConfirm={confirmDelete}
-        title="Resmi Sil"
-        message="Bu resmi silmek istediğinize emin misiniz? Bu işlem geri alınamaz."
-        confirmText="Evet, Sil"
-        cancelText="İptal"
-        variant="danger"
-      />
+
 
       {/* Toast Notifications using Magic UI AnimatedList */}
       <div className="fixed bottom-4 right-4 z-50">

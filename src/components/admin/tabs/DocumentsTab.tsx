@@ -30,9 +30,10 @@ interface ProductDocument {
 interface DocumentsTabProps {
   documents: DocumentImage[]
   setDocuments: (documents: DocumentImage[]) => void
+  openDeleteDialog: (index: number) => void
 }
 
-export default function DocumentsTab({ documents, setDocuments }: DocumentsTabProps) {
+export default function DocumentsTab({ documents, setDocuments, openDeleteDialog }: DocumentsTabProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
 
@@ -59,7 +60,7 @@ export default function DocumentsTab({ documents, setDocuments }: DocumentsTabPr
     if (imageFiles.length > 0) {
       imageFiles.forEach(file => handleImageUpload(file))
     } else {
-      alert('Lütfen geçerli bir görsel dosyası sürükleyin')
+      alert('Bitte ziehen Sie eine gültige Bilddatei hierher')
     }
   }
 
@@ -101,30 +102,27 @@ export default function DocumentsTab({ documents, setDocuments }: DocumentsTabPr
       setDocuments([...documents, newImage])
     } catch (error) {
       console.error('Image upload error:', error)
-      alert(`Görsel yüklenirken hata oluştu: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`)
+      alert(`Fehler beim Hochladen des Bildes: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`)
     } finally {
       setUploadingImage(false)
     }
   }
 
   const removeImage = (index: number) => {
-    if (confirm('Bu görseli silmek istediğinize emin misiniz?')) {
-      setDocuments(documents.filter((_, i) => i !== index))
-    }
+    // Use the parent's openDeleteDialog function instead of local state
+    openDeleteDialog(index)
   }
-
-
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <FileText className="h-6 w-6 text-[#F39236]" />
-          <h3 className="text-xl font-semibold text-gray-900">Ürün Belgeleri</h3>
+          <h3 className="text-xl font-semibold text-gray-900">Produktdokumente</h3>
         </div>
         {documents.length > 0 && (
           <div className="text-sm text-gray-600 bg-gray-100 px-3 py-2 rounded-lg">
-            {documents.length} görsel yüklendi
+            {documents.length} Bilder hochgeladen
           </div>
         )}
       </div>
@@ -147,7 +145,7 @@ export default function DocumentsTab({ documents, setDocuments }: DocumentsTabPr
                 <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               </div>
             </div>
-            <h4 className="text-lg font-medium text-gray-900">Görsel yükleniyor...</h4>
+            <h4 className="text-lg font-medium text-gray-900">Bild wird hochgeladen...</h4>
           </div>
         ) : documents.length === 0 ? (
           <div className="space-y-4">
@@ -158,14 +156,14 @@ export default function DocumentsTab({ documents, setDocuments }: DocumentsTabPr
             </div>
             <div>
               <h4 className="text-lg font-medium text-gray-900 mb-2">
-                Görsel dosyalarını buraya sürükleyin
+                Bilddateien hierher ziehen
               </h4>
               <p className="text-gray-600 mb-4">
-                JPG, PNG, GIF, BMP, WebP, SVG formatlarını destekler
+                Unterstützt JPG, PNG, GIF, BMP, WebP, SVG Formate
               </p>
               <div className="flex items-center justify-center gap-4">
                 <div className="text-sm text-gray-500">
-                  veya
+                  oder
                 </div>
                 <label className="cursor-pointer">
                   <input
@@ -179,7 +177,7 @@ export default function DocumentsTab({ documents, setDocuments }: DocumentsTabPr
                     className="hidden"
                   />
                   <span className="px-4 py-2 bg-[#F39236] text-white rounded-lg hover:bg-[#E67E22] transition-colors">
-                    Görsel Seç
+                    Bild auswählen
                   </span>
                 </label>
               </div>
@@ -213,17 +211,17 @@ export default function DocumentsTab({ documents, setDocuments }: DocumentsTabPr
                       type="button"
                       onClick={() => removeImage(index)}
                       className="mt-2 w-full px-2 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded text-xs transition-colors border border-red-200 hover:border-red-300"
-                      title="Görseli sil"
+                      title="Bild löschen"
                     >
                       <Trash2 className="w-3 h-3 inline mr-1" />
-                      Sil
+                      Löschen
                     </button>
                   </div>
                 </div>
               ))}
             </div>
             
-            {/* Daha Fazla Görsel Ekle Butonu */}
+            {/* Weitere Bilder hinzufügen Butonu */}
             <div className="mt-4 flex justify-center">
               <label className="cursor-pointer">
                 <input
@@ -238,17 +236,13 @@ export default function DocumentsTab({ documents, setDocuments }: DocumentsTabPr
                 />
                 <span className="px-6 py-3 bg-[#F39236] text-white rounded-lg hover:bg-[#E67E22] transition-colors flex items-center gap-2">
                   <Upload className="h-4 w-4" />
-                  Daha Fazla Görsel Ekle
+                  Weitere Bilder hinzufügen
                 </span>
               </label>
             </div>
-            
-
           </div>
         )}
       </div>
-
-
     </div>
   )
 }

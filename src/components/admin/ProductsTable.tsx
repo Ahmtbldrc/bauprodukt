@@ -122,7 +122,7 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-800">Ürünler yüklenirken hata oluştu: {error.message}</p>
+        <p className="text-red-800">Fehler beim Laden der Produkte: {error.message}</p>
       </div>
     )
   }

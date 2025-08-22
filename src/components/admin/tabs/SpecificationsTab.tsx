@@ -19,9 +19,10 @@ interface SpecificationsTabProps {
   handleSpecificationChange: (field: string, value: string | TechnicalSpec[]) => void
   onSave?: () => void
   isSaving?: boolean
+  openDeleteDialog: (index: number) => void
 }
 
-export default function SpecificationsTab({ specifications, handleSpecificationChange, onSave, isSaving }: SpecificationsTabProps) {
+export default function SpecificationsTab({ specifications, handleSpecificationChange, onSave, isSaving, openDeleteDialog }: SpecificationsTabProps) {
   console.log('SpecificationsTab render - specifications:', specifications)
   console.log('Technical specs count:', specifications.technical_specs?.length)
   
@@ -44,55 +45,44 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
     }
   }
 
-  const handleDeleteSpec = (specId?: string) => {
-    console.log('Delete spec called with ID:', specId)
-    console.log('Current specs:', specifications.technical_specs)
-    
-    if (specId) {
-      const specs = specifications.technical_specs.filter(s => s.id !== specId)
-      console.log('Filtered specs:', specs)
-      handleSpecificationChange('technical_specs', specs)
-    } else {
-      console.log('No spec ID provided')
-    }
-  }
+
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
         <Settings className="h-6 w-6 text-[#F39236]" />
-        <h3 className="text-xl font-semibold text-gray-900">Teknik Özellikler</h3>
+        <h3 className="text-xl font-semibold text-gray-900">Technische Spezifikationen</h3>
       </div>
 
       {/* Custom Technical Specifications */}
       <div className="bg-white border border-gray-200 rounded-lg">
         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-          <h4 className="text-lg font-medium text-gray-900 mb-4">Teknik Özellikler</h4>
+          <h4 className="text-lg font-medium text-gray-900 mb-4"></h4>
           <div className="flex gap-4 items-end">
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Başlık
-              </label>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Titel
+                </label>
               <input
                 type="text"
                 value={newSpec.title}
                 onChange={(e) => setNewSpec({ ...newSpec, title: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200"
                 style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                placeholder="Örn: Güç Tüketimi, Boyutlar, Malzeme, Ağırlık, Renk"
+                placeholder="z.B.: Leistungsaufnahme, Abmessungen, Material, Gewicht, Farbe"
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Açıklama
-              </label>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Beschreibung
+                </label>
               <input
                 type="text"
                 value={newSpec.description}
                 onChange={(e) => setNewSpec({ ...newSpec, description: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200"
                 style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                placeholder="Örn: 1500W, 60x40x80 cm, Paslanmaz Çelik, 15.5 kg, Beyaz"
+                placeholder="z.B.: 1500W, 60x40x80 cm, Edelstahl, 15.5 kg, Weiß"
               />
             </div>
             <button
@@ -106,7 +96,7 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
               className="px-4 py-2 bg-[#F39236] text-white rounded-md hover:bg-[#E67E22] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2"
             >
               <Plus className="h-4 w-4" />
-              Ekle
+              Hinzufügen
             </button>
           </div>
         </div>
@@ -117,16 +107,16 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Sıra
+                  Reihenfolge
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Başlık
+                  Titel
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Açıklama
+                  Beschreibung
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  İşlemler
+                  Aktionen
                 </th>
               </tr>
             </thead>
@@ -134,7 +124,7 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
               {specifications.technical_specs.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
-                    Henüz özel teknik detay eklenmemiş. Yukarıdaki formu kullanarak ekleyebilirsiniz.
+                    Noch keine benutzerdefinierten technischen Details hinzugefügt. Sie können sie mit dem obigen Formular hinzufügen.
                   </td>
                 </tr>
               ) : (
@@ -158,10 +148,10 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
                             onClick={(e) => {
                               e.preventDefault()
                               e.stopPropagation()
-                              handleDeleteSpec(spec.id)
+                              openDeleteDialog(index)
                             }}
                             className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors duration-150"
-                            title="Sil"
+                            title="Löschen"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -189,10 +179,12 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
             className="px-6 py-3 bg-[#F39236] text-white rounded-md hover:bg-[#E67E22] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2"
           >
             <Settings className="h-4 w-4" />
-            {isSaving ? 'Kaydediliyor...' : 'Teknik Özellikleri Kaydet'}
+            {isSaving ? 'Wird gespeichert...' : 'Technische Spezifikationen speichern'}
           </button>
         </div>
       )}
+
+
     </div>
   )
 }

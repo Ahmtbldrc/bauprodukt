@@ -6,7 +6,7 @@ interface LoadingStateProps {
   message?: string
 }
 
-export default function LoadingState({ message = 'Yükleniyor...' }: LoadingStateProps) {
+export default function LoadingState({ message = 'Wird geladen...' }: LoadingStateProps) {
   return (
     <div className="flex items-center justify-center h-64">
       <div className="text-center">

@@ -22,6 +22,7 @@ import VideoDialog from '@/components/admin/VideoDialog'
 import LoadingState from '@/components/admin/LoadingState'
 import ErrorState from '@/components/admin/ErrorState'
 import FormActions from '@/components/admin/FormActions'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import type { 
   Variant, 
   ProductImage, 
@@ -121,10 +122,216 @@ export default function EditProductPage() {
   const [showVideoDialog, setShowVideoDialog] = useState(false)
   const [selectedVideo, setSelectedVideo] = useState<Video | null>(null)
 
+  // Dialog state'leri için
+  const [specificationsDeleteDialog, setSpecificationsDeleteDialog] = useState<{
+    isOpen: boolean
+    index: number | null
+  }>({
+    isOpen: false,
+    index: null
+  })
+
+  const [variantsDeleteDialog, setVariantsDeleteDialog] = useState<{
+    isOpen: boolean
+    index: number | null
+  }>({
+    isOpen: false,
+    index: null
+  })
+
+  const [imagesDeleteDialog, setImagesDeleteDialog] = useState<{
+    isOpen: boolean
+    index: number | null
+  }>({
+    isOpen: false,
+    index: null
+  })
+
+  const [documentsDeleteDialog, setDocumentsDeleteDialog] = useState<{
+    isOpen: boolean
+    index: number | null
+  }>({
+    isOpen: false,
+    index: null
+  })
+
+  const [videosDeleteDialog, setVideosDeleteDialog] = useState<{
+    isOpen: boolean
+    index: number | null
+  }>({
+    isOpen: false,
+    index: null
+  })
 
 
   // Waitlist durumu için state
   const [waitlistInfo, setWaitlistInfo] = useState<WaitlistInfo | null>(null)
+
+  // Dialog yönetim fonksiyonları
+  const openSpecificationsDeleteDialog = (index: number) => {
+    setSpecificationsDeleteDialog({ isOpen: true, index })
+  }
+
+  const closeSpecificationsDeleteDialog = () => {
+    setSpecificationsDeleteDialog({ isOpen: false, index: null })
+  }
+
+  const confirmSpecificationsDelete = async () => {
+    if (specificationsDeleteDialog.index === null) return
+    
+    try {
+      // API call to delete the specification
+      const specToDelete = specifications.technical_specs[specificationsDeleteDialog.index]
+      
+      // If the spec has an ID, call API to delete from database
+      if (specToDelete.id) {
+        const response = await fetch(`/api/admin/products/specifications/${specToDelete.id}`, {
+          method: 'DELETE',
+        })
+        
+        if (!response.ok) {
+          throw new Error('Failed to delete specification')
+        }
+      }
+      
+      // Remove from local state
+      const newSpecs = specifications.technical_specs.filter((_, i) => i !== specificationsDeleteDialog.index)
+      setSpecifications({
+        ...specifications,
+        technical_specs: newSpecs
+      })
+      
+      closeSpecificationsDeleteDialog()
+      toast.success('Spezifikation erfolgreich gelöscht!')
+    } catch (error) {
+      console.error('Error deleting specification:', error)
+      toast.error('Fehler beim Löschen der Spezifikation')
+    }
+  }
+
+  const openVariantsDeleteDialog = (index: number) => {
+    setVariantsDeleteDialog({ isOpen: true, index })
+  }
+
+  const closeVariantsDeleteDialog = () => {
+    setVariantsDeleteDialog({ isOpen: false, index: null })
+  }
+
+  const confirmVariantsDelete = async () => {
+    if (variantsDeleteDialog.index === null) return
+    
+    try {
+      // Remove from local state
+      const newVariants = variants.filter((_, i) => i !== variantsDeleteDialog.index)
+      setVariants(newVariants)
+      
+      closeVariantsDeleteDialog()
+      toast.success('Variante erfolgreich gelöscht!')
+    } catch (error) {
+      console.error('Error deleting variant:', error)
+      toast.error('Fehler beim Löschen der Variante')
+    }
+  }
+
+  const openImagesDeleteDialog = (index: number) => {
+    setImagesDeleteDialog({ isOpen: true, index })
+  }
+
+  const closeImagesDeleteDialog = () => {
+    setImagesDeleteDialog({ isOpen: false, index: null })
+  }
+
+  const confirmImagesDelete = async () => {
+    if (imagesDeleteDialog.index === null) return
+    
+    try {
+      // Remove from local state
+      const newImages = images.filter((_, i) => i !== imagesDeleteDialog.index)
+      setImages(newImages)
+      
+      closeImagesDeleteDialog()
+      toast.success('Bild erfolgreich gelöscht!')
+      refetchImages() // Refresh images from API
+    } catch (error) {
+      console.error('Error deleting image:', error)
+      toast.error('Fehler beim Löschen des Bildes')
+    }
+  }
+
+  const openDocumentsDeleteDialog = (index: number) => {
+    setDocumentsDeleteDialog({ isOpen: true, index })
+  }
+
+  const closeDocumentsDeleteDialog = () => {
+    setDocumentsDeleteDialog({ isOpen: false, index: null })
+  }
+
+  const confirmDocumentsDelete = async () => {
+    if (documentsDeleteDialog.index === null) return
+    
+    try {
+      const documentToDelete = documents[documentsDeleteDialog.index]
+      
+      // Make API call to delete the document from database
+      if (documentToDelete.id) {
+        const response = await fetch(`/api/products/${productId}/documents/${documentToDelete.id}`, {
+          method: 'DELETE',
+        })
+        
+        if (!response.ok) {
+          throw new Error('Failed to delete document')
+        }
+      }
+      
+      // Remove from local state
+      const newDocuments = documents.filter((_, i) => i !== documentsDeleteDialog.index)
+      setDocuments(newDocuments)
+      
+      closeDocumentsDeleteDialog()
+      toast.success('Dokument erfolgreich gelöscht!')
+    } catch (error) {
+      console.error('Error deleting document:', error)
+      toast.error('Fehler beim Löschen des Dokuments')
+    }
+  }
+
+  const openVideosDeleteDialog = (index: number) => {
+    setVideosDeleteDialog({ isOpen: true, index })
+  }
+
+  const closeVideosDeleteDialog = () => {
+    setVideosDeleteDialog({ isOpen: false, index: null })
+  }
+
+  const confirmVideosDelete = async () => {
+    if (videosDeleteDialog.index === null) return
+    
+    try {
+      const videoToDelete = videos[videosDeleteDialog.index]
+      
+      // Make API call to delete the video from database
+      if (videoToDelete.id) {
+        const response = await fetch(`/api/products/${productId}/videos/${videoToDelete.id}`, {
+          method: 'DELETE',
+        })
+        
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Failed to delete video')
+        }
+      }
+      
+      // Remove from local state
+      const newVideos = videos.filter((_, i) => i !== videosDeleteDialog.index)
+      setVideos(newVideos)
+      
+      closeVideosDeleteDialog()
+      toast.success('Video erfolgreich gelöscht!')
+    } catch (error) {
+      console.error('Error deleting video:', error)
+      toast.error('Fehler beim Löschen des Videos')
+    }
+  }
 
   // Populate form when product data is loaded
   useEffect(() => {
@@ -366,13 +573,13 @@ export default function EditProductPage() {
 
       if (!response.ok) {
         const error = await response.json()
-        throw new Error(error.error || 'Specifications kaydedilemedi')
+        throw new Error(error.error || 'Spezifikationen konnten nicht gespeichert werden')
       }
 
-      toast.success('Teknik özellikler başarıyla kaydedildi!')
+      toast.success('Technische Spezifikationen erfolgreich gespeichert!')
     } catch (error) {
       console.error('Specifications save error:', error)
-      toast.error(error instanceof Error ? error.message : 'Teknik özellikler kaydedilemedi')
+      toast.error(error instanceof Error ? error.message : 'Technische Spezifikationen konnten nicht gespeichert werden')
     } finally {
       setIsSavingSpecifications(false)
     }
@@ -477,16 +684,16 @@ export default function EditProductPage() {
         return newFormData
       })
 
-      toast.success('Genel bilgiler başarıyla kaydedildi!')
+      toast.success('Allgemeine Informationen erfolgreich gespeichert!')
     } catch (error) {
       console.error('Error updating product:', error)
-      toast.error(`Hata: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`)
+      toast.error(`Fehler: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`)
     } finally {
       setIsSavingGeneral(false)
     }
   }
 
-  // Dönüşüm faktörleri için kaydetme fonksiyonu
+  // Umrechnungsfaktoren speichern Funktion
   const handleSaveConversion = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSavingConversion(true)
@@ -503,17 +710,17 @@ export default function EditProductPage() {
 
       if (!conversionFactorsResponse.ok) {
         const error = await conversionFactorsResponse.json()
-        throw new Error(`Dönüşüm faktörleri güncellenirken hata: ${error.message}`)
+        throw new Error(`Fehler beim Aktualisieren der Umrechnungsfaktoren: ${error.message}`)
       }
 
       // Başarılı kayıttan sonra conversion factors state'ini güncelle
       const updatedConversionFactors = await conversionFactorsResponse.json()
       setConversionFactors(updatedConversionFactors)
 
-      toast.success('Dönüşüm faktörleri başarıyla kaydedildi!')
+      toast.success('Umrechnungsfaktoren erfolgreich gespeichert!')
     } catch (error) {
       console.error('Error updating conversion factors:', error)
-      toast.error(`Hata: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`)
+      toast.error(`Fehler: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`)
     } finally {
       setIsSavingConversion(false)
     }
@@ -522,40 +729,40 @@ export default function EditProductPage() {
 
 
   if (isProductLoading || isVariantsLoading || isImagesLoading) {
-    return <LoadingState message="Ürün bilgileri yükleniyor..." />
+          return <LoadingState message="Produktinformationen werden geladen..." />
   }
 
   if (productError || !product) {
-    return (
-      <ErrorState 
-        error={productError}
-        title="Ürün Bulunamadı"
-        backUrl="/admin/products"
-        message={productError?.message || 'Ürün bulunamadı veya yüklenirken hata oluştu.'}
-      />
-    )
+          return (
+        <ErrorState 
+          error={productError}
+          title="Produkt nicht gefunden"
+          backUrl="/admin/products"
+          message={productError?.message || 'Produkt wurde nicht gefunden oder es ist ein Fehler beim Laden aufgetreten.'}
+        />
+      )
   }
 
   const tabs: Array<{ id: ActiveTab; label: string; icon: React.ComponentType<{ className?: string }> }> = [
-    { id: 'general', label: 'Genel Bilgiler', icon: Info },
-    { id: 'specifications', label: 'Teknik Özellikler', icon: Settings },
-    { id: 'variants', label: 'Varyantlar', icon: Package },
-    { id: 'images', label: 'Resimler', icon: ImageIcon },
-    { id: 'documents', label: 'Belgeler', icon: FileText },
-    { id: 'conversion', label: 'Dönüşüm Faktörleri', icon: Calculator },
-    { id: 'videos', label: 'Videolar', icon: Play }
+    { id: 'general', label: 'Allgemeine Informationen', icon: Info },
+    { id: 'specifications', label: 'Technische Spezifikationen', icon: Settings },
+    { id: 'variants', label: 'Varianten', icon: Package },
+    { id: 'images', label: 'Bilder', icon: ImageIcon },
+    { id: 'documents', label: 'Dokumente', icon: FileText },
+    { id: 'conversion', label: 'Umrechnungsfaktoren', icon: Calculator },
+    { id: 'videos', label: 'Videos', icon: Play }
   ]
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <PageHeader 
-        title="Ürün Düzenle"
-        subtitle={`${product.name} ürününü düzenle`}
+        title="Produkt bearbeiten"
+        subtitle={`Produkt "${product.name}" bearbeiten`}
         backUrl="/admin/products"
       />
 
-      {/* Waitlist Durumu */}
+      {/* Waitlist Status */}
       {waitlistInfo && (
         <WaitlistAlert 
           waitlistInfo={waitlistInfo}
@@ -590,6 +797,7 @@ export default function EditProductPage() {
               handleSpecificationChange={handleSpecificationChange}
               onSave={handleSaveSpecifications}
               isSaving={isSavingSpecifications}
+              openDeleteDialog={openSpecificationsDeleteDialog}
             />
           )}
 
@@ -600,6 +808,7 @@ export default function EditProductPage() {
               setVariants={setVariants}
               productId={productId}
               isSaving={isSavingVariants}
+              openDeleteDialog={openVariantsDeleteDialog}
             />
           )}
 
@@ -609,6 +818,7 @@ export default function EditProductPage() {
               images={images}
               setImages={setImages}
               refetchImages={refetchImages}
+              openDeleteDialog={openImagesDeleteDialog}
             />
           )}
 
@@ -617,6 +827,7 @@ export default function EditProductPage() {
             <DocumentsTab
               documents={documents}
               setDocuments={setDocuments}
+              openDeleteDialog={openDocumentsDeleteDialog}
             />
           )}
 
@@ -644,7 +855,8 @@ export default function EditProductPage() {
                 file_size: video.file_size
               }))}
               setVideos={(newVideos) => {
-                setVideos(newVideos.map(video => ({
+                // Transform the videos back to the main page's format
+                const transformedVideos = newVideos.map(video => ({
                   id: video.id,
                   product_id: productId,
                   title: video.title,
@@ -655,9 +867,13 @@ export default function EditProductPage() {
                   is_active: true,
                   created_at: new Date().toISOString(),
                   updated_at: new Date().toISOString()
-                })))
+                }))
+                console.log('Main page: Updating videos state:', transformedVideos)
+                setVideos(transformedVideos)
               }}
               openVideoDialog={openVideoDialog}
+              openDeleteDialog={openVideosDeleteDialog}
+              productId={productId}
             />
           )}
 
@@ -695,6 +911,66 @@ export default function EditProductPage() {
         isOpen={showVideoDialog}
         video={selectedVideo}
         onClose={() => setShowVideoDialog(false)}
+      />
+
+      {/* Specifications Delete Dialog */}
+      <ConfirmDialog
+        isOpen={specificationsDeleteDialog.isOpen}
+        onClose={closeSpecificationsDeleteDialog}
+        onConfirm={confirmSpecificationsDelete}
+        title="Spezifikation löschen"
+        message="Sind Sie sicher, dass Sie diese technische Spezifikation löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+        confirmText="Ja, löschen"
+        cancelText="Abbrechen"
+        variant="danger"
+      />
+
+      {/* Variants Delete Dialog */}
+      <ConfirmDialog
+        isOpen={variantsDeleteDialog.isOpen}
+        onClose={closeVariantsDeleteDialog}
+        onConfirm={confirmVariantsDelete}
+        title="Variante löschen"
+        message="Sind Sie sicher, dass Sie diese Variante löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+        confirmText="Ja, löschen"
+        cancelText="Abbrechen"
+        variant="danger"
+      />
+
+      {/* Images Delete Dialog */}
+      <ConfirmDialog
+        isOpen={imagesDeleteDialog.isOpen}
+        onClose={closeImagesDeleteDialog}
+        onConfirm={confirmImagesDelete}
+        title="Bild löschen"
+        message="Sind Sie sicher, dass Sie dieses Bild löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+        confirmText="Ja, löschen"
+        cancelText="Abbrechen"
+        variant="danger"
+      />
+
+      {/* Documents Delete Dialog */}
+      <ConfirmDialog
+        isOpen={documentsDeleteDialog.isOpen}
+        onClose={closeDocumentsDeleteDialog}
+        onConfirm={confirmDocumentsDelete}
+        title="Dokument löschen"
+        message="Sind Sie sicher, dass Sie dieses Dokument löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+        confirmText="Ja, löschen"
+        cancelText="Abbrechen"
+        variant="danger"
+      />
+
+      {/* Videos Delete Dialog */}
+      <ConfirmDialog
+        isOpen={videosDeleteDialog.isOpen}
+        onClose={closeVideosDeleteDialog}
+        onConfirm={confirmVideosDelete}
+        title="Video löschen"
+        message="Sind Sie sicher, dass Sie dieses Video löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+        confirmText="Ja, löschen"
+        cancelText="Abbrechen"
+        variant="danger"
       />
 
     </div>

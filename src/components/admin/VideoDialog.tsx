@@ -61,7 +61,7 @@ export default function VideoDialog({ isOpen, video, onClose }: VideoDialogProps
               <source src={video.previewUrl} type="video/mp4" />
               <source src={video.previewUrl} type="video/webm" />
               <source src={video.previewUrl} type="video/ogg" />
-              Tarayıcınız video oynatmayı desteklemiyor.
+              Ihr Browser unterstützt keine Videowiedergabe.
             </video>
           </div>
         </div>
@@ -71,7 +71,7 @@ export default function VideoDialog({ isOpen, video, onClose }: VideoDialogProps
             onClick={onClose}
             className="px-4 py-2 bg-[#F39236] text-white font-medium rounded-lg hover:bg-[#E67E22] transition-colors"
           >
-            Kaydet
+            Schließen
           </button>
         </div>
       </div>

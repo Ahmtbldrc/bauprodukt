@@ -177,7 +177,7 @@ export function Header() {
                 className="relative text-gray-400 border border-gray-200 rounded-sm hover:border-gray-300 transition-all duration-200 flex items-center justify-center" style={{ width: '30px', height: '30px' }}
               >
                 <ShoppingCart className="h-4 w-4" />
-                {/* Cart Badge - sadece sepette ürün varsa göster */}
+                {/* Cart Badge - nur anzeigen wenn Produkte im Warenkorb sind */}
                 {totalItems > 0 && (
                   <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center font-medium animate-bounce">
                     {totalItems > 99 ? '99+' : totalItems}
@@ -362,7 +362,7 @@ export function Header() {
                     }}
                   >
                     <div className="flex">
-                      {/* Sol Panel - Ana Kategoriler */}
+                      {/* Linkes Panel - Hauptkategorien */}
                       <div className="w-1/3 p-4 border-r border-gray-100">
                         <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
                           Hauptkategorien
@@ -393,7 +393,7 @@ export function Header() {
                         </div>
                       </div>
 
-                      {/* Sağ Panel - Alt Kategoriler und Items */}
+                      {/* Rechtes Panel - Unterkategorien und Items */}
                       <div className="w-2/3 p-4">
                         <div className="flex items-center justify-between mb-4">
                           <h3 className="text-lg font-semibold text-gray-800">
@@ -430,7 +430,7 @@ export function Header() {
                           ))}
                         </div>
 
-                        {/* Alt Kısım - Tüm Kategoriler Linki */}
+                        {/* Unterer Bereich - Alle Kategorien Link */}
                         <div className="mt-6 pt-4 border-t border-gray-100">
                           <Link 
                             href="/categories"

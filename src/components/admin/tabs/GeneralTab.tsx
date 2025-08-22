@@ -83,14 +83,14 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
     <div className="space-y-8">
       <div className="flex items-center gap-3 mb-6">
         <Info className="h-6 w-6 text-[#F39236]" />
-        <h3 className="text-xl font-semibold text-gray-900">Genel Bilgiler</h3>
+        <h3 className="text-xl font-semibold text-gray-900">Allgemeine Informationen</h3>
       </div>
 
       {/* Ürün Adı ve Stok Kodu - Yan Yana */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-            Ürün Adı *
+            Produktname *
           </label>
           <input
             type="text"
@@ -106,7 +106,7 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
 
         <div>
           <label htmlFor="stock_code" className="block text-sm font-medium text-gray-700 mb-2">
-            Stok Kodu
+            Lagerbestandscode
           </label>
           <input
             type="text"
@@ -116,7 +116,7 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
             onChange={handleInputChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200"
             style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-            placeholder="Stok kodu"
+            placeholder="Lagerbestandscode"
           />
         </div>
       </div>
@@ -125,7 +125,7 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label htmlFor="brand_id" className="block text-sm font-medium text-gray-700 mb-2">
-            Marka *
+            Marke *
           </label>
           <select
             id="brand_id"
@@ -136,7 +136,7 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
             style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
             required
           >
-            <option value="">Marka seçin</option>
+            <option value="">Marke auswählen</option>
             {brands.map((brand) => (
               <option key={brand.id} value={brand.id}>
                 {brand.name}
@@ -147,7 +147,7 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
 
         <div>
           <label htmlFor="category_id" className="block text-sm font-medium text-gray-700 mb-2">
-            Kategori *
+            Kategorie *
           </label>
           <select
             id="category_id"
@@ -158,7 +158,7 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
             style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
             required
           >
-            <option value="">Kategori seçin</option>
+            <option value="">Kategorie auswählen</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.emoji} {category.name}
@@ -172,7 +172,7 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label htmlFor="art_nr" className="block text-sm font-medium text-gray-700 mb-2">
-            Art-Nr
+            Art.-Nr.
           </label>
           <input
             type="text"
@@ -182,13 +182,13 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
             onChange={handleInputChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200"
             style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-            placeholder="Ürün numarası"
+            placeholder="Produktnummer"
           />
         </div>
 
         <div>
           <label htmlFor="hersteller_nr" className="block text-sm font-medium text-gray-700 mb-2">
-            Hersteller-Nr
+            Hersteller-Nr.
           </label>
           <input
             type="text"
@@ -198,7 +198,7 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
             onChange={handleInputChange}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200"
             style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-            placeholder="Üretici numarası"
+            placeholder="Herstellernummer"
           />
         </div>
       </div>
@@ -207,7 +207,7 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-2">
-            Fiyat (CHF) *
+            Preis (CHF) *
           </label>
           <input
             type="number"
@@ -225,7 +225,7 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
 
         <div>
           <label htmlFor="discount_price" className="block text-sm font-medium text-gray-700 mb-2">
-            İndirimli Fiyat (CHF)
+            Rabattpreis (CHF)
           </label>
           <input
             type="number"
@@ -246,7 +246,7 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
         {/* Stok Miktarı - Sol */}
         <div>
           <label htmlFor="stock" className="block text-sm font-medium text-gray-700 mb-2">
-            Stok Miktarı *
+            Lagerbestand *
           </label>
           <input
             type="number"
@@ -269,7 +269,7 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
               Technische Eigenschaften:
             </label>
             <span className="inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium bg-[#FFF0E2] text-[#F39236] border border-[#F39236]">
-              {formData.general_technical_specs.length} madde
+              {formData.general_technical_specs.length} Einträge
             </span>
             <button
               type="button"
@@ -277,10 +277,10 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
               className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-[#F39236] rounded-md hover:bg-[#E67E22] transition-colors"
             >
               <Plus className="h-4 w-4 mr-1" />
-              Ekle
+              Hinzufügen
             </button>
             {formData.general_technical_specs.length === 0 && (
-              <span className="text-sm text-gray-500 italic">Henüz teknik özellik eklenmemiş</span>
+              <span className="text-sm text-gray-500 italic"></span>
             )}
           </div>
         </div>
@@ -322,14 +322,14 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
               {/* Add new spec input */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Yeni Özellik Ekle
+                  Neue Eigenschaft hinzufügen
                 </label>
                 <input
                   type="text"
                   value={newTechSpec}
                   onChange={(e) => setNewTechSpec(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Özellik metnini yazın..."
+                  placeholder="Eigenschaftstext eingeben..."
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200"
                   style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
                   autoFocus
@@ -339,11 +339,11 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
               {/* Current list display */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Mevcut Özellikler:
+                  Bestehende Eigenschaften:
                 </label>
                 <div className="bg-gray-50 rounded-md p-3 max-h-40 overflow-y-auto">
                   {formData.general_technical_specs.length === 0 ? (
-                    <p className="text-sm text-gray-500 italic">Henüz özellik eklenmemiş</p>
+                    <p className="text-sm text-gray-500 italic">Noch keine Eigenschaften hinzugefügt</p>
                   ) : (
                     <ul className="space-y-1">
                       {formData.general_technical_specs.map((spec, index) => (
@@ -368,20 +368,20 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
             </div>
             
             <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-100">
-              <button
-                type="button"
-                onClick={closeDialog}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors"
-              >
-                Kapat
-              </button>
+                              <button
+                  type="button"
+                  onClick={closeDialog}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  Schließen
+                </button>
               <button
                 type="button"
                 onClick={addTechSpec}
                 disabled={!newTechSpec.trim()}
                 className="px-4 py-2 text-sm font-medium text-white bg-[#F39236] rounded-md hover:bg-[#E67E22] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                Ekle
+                                  Hinzufügen
               </button>
             </div>
           </div>

@@ -12,11 +12,11 @@ interface ErrorStateProps {
 
 export default function ErrorState({ 
   error, 
-  title = 'Bir Hata Oluştu', 
+  title = 'Ein Fehler ist aufgetreten', 
   backUrl = '/admin',
   message
 }: ErrorStateProps) {
-  const errorMessage = message || error?.message || 'Bilinmeyen bir hata oluştu.'
+  const errorMessage = message || error?.message || 'Ein unbekannter Fehler ist aufgetreten.'
 
   return (
     <div className="space-y-6">
@@ -29,7 +29,7 @@ export default function ErrorState({
         </Link>
         <div>
           <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
-          <p className="text-gray-600">Bir sorun oluştu</p>
+          <p className="text-gray-600">Ein Problem ist aufgetreten</p>
         </div>
       </div>
       

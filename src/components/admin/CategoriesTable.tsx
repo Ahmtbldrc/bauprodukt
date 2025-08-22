@@ -90,7 +90,7 @@ export function CategoriesTable({ onDeleteCategory }: CategoriesTableProps) {
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-800">Kategoriler yüklenirken hata oluştu: {error.message}</p>
+        <p className="text-red-800">Fehler beim Laden der Kategorien: {error.message}</p>
       </div>
     )
   }

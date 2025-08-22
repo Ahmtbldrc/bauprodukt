@@ -91,7 +91,7 @@ export function FavoriteButton({
         <Heart className={`${sizeClasses[size]}`} />
         {showText && (
           <span className="text-sm font-medium">
-            Favorilere Ekle
+            Zu Favoriten hinzufügen
           </span>
         )}
       </button>
