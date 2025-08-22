@@ -1,6 +1,6 @@
 'use client'
 
-import { Info, Plus, Trash2, X, Settings } from 'lucide-react'
+import { Info, Plus, Trash2, Settings } from 'lucide-react'
 import { useState } from 'react'
 
 interface GeneralTabProps {
@@ -49,7 +49,7 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
       }]
       const event = {
         target: { name: 'general_technical_specs', value: updatedSpecs }
-      } as any
+      } as unknown as React.ChangeEvent<HTMLInputElement>
       handleInputChange(event)
       setNewTechSpec('')
     }
@@ -59,7 +59,7 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
     const updatedSpecs = formData.general_technical_specs.filter((_, i) => i !== index)
     const event = {
       target: { name: 'general_technical_specs', value: updatedSpecs }
-    } as any
+    } as unknown as React.ChangeEvent<HTMLInputElement>
     handleInputChange(event)
   }
 

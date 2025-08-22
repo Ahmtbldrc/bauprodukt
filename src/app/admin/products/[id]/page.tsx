@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useParams } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { useProductById, useProductVariants, useProductImages } from '@/hooks/useProducts'
 import { useAllBrands } from '@/hooks/useBrands'
 import { useAllCategories } from '@/hooks/useCategories'
@@ -66,17 +66,7 @@ interface ProductDocumentResponse {
   file_size?: number
 }
 
-interface VideoTabData {
-  id: string
-  title: string
-  file: File
-  description: string
-  previewUrl: string
-  video_url: string
-  thumbnail_url?: string
-  duration?: number
-  file_size?: number
-}
+
 
 export default function EditProductPage() {
   const params = useParams()
@@ -504,7 +494,7 @@ export default function EditProductPage() {
             }))
             setDocuments(convertedDocuments)
           }
-        } catch (error) {
+        } catch {
           console.log('No documents found')
         }
       }
@@ -517,7 +507,7 @@ export default function EditProductPage() {
             const data = await response.json()
             setVideos(data.data || [])
           }
-        } catch (error) {
+        } catch {
           console.log('No videos found')
         }
       }
@@ -549,7 +539,7 @@ export default function EditProductPage() {
     checkWaitlistStatus()
   }, [product])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> | any) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
@@ -714,8 +704,7 @@ export default function EditProductPage() {
   }
 
   // Umrechnungsfaktoren speichern Funktion
-  const handleSaveConversion = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSaveConversion = async () => {
     setIsSavingConversion(true)
 
     try {

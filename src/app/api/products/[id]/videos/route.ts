@@ -114,7 +114,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Then, insert/update the new videos
-    const videosToInsert = videos.map((video: any) => ({
+    const videosToInsert = videos.map((video: { title: string; video_url: string; thumbnail_url?: string; duration?: number; file_size?: number }) => ({
       product_id: id,
       title: video.title,
       video_url: video.video_url,

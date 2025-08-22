@@ -113,7 +113,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Then, insert/update the new documents
-    const documentsToInsert = documents.map((doc: any) => ({
+    const documentsToInsert = documents.map((doc: { title: string; file_url: string; file_type?: string; file_size?: number }) => ({
       product_id: id,
       title: doc.title,
       file_url: doc.file_url,

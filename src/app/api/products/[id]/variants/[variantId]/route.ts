@@ -53,7 +53,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if variant exists
-    const { data: existingVariant, error: variantCheckError } = await supabase
+    const { error: variantCheckError } = await supabase
       .from('product_variants')
       .select('id')
       .eq('id', variantId)
@@ -131,7 +131,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if variant exists
-    const { data: existingVariant, error: variantCheckError } = await supabase
+    const { error: variantCheckError } = await supabase
       .from('product_variants')
       .select('id')
       .eq('id', variantId)

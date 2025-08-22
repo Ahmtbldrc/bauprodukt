@@ -331,24 +331,24 @@ export default function VariantsTab({
     return PREDEFINED_VALUES[attributeName as keyof typeof PREDEFINED_VALUES] || []
   }
 
-  const generateVariantTitle = () => {
-    if (!editingVariant.attributes || editingVariant.attributes.length === 0) return ''
-    
-    const attributeValues = editingVariant.attributes
-      .filter(attr => attr.display_value)
-      .map(attr => attr.display_value)
-      .join(' - ')
-    
-    return attributeValues || 'Neue Variante'
-  }
-
   // Auto-generate title when attributes change
   useEffect(() => {
+    const generateVariantTitle = () => {
+      if (!editingVariant.attributes || editingVariant.attributes.length === 0) return ''
+      
+      const attributeValues = editingVariant.attributes
+        .filter(attr => attr.display_value)
+        .map(attr => attr.display_value)
+        .join(' - ')
+      
+      return attributeValues || 'Neue Variante'
+    }
+
     const newTitle = generateVariantTitle()
     if (newTitle && newTitle !== editingVariant.title) {
       setEditingVariant(prev => ({ ...prev, title: newTitle }))
     }
-  }, [editingVariant.attributes, editingVariant.title, generateVariantTitle])
+  }, [editingVariant.attributes, editingVariant.title])
 
   return (
     <div className="space-y-6">

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { FileText, Upload, Download, Trash2, Image as ImageIcon, FileDown } from 'lucide-react'
+import { FileText, Upload, Trash2, Image as ImageIcon } from 'lucide-react'
 import { validateFile } from '@/lib/upload'
 
 interface DocumentImage {
@@ -14,18 +14,7 @@ interface DocumentImage {
   file_size?: number
 }
 
-// API'den gelen document tipi
-interface ProductDocument {
-  id: string
-  product_id: string
-  title: string
-  file_url: string
-  file_type?: string
-  file_size?: number
-  is_active: boolean
-  created_at: string
-  updated_at: string
-}
+
 
 interface DocumentsTabProps {
   documents: DocumentImage[]
