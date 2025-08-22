@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { FileText, Upload, Trash2, Image as ImageIcon } from 'lucide-react'
+import Image from 'next/image'
 import { validateFile } from '@/lib/upload'
 
 interface DocumentImage {
@@ -180,9 +181,11 @@ export default function DocumentsTab({ documents, setDocuments, openDeleteDialog
                 <div key={index} className="bg-white rounded-lg border border-gray-200 hover:border-[#F39236] transition-colors overflow-hidden">
                   {/* Image Preview */}
                   <div className="aspect-square bg-gray-100 overflow-hidden">
-                    <img
+                    <Image
                       src={image.previewUrl}
                       alt={image.name}
+                      width={200}
+                      height={200}
                       className="w-full h-full object-cover"
                     />
                   </div>

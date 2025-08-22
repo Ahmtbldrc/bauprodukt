@@ -472,7 +472,7 @@ export default function EditProductPage() {
             const data = await response.json()
             setConversionFactors(data)
           }
-        } catch (error) {
+        } catch {
           console.log('No conversion factors found, using defaults')
         }
       }
@@ -646,7 +646,7 @@ export default function EditProductPage() {
         let error: ApiError
         try {
           error = JSON.parse(errorText)
-        } catch (e) {
+        } catch {
           error = { message: errorText }
         }
         
