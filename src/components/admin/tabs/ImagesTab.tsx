@@ -1,6 +1,6 @@
 'use client'
 
-import { Image as ImageIcon, Plus, Star, Trash2, Upload, GripVertical, CheckCircle, X } from 'lucide-react'
+import { Image as ImageIcon, Plus, Star, Trash2, Upload, GripVertical, X } from 'lucide-react'
 import Image from 'next/image'
 import { useRef, useState } from 'react'
 

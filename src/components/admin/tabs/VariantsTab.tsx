@@ -118,7 +118,6 @@ export default function VariantsTab({
   variants,
   setVariants,
   productId,
-  isSaving = false,
   openDeleteDialog
 }: VariantsTabProps) {
   console.log('🔄 VariantsTab rendered')
@@ -349,7 +348,7 @@ export default function VariantsTab({
     if (newTitle && newTitle !== editingVariant.title) {
       setEditingVariant(prev => ({ ...prev, title: newTitle }))
     }
-  }, [editingVariant.attributes])
+  }, [editingVariant.attributes, editingVariant.title, generateVariantTitle])
 
   return (
     <div className="space-y-6">
@@ -657,7 +656,7 @@ export default function VariantsTab({
                                       updateAttribute(attrIndex, 'value', selected.value)
                                       updateAttribute(attrIndex, 'display_value', selected.display_value)
                                       if ('hex_color' in selected) {
-                                        updateAttribute(attrIndex, 'hex_color', (selected as any).hex_color || null)
+                                        updateAttribute(attrIndex, 'hex_color', (selected as { hex_color?: string }).hex_color || null)
                                       }
                                     }
                                   }}

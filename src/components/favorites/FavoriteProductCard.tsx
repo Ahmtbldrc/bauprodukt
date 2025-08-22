@@ -39,7 +39,7 @@ export function FavoriteProductCard({ productId, onRemove, localLoading }: {
           <Heart className="h-4 w-4 text-red-500 fill-current" />
         )}
       </button>
-      <Link href={`/${(product as any)?.brand_slug || 'marke'}/${(product as any)?.category_slug || 'kategorie'}/${product.slug}`}>
+      <Link href={`/${(product as { brand_slug?: string })?.brand_slug || 'marke'}/${(product as { category_slug?: string })?.category_slug || 'kategorie'}/${product.slug}`}>
         <div className="relative">
           {/* Product Image */}
           <div className="h-48 bg-white overflow-hidden">
@@ -94,7 +94,7 @@ export function FavoriteProductCard({ productId, onRemove, localLoading }: {
           
           {/* Category Description */}
           <p className="text-xs text-gray-500 mb-3">
-            {(product as any)?.category_name}
+            {(product as { category_name?: string })?.category_name}
           </p>
           
           {/* Price */}

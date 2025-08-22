@@ -62,8 +62,8 @@ export const CartItem: React.FC<CartItemProps> = ({
 
   // Create fallback URL structure when brand/category data is not available
   // The API view includes brand_slug and category_slug fields
-  const productUrl = (fullProduct as any)?.brand_slug && (fullProduct as any)?.category_slug 
-    ? `/${(fullProduct as any).brand_slug}/${(fullProduct as any).category_slug}/${fullProduct?.slug || item.product.slug}`
+  const productUrl = (fullProduct as { brand_slug?: string; category_slug?: string; slug?: string })?.brand_slug && (fullProduct as { brand_slug?: string; category_slug?: string; slug?: string })?.category_slug 
+    ? `/${(fullProduct as { brand_slug?: string; category_slug?: string; slug?: string }).brand_slug}/${(fullProduct as { brand_slug?: string; category_slug?: string; slug?: string }).category_slug}/${fullProduct?.slug || item.product.slug}`
     : `/products/${fullProduct?.slug || item.product.slug}`
 
   const loading = isLoading || actionLoading

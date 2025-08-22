@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Play, Upload, Loader2, Trash2 } from 'lucide-react'
-import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { Play, Upload, Loader2 } from 'lucide-react'
 import { validateFile } from '@/lib/upload'
 
 interface Video {
@@ -76,7 +75,7 @@ export default function VideosTab({ videos, setVideos, openVideoDialog, openDele
       const response = await fetch(`/api/products/${productId}/videos`)
       if (response.ok) {
         const data = await response.json()
-        const refreshedVideos = (data.data || []).map((video: any) => ({
+        const refreshedVideos = (data.data || []).map((video: { id: string; title: string; video_url?: string; thumbnail_url?: string; duration?: number; file_size?: number }) => ({
           id: video.id,
           title: video.title,
           file: null,
@@ -153,19 +152,6 @@ export default function VideosTab({ videos, setVideos, openVideoDialog, openDele
       }
       
       const result = await response.json()
-      
-      // Create new video entry from uploaded data
-      const newVideo: Video = {
-        id: result.data[0].id,
-        title: result.data[0].title,
-        file: file,
-        description: '',
-        previewUrl: result.data[0].video_url || URL.createObjectURL(file),
-        video_url: result.data[0].video_url,
-        thumbnail_url: result.data[0].thumbnail_url,
-        duration: result.data[0].duration,
-        file_size: result.data[0].file_size
-      }
       
       // Immediately add the new video to local state for instant UI feedback
       const newVideoForState: Video = {

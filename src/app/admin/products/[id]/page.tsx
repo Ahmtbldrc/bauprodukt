@@ -30,14 +30,12 @@ import type {
   ImageResponse,
   FormData,
   Specifications,
-  Document,
-  ProductDocument,
   ConversionFactors,
-  ProductConversionFactors,
   Video,
   ProductVideo,
   WaitlistInfo,
-  ActiveTab
+  ActiveTab,
+  DocumentImage
 } from '@/types/admin/product-edit'
 
 // Import TechnicalSpec type for the specifications
@@ -48,19 +46,39 @@ type TechnicalSpec = {
   sort_order: number
 }
 
-// DocumentImage type for documents tab
-type DocumentImage = {
+// Additional types to replace any usage
+interface SpecificationsData {
+  technical_specs?: TechnicalSpec[]
+  general_technical_specs?: TechnicalSpec[]
+}
+
+interface ApiError {
+  error?: string
+  message?: string
+  details?: Record<string, unknown>
+}
+
+interface ProductDocumentResponse {
   id: string
-  file: File
-  previewUrl: string
-  name: string
-  file_url?: string
+  title: string
+  file_url: string
   file_type?: string
   file_size?: number
 }
 
+interface VideoTabData {
+  id: string
+  title: string
+  file: File
+  description: string
+  previewUrl: string
+  video_url: string
+  thumbnail_url?: string
+  duration?: number
+  file_size?: number
+}
+
 export default function EditProductPage() {
-  const router = useRouter()
   const params = useParams()
   const productId = params.id as string
 
@@ -96,7 +114,7 @@ export default function EditProductPage() {
   const [isSavingGeneral, setIsSavingGeneral] = useState(false)
   const [isSavingConversion, setIsSavingConversion] = useState(false)
   const [isSavingSpecifications, setIsSavingSpecifications] = useState(false)
-  const [isSavingVariants, setIsSavingVariants] = useState(false)
+  const [isSavingVariants,] = useState(false)
 
 
   // New state for additional tabs
@@ -423,7 +441,7 @@ export default function EditProductPage() {
       console.log('Product general_technical_specs is array:', Array.isArray(product.general_technical_specs))
       
       if (product.specifications_data && typeof product.specifications_data === 'object') {
-        const specs = product.specifications_data as any
+        const specs = product.specifications_data as SpecificationsData
         console.log('Parsed specs:', specs)
         console.log('Technical specs array:', specs.technical_specs)
         console.log('Technical specs type:', typeof specs.technical_specs)
@@ -438,7 +456,7 @@ export default function EditProductPage() {
         if (specs.general_technical_specs) {
           setFormData(prev => ({
             ...prev,
-            general_technical_specs: specs.general_technical_specs
+            general_technical_specs: specs.general_technical_specs || []
           }))
         }
       } else {
@@ -450,7 +468,7 @@ export default function EditProductPage() {
         console.log('Loading general_technical_specs directly from product:', product.general_technical_specs)
         setFormData(prev => ({
           ...prev,
-          general_technical_specs: product.general_technical_specs as any
+          general_technical_specs: (product.general_technical_specs as unknown) as TechnicalSpec[]
         }))
       } else {
         console.log('No general_technical_specs found in product or not an array')
@@ -478,14 +496,11 @@ export default function EditProductPage() {
           if (response.ok) {
             const data = await response.json()
             // Convert ProductDocument to DocumentImage format
-            const convertedDocuments = (data.data || []).map((doc: any) => ({
+            const convertedDocuments = (data.data || []).map((doc: ProductDocumentResponse) => ({
               id: doc.id,
-              file: null, // We don't have the actual file, just the URL
+              file: new File([], doc.title), // Create a placeholder file
               previewUrl: doc.file_url,
-              name: doc.title,
-              file_url: doc.file_url,
-              file_type: doc.file_type,
-              file_size: doc.file_size
+              name: doc.title
             }))
             setDocuments(convertedDocuments)
           }
@@ -631,9 +646,14 @@ export default function EditProductPage() {
         const errorText = await productResponse.text()
         console.error('API Error Response Text:', errorText)
         console.error('Response status:', productResponse.status)
-        console.error('Response headers:', Object.fromEntries(productResponse.headers.entries()))
+        // Log headers in a different way since Headers.entries() might not be available
+        const headers: Record<string, string> = {}
+        productResponse.headers.forEach((value, key) => {
+          headers[key] = value
+        })
+        console.error('Response headers:', headers)
         
-        let error
+        let error: ApiError
         try {
           error = JSON.parse(errorText)
         } catch (e) {
