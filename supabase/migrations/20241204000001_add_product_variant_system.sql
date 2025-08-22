@@ -241,6 +241,18 @@ SELECT
     p.brand_id,
     p.created_at,
     p.stock_code,
+    p.art_nr,
+    p.hersteller_nr,
+    p.source_url,
+    p.images,
+    p.status,
+    p.is_changeable,
+    p.language,
+    p.raw_variant_data,
+    p.category_slug,
+    p.attribute_data,
+    p.specifications_data,
+    p.features_list,
     
     -- Default variant information
     pv.id as default_variant_id,

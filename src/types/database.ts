@@ -127,6 +127,8 @@ export interface Product {
   discount_price: number | null
   stock: number
   stock_code: string | null
+  art_nr: string | null
+  hersteller_nr: string | null
   image_url: string | null
   source_url: string | null
   images: Record<string, unknown>[] | null
@@ -138,6 +140,8 @@ export interface Product {
   category_id: string | null
   category_slug: string | null
   attribute_data: Record<string, unknown> | null
+  specifications_data: Record<string, unknown> | null
+  general_technical_specs: Record<string, unknown> | null
   // Enhanced content system
   features_list: FeaturesListStructure | null
   created_at: string

@@ -44,6 +44,8 @@ export const productSchema = z.object({
   discount_price: z.number().min(0, 'İndirimli fiyat negatif olamaz').nullable(),
   stock: z.number().int().min(0, 'Stok negatif olamaz'),
   stock_code: z.string().nullable(),
+  art_nr: z.string().nullable(),
+  hersteller_nr: z.string().nullable(),
   image_url: z.string().url().nullable(),
   brand_id: z.string().uuid().nullable(),
   category_id: z.string().uuid().nullable(),
@@ -58,9 +60,18 @@ const baseProductSchema = z.object({
   discount_price: z.number().min(0, 'İndirimli fiyat negatif olamaz').optional(),
   stock: z.number().int().min(0, 'Stok negatif olamaz'),
   stock_code: z.string().max(100, 'Stok kodu çok uzun').optional(),
+  art_nr: z.string().max(100, 'Art-Nr çok uzun').optional(),
+  hersteller_nr: z.string().max(100, 'Hersteller-Nr çok uzun').optional(),
   image_url: z.string().url('Geçerli bir URL giriniz').optional(),
   brand_id: z.string().uuid('Geçerli bir marka seçiniz').optional(),
-  category_id: z.string().uuid('Geçerli bir kategori seçiniz').optional()
+  category_id: z.string().uuid('Geçerli bir kategori seçiniz').optional(),
+  specifications_data: z.record(z.unknown()).optional(),
+  general_technical_specs: z.array(z.object({
+    id: z.string().optional(),
+    title: z.string(),
+    description: z.string(),
+    sort_order: z.number()
+  })).optional()
 })
 
 export const createProductSchema = baseProductSchema.refine((data) => {

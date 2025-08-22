@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 import { deleteFile, uploadFile, validateFile } from '@/lib/upload'
 
 interface RouteParams {
@@ -10,6 +10,7 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id: productId } = await params
+    const supabase = createClient()
 
     const { data, error } = await supabase
       .from('product_images')
@@ -42,6 +43,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { id: productId } = await params
+    const supabase = createClient()
     const formData = await request.formData()
     
     const file = formData.get('file') as File
@@ -128,6 +130,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id: productId } = await params
+    const supabase = createClient()
 
     // Önce resimleri getir (dosyaları silmek için)
     const { data: images, error: fetchError } = await supabase
@@ -184,6 +187,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const { id: productId } = await params
+    const supabase = createClient()
     const body = await request.json()
 
     const { images } = body

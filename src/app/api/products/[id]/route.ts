@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@/lib/supabase/server'
 import { updateProductSchema } from '@/schemas/database'
 import type { ProductPdf, ContentSummary, FeaturesListStructure } from '@/types/database'
 
@@ -10,6 +10,7 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
+    const supabase = createClient()
     const { searchParams } = new URL(request.url)
     const variant = searchParams.get('variant') // Get variant ID parameter
     
@@ -52,6 +53,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         { status: 500 }
       )
     }
+
+
 
     // Get variant information
     let selectedVariant = null
@@ -181,10 +184,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
+    const supabase = createClient()
     const body = await request.json()
     
     const validation = updateProductSchema.safeParse(body)
     if (!validation.success) {
+      console.error('Validation failed:', validation.error.errors)
       return NextResponse.json(
         { error: 'Validation failed', details: validation.error.errors },
         { status: 400 }
@@ -208,6 +213,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       .single()
 
     if (updateError) {
+      console.error('Product update error details:', {
+        code: updateError.code,
+        message: updateError.message,
+        details: updateError.details,
+        hint: updateError.hint
+      })
+
       if (updateError.code === 'PGRST116') {
         return NextResponse.json(
           { error: 'Product not found' },
@@ -236,9 +248,17 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         }
       }
 
+      // Handle column not found errors
+      if (updateError.code === '42703') {
+        return NextResponse.json(
+          { error: `Database column not found: ${updateError.message}` },
+          { status: 500 }
+        )
+      }
+
       console.error('Product update error:', updateError)
       return NextResponse.json(
-        { error: 'Failed to update product' },
+        { error: 'Failed to update product', details: updateError.message },
         { status: 500 }
       )
     }
@@ -261,38 +281,23 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       // Don't fail the product update if audit logging fails
     }
 
-    // Fetch the updated product with relations
+    // Fetch the updated product directly from products table to ensure all fields
     const { data: updatedProduct, error: fetchError } = await supabase
-      .from('products_with_relations')
+      .from('products')
       .select('*')
       .eq('id', id)
       .single()
 
     if (fetchError) {
       console.error('Failed to fetch updated product:', fetchError)
-      // Return the basic updated product if fetching relations fails
+      // Return the basic updated product if fetching fails
       return NextResponse.json(data)
     }
 
-    // Transform the relations format
-    const productWithRelations = {
-      ...updatedProduct,
-      brand: updatedProduct.brand_name ? {
-        id: updatedProduct.brand_id,
-        name: updatedProduct.brand_name,
-        slug: updatedProduct.brand_slug,
-        created_at: ''
-      } : null,
-      category: updatedProduct.category_name ? {
-        id: updatedProduct.category_id,
-        name: updatedProduct.category_name,
-        slug: updatedProduct.category_slug,
-        parent_id: updatedProduct.category_parent_id,
-        created_at: ''
-      } : null
-    }
 
-    return NextResponse.json(productWithRelations)
+
+    // Return the complete product data
+    return NextResponse.json(updatedProduct)
   } catch (error) {
     console.error('Product update API error:', error)
     return NextResponse.json(
@@ -305,6 +310,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
+    const supabase = createClient()
 
     // Check if product exists before deletion
     const { error: fetchError } = await supabase

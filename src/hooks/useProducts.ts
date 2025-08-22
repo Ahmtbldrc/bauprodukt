@@ -1,6 +1,7 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
+import type { Product as DatabaseProduct } from '@/types/database'
 
 interface Brand {
   id: string
@@ -26,6 +27,8 @@ interface Product {
   discount_price?: number
   stock: number
   stock_code?: string
+  art_nr?: string
+  hersteller_nr?: string
   image_url?: string
   brand_id?: string
   category_id?: string
@@ -105,7 +108,7 @@ export function useProductsByCategory(categoryId: string, options: Omit<UseProdu
 
 // Hook to get a single product by ID
 export function useProductById(productId: string) {
-  return useQuery<Product>({
+  return useQuery<DatabaseProduct>({
     queryKey: ['product', productId],
     queryFn: async () => {
       const response = await fetch(`/api/products/${productId}`)

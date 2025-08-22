@@ -5,48 +5,57 @@ import { useRouter, useParams } from 'next/navigation'
 import { useProductById, useProductVariants, useProductImages } from '@/hooks/useProducts'
 import { useAllBrands } from '@/hooks/useBrands'
 import { useAllCategories } from '@/hooks/useCategories'
-import { ArrowLeft, Save, X, Loader2, Plus, Trash2, Image as ImageIcon, Package, Info, GripVertical, Clock, AlertTriangle } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
+import { Info, Settings, Package, ImageIcon, FileText, Calculator, Play } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
+import toast from 'react-hot-toast'
+import GeneralTab from '@/components/admin/tabs/GeneralTab'
+import SpecificationsTab from '@/components/admin/tabs/SpecificationsTab'
+import VariantsTab from '@/components/admin/tabs/VariantsTab'
+import ImagesTab from '@/components/admin/tabs/ImagesTab'
+import DocumentsTab from '@/components/admin/tabs/DocumentsTab'
+import ConversionTab from '@/components/admin/tabs/ConversionTab'
+import VideosTab from '@/components/admin/tabs/VideosTab'
+import PageHeader from '@/components/admin/PageHeader'
+import WaitlistAlert from '@/components/admin/WaitlistAlert'
+import TabNavigation from '@/components/admin/TabNavigation'
+import VideoDialog from '@/components/admin/VideoDialog'
+import LoadingState from '@/components/admin/LoadingState'
+import ErrorState from '@/components/admin/ErrorState'
+import FormActions from '@/components/admin/FormActions'
+import type { 
+  Variant, 
+  ProductImage, 
+  VariantResponse, 
+  ImageResponse,
+  FormData,
+  Specifications,
+  Document,
+  ProductDocument,
+  ConversionFactors,
+  ProductConversionFactors,
+  Video,
+  ProductVideo,
+  WaitlistInfo,
+  ActiveTab
+} from '@/types/admin/product-edit'
 
-interface Variant {
+// Import TechnicalSpec type for the specifications
+type TechnicalSpec = {
   id?: string
-  sku: string
   title: string
-  price: string
-  compare_at_price: string
-  stock_quantity: string
-  track_inventory: boolean
-  continue_selling_when_out_of_stock: boolean
-  is_active: boolean
-  position: number
+  description: string
+  sort_order: number
 }
 
-interface ProductImage {
-  id?: string
-  image_url: string
-  is_cover: boolean
-}
-
-interface VariantResponse {
+// DocumentImage type for documents tab
+type DocumentImage = {
   id: string
-  sku: string
-  title?: string
-  price: number
-  compare_at_price?: number
-  stock_quantity: number
-  track_inventory: boolean
-  continue_selling_when_out_of_stock: boolean
-  is_active: boolean
-  position: number
-}
-
-interface ImageResponse {
-  id: string
-  image_url: string
-  order_index: number
-  is_cover: boolean
+  file: File
+  previewUrl: string
+  name: string
+  file_url?: string
+  file_type?: string
+  file_size?: number
 }
 
 export default function EditProductPage() {
@@ -56,14 +65,14 @@ export default function EditProductPage() {
 
   const { data: product, isLoading: isProductLoading, error: productError } = useProductById(productId)
   const { data: variantsResponse, isLoading: isVariantsLoading } = useProductVariants(productId)
-  const { data: imagesResponse, isLoading: isImagesLoading } = useProductImages(productId)
+  const { data: imagesResponse, isLoading: isImagesLoading, refetch: refetchImages } = useProductImages(productId)
   const { data: brandsResponse } = useAllBrands()
   const { data: categoriesResponse } = useAllCategories()
   
   const brands = brandsResponse?.data || []
   const categories = categoriesResponse?.data || []
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     slug: '',
     description: '',
@@ -71,59 +80,96 @@ export default function EditProductPage() {
     discount_price: '',
     stock: '',
     stock_code: '',
+    art_nr: '',
+    hersteller_nr: '',
     image_url: '',
     brand_id: '',
-    category_id: ''
+    category_id: '',
+    technical_specs: [],
+    general_technical_specs: []
   })
 
   const [variants, setVariants] = useState<Variant[]>([])
   const [images, setImages] = useState<ProductImage[]>([])
-  const [activeTab, setActiveTab] = useState<'general' | 'variants' | 'images'>('general')
-  const [isSaving, setIsSaving] = useState(false)
-  const [showVariantDialog, setShowVariantDialog] = useState(false)
-  const [editingVariantIndex, setEditingVariantIndex] = useState<number | null>(null)
-  const [editingVariant, setEditingVariant] = useState<Variant>({
-    sku: '',
-    title: '',
-    price: '',
-    compare_at_price: '',
-    stock_quantity: '0',
-    track_inventory: true,
-    continue_selling_when_out_of_stock: false,
-    is_active: true,
-    position: 0
+  const [activeTab, setActiveTab] = useState<ActiveTab>('general')
+  const [isSavingGeneral, setIsSavingGeneral] = useState(false)
+  const [isSavingConversion, setIsSavingConversion] = useState(false)
+  const [isSavingSpecifications, setIsSavingSpecifications] = useState(false)
+  const [isSavingVariants, setIsSavingVariants] = useState(false)
+
+
+  // New state for additional tabs
+  const [specifications, setSpecifications] = useState<Specifications>({
+    technical_specs: [],
+    general_technical_specs: []
   })
 
+  const [documents, setDocuments] = useState<DocumentImage[]>([])
+
+  const [conversionFactors, setConversionFactors] = useState<ConversionFactors>({
+    length_units: true,
+    weight_units: true,
+    volume_units: false,
+    temperature_units: false
+  })
+
+  const [videos, setVideos] = useState<ProductVideo[]>([])
+
+
+
+  // Video dialog state
+  const [showVideoDialog, setShowVideoDialog] = useState(false)
+  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null)
+
+
+
   // Waitlist durumu için state
-  const [waitlistInfo, setWaitlistInfo] = useState<{
-    id: string
-    product_slug: string
-    product_id: string
-    reason: string
-    requires_manual_review: boolean
-  } | null>(null)
+  const [waitlistInfo, setWaitlistInfo] = useState<WaitlistInfo | null>(null)
 
   // Populate form when product data is loaded
   useEffect(() => {
     if (product) {
-      setFormData({
-        name: product.name || '',
-        slug: product.slug || '',
-        description: product.description || '',
-        price: product.price?.toString() || '',
-        discount_price: product.discount_price?.toString() || '',
-        stock: product.stock?.toString() || '',
-        stock_code: product.stock_code || '',
-        image_url: product.image_url || '',
-        brand_id: product.brand_id || '',
-        category_id: product.category_id || ''
-      })
+      console.log('Product loaded, setting form data:', product)
+      console.log('art_nr in product:', product.art_nr)
+      console.log('hersteller_nr in product:', product.hersteller_nr)
+      
+              setFormData({
+          name: product.name || '',
+          slug: product.slug || '',
+          description: product.description || '',
+          price: product.price?.toString() || '',
+          discount_price: product.discount_price?.toString() || '',
+          stock: product.stock?.toString() || '',
+          stock_code: product.stock_code || '',
+          art_nr: product.art_nr || '',
+          hersteller_nr: product.hersteller_nr || '',
+          image_url: product.image_url || '',
+          brand_id: product.brand_id || '',
+          category_id: product.category_id || '',
+          technical_specs: [],
+          general_technical_specs: Array.isArray(product.general_technical_specs) ? product.general_technical_specs : []
+        })
     }
   }, [product])
 
+  // Debug: Form data değişikliklerini izle
+  useEffect(() => {
+    console.log('Form data changed:', formData)
+  }, [formData])
+
+  // Debug: Specifications değişikliklerini izle
+  useEffect(() => {
+    console.log('Specifications changed:', specifications)
+  }, [specifications])
+
   // Load variants when variants data is loaded
   useEffect(() => {
+    console.log('🔄 Variants useEffect triggered')
+    console.log('variantsResponse:', variantsResponse)
+    console.log('variantsResponse?.variants:', variantsResponse?.variants)
+    
     if (variantsResponse?.variants) {
+      console.log('✅ Loading variants from response')
       const loadedVariants: Variant[] = variantsResponse.variants.map((variant: VariantResponse) => ({
         id: variant.id,
         sku: variant.sku || '',
@@ -134,9 +180,13 @@ export default function EditProductPage() {
         track_inventory: variant.track_inventory !== undefined ? variant.track_inventory : true,
         continue_selling_when_out_of_stock: variant.continue_selling_when_out_of_stock !== undefined ? variant.continue_selling_when_out_of_stock : false,
         is_active: variant.is_active !== undefined ? variant.is_active : true,
-        position: variant.position || 0
+        position: variant.position || 0,
+        attributes: []
       }))
+      console.log('📋 Loaded variants:', loadedVariants)
       setVariants(loadedVariants)
+    } else {
+      console.log('❌ No variants in response or response is empty')
     }
   }, [variantsResponse])
 
@@ -151,6 +201,109 @@ export default function EditProductPage() {
       setImages(loadedImages)
     }
   }, [imagesResponse])
+
+  // Load additional data when product is loaded
+  useEffect(() => {
+    if (product) {
+      // Load specifications from specifications_data if available
+      console.log('Product specifications_data:', product.specifications_data)
+      console.log('Product specifications_data type:', typeof product.specifications_data)
+      console.log('Product specifications_data keys:', product.specifications_data ? Object.keys(product.specifications_data) : 'undefined')
+      
+      // Load general_technical_specs directly from product
+      console.log('Product general_technical_specs:', product.general_technical_specs)
+      console.log('Product general_technical_specs type:', typeof product.general_technical_specs)
+      console.log('Product general_technical_specs is array:', Array.isArray(product.general_technical_specs))
+      
+      if (product.specifications_data && typeof product.specifications_data === 'object') {
+        const specs = product.specifications_data as any
+        console.log('Parsed specs:', specs)
+        console.log('Technical specs array:', specs.technical_specs)
+        console.log('Technical specs type:', typeof specs.technical_specs)
+        console.log('Technical specs is array:', Array.isArray(specs.technical_specs))
+        
+        setSpecifications({
+          technical_specs: Array.isArray(specs.technical_specs) ? specs.technical_specs : [],
+          general_technical_specs: Array.isArray(specs.general_technical_specs) ? specs.general_technical_specs : []
+        })
+        
+        // Load general technical specs from specifications_data if available
+        if (specs.general_technical_specs) {
+          setFormData(prev => ({
+            ...prev,
+            general_technical_specs: specs.general_technical_specs
+          }))
+        }
+      } else {
+        console.log('No specifications_data found or not an object')
+      }
+      
+      // Load general_technical_specs directly from product if not in specifications_data
+      if (product.general_technical_specs && Array.isArray(product.general_technical_specs)) {
+        console.log('Loading general_technical_specs directly from product:', product.general_technical_specs)
+        setFormData(prev => ({
+          ...prev,
+          general_technical_specs: product.general_technical_specs as any
+        }))
+      } else {
+        console.log('No general_technical_specs found in product or not an array')
+      }
+
+      // Load conversion factors from API
+      const loadConversionFactors = async () => {
+        try {
+          const response = await fetch(`/api/products/${product.id}/conversion-factors`)
+          if (response.ok) {
+            const data = await response.json()
+            setConversionFactors(data)
+          }
+        } catch (error) {
+          console.log('No conversion factors found, using defaults')
+        }
+      }
+
+      loadConversionFactors()
+
+      // Load documents from API
+      const loadDocuments = async () => {
+        try {
+          const response = await fetch(`/api/products/${product.id}/documents`)
+          if (response.ok) {
+            const data = await response.json()
+            // Convert ProductDocument to DocumentImage format
+            const convertedDocuments = (data.data || []).map((doc: any) => ({
+              id: doc.id,
+              file: null, // We don't have the actual file, just the URL
+              previewUrl: doc.file_url,
+              name: doc.title,
+              file_url: doc.file_url,
+              file_type: doc.file_type,
+              file_size: doc.file_size
+            }))
+            setDocuments(convertedDocuments)
+          }
+        } catch (error) {
+          console.log('No documents found')
+        }
+      }
+
+      // Load videos from API
+      const loadVideos = async () => {
+        try {
+          const response = await fetch(`/api/products/${product.id}/videos`)
+          if (response.ok) {
+            const data = await response.json()
+            setVideos(data.data || [])
+          }
+        } catch (error) {
+          console.log('No videos found')
+        }
+      }
+
+      loadDocuments()
+      loadVideos()
+    }
+  }, [product])
 
   // Ürünün waitlist durumunu kontrol et
   useEffect(() => {
@@ -174,7 +327,7 @@ export default function EditProductPage() {
     checkWaitlistStatus()
   }, [product])
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement> | any) => {
     const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
@@ -182,960 +335,368 @@ export default function EditProductPage() {
     }))
   }
 
-  const handleImageChange = (index: number, field: keyof ProductImage, value: string | boolean) => {
-    const newImages = [...images]
-    newImages[index] = { ...newImages[index], [field]: value }
-    setImages(newImages)
-  }
-
-  const addImage = () => {
-    const newImage: ProductImage = {
-      image_url: '',
-      is_cover: images.length === 0
-    }
-    setImages([...images, newImage])
-  }
-
-  const removeImage = (index: number) => {
-    const newImages = images.filter((_, i) => i !== index)
-    // If we're removing the cover image, make the first remaining image the cover
-    if (images[index].is_cover && newImages.length > 0) {
-      newImages[0].is_cover = true
-    }
-    setImages(newImages)
-  }
-
-  const setCoverImage = (index: number) => {
-    const newImages = images.map((img, i) => ({
-      ...img,
-      is_cover: i === index
-    }))
-    setImages(newImages)
-  }
 
 
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSaving(true)
-
-    try {
-      // Update main product
-      const productResponse = await fetch(`/api/products/${productId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          price: parseFloat(formData.price),
-          discount_price: formData.discount_price ? parseFloat(formData.discount_price) : null,
-          stock: parseInt(formData.stock),
-          brand_id: formData.brand_id || null,
-          category_id: formData.category_id || null,
-        }),
-      })
-
-      if (!productResponse.ok) {
-        const error = await productResponse.json()
-        throw new Error(error.message)
-      }
-
-      // Update variants if any exist
-      if (variants.length > 0) {
-        const variantsResponse = await fetch(`/api/products/${productId}/variants`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ variants }),
-        })
-
-        if (!variantsResponse.ok) {
-          const error = await variantsResponse.json()
-          throw new Error(`Varyant güncellenirken hata: ${error.message}`)
-        }
-      }
-
-      // Update images if any exist
-      if (images.length > 0) {
-        const imagesResponse = await fetch(`/api/products/${productId}/images`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ images }),
-        })
-
-        if (!imagesResponse.ok) {
-          const error = await imagesResponse.json()
-          throw new Error(`Resimler güncellenirken hata: ${error.message}`)
-        }
-      }
-
-      router.push('/admin/products')
-    } catch (error) {
-      console.error('Error updating product:', error)
-      alert(`Hata: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`)
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const editVariant = (index: number) => {
-    setEditingVariantIndex(index)
-    setEditingVariant({ ...variants[index] })
-    setShowVariantDialog(true)
-  }
-
-  const closeVariantDialog = () => {
-    setEditingVariantIndex(null)
-    setEditingVariant({
-      sku: '',
-      title: '',
-      price: '',
-      compare_at_price: '',
-      stock_quantity: '0',
-      track_inventory: true,
-      continue_selling_when_out_of_stock: false,
-      is_active: true,
-      position: variants.length
-    })
-    setShowVariantDialog(false)
-  }
-
-  const handleEditingVariantChange = (field: keyof Variant, value: string | number | boolean) => {
-    setEditingVariant(prev => ({
+  // New handler functions for additional tabs
+  const handleSpecificationChange = (field: string, value: string | TechnicalSpec[]) => {
+    setSpecifications(prev => ({
       ...prev,
       [field]: value
     }))
   }
 
-  const saveVariant = () => {
-    if (editingVariantIndex !== null) {
-      // Update existing variant
-      const updatedVariants = [...variants]
-      updatedVariants[editingVariantIndex] = editingVariant
-      setVariants(updatedVariants)
-    } else {
-      // Add new variant
-      setVariants([...variants, { ...editingVariant, position: variants.length }])
+  // Specifications için kaydetme fonksiyonu
+  const handleSaveSpecifications = async () => {
+    setIsSavingSpecifications(true)
+    try {
+      // specifications_data'yı güncelle
+      const specificationsData = {
+        technical_specs: specifications.technical_specs
+      }
+
+      const response = await fetch(`/api/products/${productId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          specifications_data: specificationsData
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Specifications kaydedilemedi')
+      }
+
+      toast.success('Teknik özellikler başarıyla kaydedildi!')
+    } catch (error) {
+      console.error('Specifications save error:', error)
+      toast.error(error instanceof Error ? error.message : 'Teknik özellikler kaydedilemedi')
+    } finally {
+      setIsSavingSpecifications(false)
     }
-    closeVariantDialog()
   }
 
-  const deleteVariant = (index: number) => {
-    if (confirm('Bu varyantı silmek istediğinize emin misiniz?')) {
-      setVariants(variants.filter((_, i) => i !== index))
+
+  const openVideoDialog = (video: Video) => {
+    setSelectedVideo(video)
+    setShowVideoDialog(true)
+  }
+
+
+  // Genel bilgiler için kaydetme fonksiyonu
+  const handleSaveGeneral = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSavingGeneral(true)
+
+    try {
+      console.log('FormData:', formData)
+      console.log('ProductId:', productId)
+      
+      const requestBody = {
+        ...formData,
+        price: formData.price ? parseFloat(formData.price) : 0,
+        discount_price: formData.discount_price ? parseFloat(formData.discount_price) : null,
+        stock: formData.stock ? parseInt(formData.stock) : 0,
+        stock_code: formData.stock_code || null,
+        art_nr: formData.art_nr || null,
+        hersteller_nr: formData.hersteller_nr || null,
+        image_url: formData.image_url || null,
+        brand_id: formData.brand_id || null,
+        category_id: formData.category_id || null,
+        general_technical_specs: formData.general_technical_specs || null,
+      }
+      
+      console.log('Request Body:', requestBody)
+      console.log('general_technical_specs value:', formData.general_technical_specs)
+      
+      // Update main product with additional data
+      const productResponse = await fetch(`/api/products/${productId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      })
+
+      if (!productResponse.ok) {
+        const errorText = await productResponse.text()
+        console.error('API Error Response Text:', errorText)
+        console.error('Response status:', productResponse.status)
+        console.error('Response headers:', Object.fromEntries(productResponse.headers.entries()))
+        
+        let error
+        try {
+          error = JSON.parse(errorText)
+        } catch (e) {
+          error = { message: errorText }
+        }
+        
+        // Daha detaylı error mesajı
+        let errorMessage = 'Bilinmeyen API hatası'
+        if (error.message) {
+          errorMessage = error.message
+        } else if (error.error) {
+          errorMessage = error.error
+        } else if (error.details) {
+          errorMessage = `Validation hatası: ${JSON.stringify(error.details)}`
+        }
+        
+        throw new Error(errorMessage)
+      }
+
+      // Başarılı kayıttan sonra form state'ini güncelle
+      const updatedProduct = await productResponse.json()
+      console.log('Updated product from API:', updatedProduct)
+      console.log('art_nr from API:', updatedProduct.art_nr)
+      console.log('hersteller_nr from API:', updatedProduct.hersteller_nr)
+      
+      // Form state'ini güncelle - sadece gerekli field'ları
+      setFormData(prev => {
+        console.log('Previous form data:', prev)
+        
+        const newFormData = {
+          ...prev,
+          name: updatedProduct.name || prev.name,
+          slug: updatedProduct.slug || prev.slug,
+          description: updatedProduct.description || prev.description,
+          price: updatedProduct.price?.toString() || prev.price,
+          discount_price: updatedProduct.discount_price?.toString() || prev.discount_price,
+          stock: updatedProduct.stock?.toString() || prev.stock,
+          stock_code: updatedProduct.stock_code || prev.stock_code,
+          art_nr: updatedProduct.art_nr || prev.art_nr,
+          hersteller_nr: updatedProduct.hersteller_nr || prev.hersteller_nr,
+          image_url: updatedProduct.image_url || prev.image_url,
+          brand_id: updatedProduct.brand_id || prev.brand_id,
+          category_id: updatedProduct.category_id || prev.category_id
+        }
+        console.log('New form data:', newFormData)
+        console.log('art_nr in new form:', newFormData.art_nr)
+        console.log('hersteller_nr in new form:', newFormData.hersteller_nr)
+        return newFormData
+      })
+
+      toast.success('Genel bilgiler başarıyla kaydedildi!')
+    } catch (error) {
+      console.error('Error updating product:', error)
+      toast.error(`Hata: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`)
+    } finally {
+      setIsSavingGeneral(false)
     }
   }
+
+  // Dönüşüm faktörleri için kaydetme fonksiyonu
+  const handleSaveConversion = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSavingConversion(true)
+
+    try {
+      // Update conversion factors
+      const conversionFactorsResponse = await fetch(`/api/products/${productId}/conversion-factors`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(conversionFactors),
+      })
+
+      if (!conversionFactorsResponse.ok) {
+        const error = await conversionFactorsResponse.json()
+        throw new Error(`Dönüşüm faktörleri güncellenirken hata: ${error.message}`)
+      }
+
+      // Başarılı kayıttan sonra conversion factors state'ini güncelle
+      const updatedConversionFactors = await conversionFactorsResponse.json()
+      setConversionFactors(updatedConversionFactors)
+
+      toast.success('Dönüşüm faktörleri başarıyla kaydedildi!')
+    } catch (error) {
+      console.error('Error updating conversion factors:', error)
+      toast.error(`Hata: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`)
+    } finally {
+      setIsSavingConversion(false)
+    }
+  }
+
+
 
   if (isProductLoading || isVariantsLoading || isImagesLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Ürün bilgileri yükleniyor...</p>
-        </div>
-      </div>
-    )
+    return <LoadingState message="Ürün bilgileri yükleniyor..." />
   }
 
   if (productError || !product) {
     return (
-      <div className="space-y-6">
-        <div className="flex items-center space-x-4">
-          <Link
-            href="/admin/products"
-            className="text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Ürün Bulunamadı</h1>
-            <p className="text-gray-600">Ürün yüklenirken hata oluştu</p>
-          </div>
-        </div>
-        
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">
-            {productError?.message || 'Ürün bulunamadı veya yüklenirken hata oluştu.'}
-          </p>
-        </div>
-      </div>
+      <ErrorState 
+        error={productError}
+        title="Ürün Bulunamadı"
+        backUrl="/admin/products"
+        message={productError?.message || 'Ürün bulunamadı veya yüklenirken hata oluştu.'}
+      />
     )
   }
 
-  const tabs = [
+  const tabs: Array<{ id: ActiveTab; label: string; icon: React.ComponentType<{ className?: string }> }> = [
     { id: 'general', label: 'Genel Bilgiler', icon: Info },
+    { id: 'specifications', label: 'Teknik Özellikler', icon: Settings },
     { id: 'variants', label: 'Varyantlar', icon: Package },
-    { id: 'images', label: 'Resimler', icon: ImageIcon }
+    { id: 'images', label: 'Resimler', icon: ImageIcon },
+    { id: 'documents', label: 'Belgeler', icon: FileText },
+    { id: 'conversion', label: 'Dönüşüm Faktörleri', icon: Calculator },
+    { id: 'videos', label: 'Videolar', icon: Play }
   ]
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Link
-            href="/admin/products"
-            className="text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Ürün Düzenle</h1>
-            <p className="text-gray-600">{product.name} ürününü düzenle</p>
-          </div>
-        </div>
-        <div className="flex items-center space-x-4">
-          {/* Sağ tarafta boş alan - gelecekte eklenebilir */}
-        </div>
-      </div>
+      <PageHeader 
+        title="Ürün Düzenle"
+        subtitle={`${product.name} ürününü düzenle`}
+        backUrl="/admin/products"
+      />
 
       {/* Waitlist Durumu */}
       {waitlistInfo && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-          <div className="flex items-center space-x-2">
-            <Clock className="h-5 w-5 text-yellow-600" />
-            <h3 className="text-lg font-medium text-yellow-800">
-              Waitlist&apos;te Bekleyen Güncellemeler
-            </h3>
-          </div>
-          <p className="text-yellow-700 mt-2">
-            Bu ürün için <strong>{waitlistInfo.reason?.replace('_', ' ')}</strong> nedeniyle bekleyen değişiklikler bulunmaktadır.
-          </p>
-          <div className="mt-3 flex space-x-2">
-            <Link
-              href={`/admin/waitlist?product_id=${product.id}`}
-              className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-yellow-800 bg-yellow-100 hover:bg-yellow-200 transition-colors"
-            >
-              Waitlist&apos;i Görüntüle
-            </Link>
-            {waitlistInfo.requires_manual_review && (
-              <span className="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-800">
-                <AlertTriangle className="h-3 w-3 mr-1" />
-                Manuel İnceleme Gerekli
-              </span>
-            )}
-          </div>
-        </div>
+        <WaitlistAlert 
+          waitlistInfo={waitlistInfo}
+          productId={product.id}
+        />
       )}
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          {tabs.map((tab) => {
-            const Icon = tab.icon
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as 'general' | 'variants' | 'images')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                  activeTab === tab.id
-                    ? 'border-orange-500'
-                    : 'border-transparent'
-                }`}
-                style={{
-                  color: activeTab === tab.id ? '#F39237' : '#6b7280',
-                  borderBottomColor: activeTab === tab.id ? '#F39237' : 'transparent'
-                } as React.CSSProperties}
-                onMouseEnter={(e) => {
-                  if (activeTab !== tab.id) {
-                    e.currentTarget.style.color = '#F39237'
-                    e.currentTarget.style.borderBottomColor = '#F39237'
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (activeTab !== tab.id) {
-                    e.currentTarget.style.color = '#6b7280'
-                    e.currentTarget.style.borderBottomColor = 'transparent'
-                  }
-                }}
-              >
-                <Icon className="h-4 w-4" />
-                {tab.label}
-              </button>
-            )
-          })}
-        </nav>
-      </div>
+      <TabNavigation 
+        tabs={tabs}
+        activeTab={activeTab}
+        onTabChange={(tabId: string) => setActiveTab(tabId as ActiveTab)}
+      />
 
       {/* Tab Content */}
       <div className="bg-white rounded-lg shadow">
-        <form onSubmit={handleSubmit} className="p-6">
+        <form className="p-6">
           {/* General Tab */}
-          {activeTab === 'general' && (
-            <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Ürün Adı */}
-                <div className="space-y-1">
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Ürün Adı *
-              </label>
-                              <input
-                  type="text"
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  required
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
-                      style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                  placeholder="Ürün adını girin"
-                />
-            </div>
+                    {activeTab === 'general' && (
+            <GeneralTab
+              formData={formData}
+              brands={brands}
+              categories={categories}
+              handleInputChange={handleInputChange}
+            />
+          )}
 
-            {/* Slug */}
-                <div className="space-y-1">
-                  <label htmlFor="slug" className="block text-sm font-medium text-gray-700">
-                    URL Slug *
-              </label>
-              <input
-                type="text"
-                id="slug"
-                name="slug"
-                value={formData.slug}
-                onChange={handleInputChange}
-                required
-                pattern="[a-z0-9-]+"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
-                    style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                placeholder="urun-adi"
-              />
-                  <p className="text-xs text-gray-500">Sadece küçük harf, rakam ve tire kullanın</p>
-            </div>
-
-            {/* Fiyat */}
-                <div className="space-y-1">
-                  <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-                Fiyat (₺) *
-              </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₺</span>
-              <input
-                type="number"
-                id="price"
-                name="price"
-                value={formData.price}
-                onChange={handleInputChange}
-                required
-                min="0"
-                step="0.01"
-                      className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
-                      style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                placeholder="0.00"
-              />
-                  </div>
-            </div>
-
-            {/* İndirimli Fiyat */}
-                <div className="space-y-1">
-                  <label htmlFor="discount_price" className="block text-sm font-medium text-gray-700">
-                İndirimli Fiyat (₺)
-              </label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₺</span>
-              <input
-                type="number"
-                id="discount_price"
-                name="discount_price"
-                value={formData.discount_price}
-                onChange={handleInputChange}
-                min="0"
-                step="0.01"
-                      className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
-                      style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                placeholder="0.00"
-              />
-                  </div>
-            </div>
-
-            {/* Stok */}
-                <div className="space-y-1">
-                  <label htmlFor="stock" className="block text-sm font-medium text-gray-700">
-                    Stok Miktarı *
-              </label>
-              <input
-                type="number"
-                id="stock"
-                name="stock"
-                value={formData.stock}
-                onChange={handleInputChange}
-                required
-                min="0"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
-                    style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                placeholder="0"
-              />
-            </div>
-
-            {/* Stok Kodu */}
-                <div className="space-y-1">
-                  <label htmlFor="stock_code" className="block text-sm font-medium text-gray-700">
-                Stok Kodu
-              </label>
-              <input
-                type="text"
-                id="stock_code"
-                name="stock_code"
-                value={formData.stock_code}
-                onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
-                    style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                placeholder="STK001"
-              />
-            </div>
-
-            {/* Marka */}
-                <div className="space-y-1">
-                  <label htmlFor="brand_id" className="block text-sm font-medium text-gray-700">
-                Marka
-              </label>
-              <select
-                id="brand_id"
-                name="brand_id"
-                value={formData.brand_id}
-                onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
-                    style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-              >
-                <option value="">Marka seçin</option>
-                {brands.map((brand) => (
-                  <option key={brand.id} value={brand.id}>
-                    {brand.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Kategori */}
-                <div className="space-y-1">
-                  <label htmlFor="category_id" className="block text-sm font-medium text-gray-700">
-                Kategori
-              </label>
-              <select
-                id="category_id"
-                name="category_id"
-                value={formData.category_id}
-                onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
-                    style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-              >
-                <option value="">Kategori seçin</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.emoji ? `${category.emoji} ` : ''}{category.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            </div>
-
-              {/* Açıklama - Tam Genişlik */}
-              <div className="space-y-1">
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-                  Ürün Açıklaması
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400 resize-none"
-                  style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                  placeholder="Ürün hakkında detaylı bilgi verin..."
-                />
-                <p className="text-xs text-gray-500">Maksimum 2000 karakter</p>
-              </div>
-            </div>
+          {/* Specifications Tab */}
+          {activeTab === 'specifications' && (
+            <SpecificationsTab
+              specifications={specifications}
+              handleSpecificationChange={handleSpecificationChange}
+              onSave={handleSaveSpecifications}
+              isSaving={isSavingSpecifications}
+            />
           )}
 
           {/* Variants Tab */}
           {activeTab === 'variants' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Ürün Varyantları</h3>
-                  <p className="text-sm text-gray-600 mt-1">Ürün varyantlarını yönetin (renk, boyut, fiyat farkları)</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setShowVariantDialog(true)}
-                  className="px-4 py-2 text-white rounded-xl transition-colors flex items-center gap-2 shadow-sm"
-                  style={{backgroundColor: '#F39236'}}
-                >
-                  <Plus className="h-4 w-4" />
-                  Varyant Ekle
-                </button>
-              </div>
-
-              {variants.length === 0 ? (
-                <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-xl">
-                  <Package className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                  <p className="text-lg font-medium text-gray-900 mb-2">Henüz varyant eklenmemiş</p>
-                  <p className="text-sm">Ürün varyantları eklemek için yukarıdaki butona tıklayın</p>
-                </div>
-              ) : (
-                <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            SKU
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Başlık
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Fiyat
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Stok
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Durum
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            İşlemler
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {variants.map((variant, index) => (
-                          <tr key={index} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {variant.sku}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {variant.title || '-'}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              <div className="flex flex-col">
-                                <span className="font-medium">₺{variant.price}</span>
-                                {variant.compare_at_price && (
-                                  <span className="text-xs text-gray-500 line-through">
-                                    ₺{variant.compare_at_price}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {variant.stock_quantity}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                variant.is_active 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-red-100 text-red-800'
-                              }`}>
-                                {variant.is_active ? 'Aktif' : 'Pasif'}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  type="button"
-                                  onClick={() => editVariant(index)}
-                                  className="text-blue-600 hover:text-blue-900 transition-colors"
-                                >
-                                  Düzenle
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => deleteVariant(index)}
-                                  className="text-red-600 hover:text-red-900 transition-colors"
-                                >
-                                  Sil
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </div>
+            <VariantsTab
+              variants={variants}
+              setVariants={setVariants}
+              productId={productId}
+              isSaving={isSavingVariants}
+            />
           )}
 
           {/* Images Tab */}
           {activeTab === 'images' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Ürün Resimleri</h3>
-                  <p className="text-sm text-gray-600 mt-1">Resimleri sürükleyip bırakarak sıralayın</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={addImage}
-                  className="px-4 py-2 text-white rounded-lg transition-colors flex items-center gap-2"
-                  style={{backgroundColor: '#F39236'}}
-                >
-                  <Plus className="h-4 w-4" />
-                  Resim Ekle
-                </button>
-              </div>
+            <ImagesTab
+              images={images}
+              setImages={setImages}
+              refetchImages={refetchImages}
+            />
+          )}
 
-              {images.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
-                  <ImageIcon className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                  <p className="text-sm font-medium text-gray-900 mb-1">Henüz resim eklenmemiş</p>
-                  <p className="text-xs">Ürün resimleri eklemek için yukarıdaki butona tıklayın</p>
-                </div>
-              ) : (
-                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                  <div className="max-h-96 overflow-y-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50 sticky top-0 z-10">
-                        <tr>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12 bg-gray-50">
-                            #
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16 bg-gray-50">
-                            Önizleme
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
-                            URL
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-24 bg-gray-50">
-                            Kapak
-                          </th>
-                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32 bg-gray-50">
-                            İşlemler
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {images.map((image, index) => (
-                          <tr 
-                            key={index} 
-                            className="hover:bg-gray-50 transition-colors cursor-move"
-                            draggable
-                            onDragStart={(e) => {
-                              e.dataTransfer.setData('text/plain', index.toString())
-                            }}
-                            onDragOver={(e) => e.preventDefault()}
-                            onDrop={(e) => {
-                              e.preventDefault()
-                              const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'))
-                              if (draggedIndex !== index) {
-                                const newImages = [...images]
-                                const [draggedImage] = newImages.splice(draggedIndex, 1)
-                                newImages.splice(index, 0, draggedImage)
-                                setImages(newImages)
-                              }
-                            }}
-                          >
-                            {/* Drag Handle & Position */}
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <div className="flex items-center gap-2">
-                                <GripVertical className="h-4 w-4 text-gray-400 cursor-grab active:cursor-grabbing" />
-                                <span className="text-sm font-medium text-gray-900">{index + 1}</span>
-                              </div>
-                            </td>
-                            
-                            {/* Image Preview */}
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden border border-gray-200 relative">
-                                {image.image_url ? (
-                                  <Image
-                                    src={image.image_url}
-                                    alt={`Ürün resmi ${index + 1}`}
-                                    fill
-                                    sizes="48px"
-                                    className="object-cover"
-                                  />
-                                ) : (
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <ImageIcon className="h-5 w-5 text-gray-300" />
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                            
-                            {/* URL Input */}
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              <input
-                                type="url"
-                                value={image.image_url}
-                                onChange={(e) => handleImageChange(index, 'image_url', e.target.value)}
-                                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:border-transparent"
-                                style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                                placeholder="https://example.com/image.jpg"
-                              />
-                            </td>
-                            
-                            {/* Cover Status */}
-                            <td className="px-4 py-3 whitespace-nowrap">
-                              {image.is_cover ? (
-                                <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full"
-                                      style={{backgroundColor: '#FFF0E2', color: '#F39237'}}>
-                                  Kapak
-                                </span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => setCoverImage(index)}
-                                  className="px-2 py-1 text-xs rounded-md transition-colors"
-                                  style={{
-                                    color: '#6b7280'
-                                  } as React.CSSProperties}
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.backgroundColor = '#FFF0E2'
-                                    e.currentTarget.style.color = '#F39237'
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.backgroundColor = 'transparent'
-                                    e.currentTarget.style.color = '#6b7280'
-                                  }}
-                                >
-                                  Kapak Yap
-                                </button>
-                              )}
-                            </td>
-                            
-                            {/* Actions */}
-                            <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                              <div className="flex items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => removeImage(index)}
-                                  className="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition-colors"
-                                  title="Resmi sil"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
-            </div>
+          {/* Documents Tab */}
+          {activeTab === 'documents' && (
+            <DocumentsTab
+              documents={documents}
+              setDocuments={setDocuments}
+            />
           )}
 
 
+          {/* Conversion Factors Tab */}
+          {activeTab === 'conversion' && (
+            <ConversionTab
+              conversionFactors={conversionFactors}
+              setConversionFactors={setConversionFactors}
+            />
+          )}
 
-          {/* Form Actions */}
-          <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-            <Link
-              href="/admin/products"
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
-            >
-              <X className="h-4 w-4" />
-              İptal
-            </Link>
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="px-4 py-2 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-              style={{backgroundColor: isSaving ? '#d1d5db' : '#F39236'}}
-            >
-              <Save className="h-4 w-4" />
-              {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
-            </button>
-          </div>
+          {/* Videos Tab */}
+          {activeTab === 'videos' && (
+            <VideosTab
+              videos={videos.map(video => ({
+                id: video.id,
+                title: video.title,
+                file: new File([], video.title), // Placeholder file
+                description: '',
+                previewUrl: video.video_url,
+                video_url: video.video_url,
+                thumbnail_url: video.thumbnail_url,
+                duration: video.duration,
+                file_size: video.file_size
+              }))}
+              setVideos={(newVideos) => {
+                setVideos(newVideos.map(video => ({
+                  id: video.id,
+                  product_id: productId,
+                  title: video.title,
+                  video_url: video.previewUrl,
+                  thumbnail_url: video.thumbnail_url,
+                  duration: video.duration,
+                  file_size: video.file_size,
+                  is_active: true,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+                })))
+              }}
+              openVideoDialog={openVideoDialog}
+            />
+          )}
+
+          {/* SEO Settings Tab */}
+
+
+
         </form>
+        
+        {/* Form Actions - Genel bilgiler için */}
+        {activeTab === 'general' && (
+          <div className="px-6 pb-6">
+            <FormActions 
+              isSaving={isSavingGeneral}
+              cancelUrl="/admin/products"
+              onSubmit={handleSaveGeneral}
+            />
+          </div>
+        )}
+
+        {/* Form Actions - Dönüşüm faktörleri için */}
+        {activeTab === 'conversion' && (
+          <div className="px-6 pb-6">
+            <FormActions 
+              isSaving={isSavingConversion}
+              cancelUrl="/admin/products"
+              onSubmit={handleSaveConversion}
+            />
+          </div>
+        )}
       </div>
 
-      {/* Variant Dialog */}
-      {showVariantDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 backdrop-blur-md bg-gray-900/20 transition-all duration-300 opacity-100"
-            style={{
-              backdropFilter: 'blur(12px)',
-              WebkitBackdropFilter: 'blur(12px)'
-            }}
-            onClick={closeVariantDialog}
-          />
-          
-          {/* Dialog */}
-          <div className="relative bg-white/90 backdrop-blur-sm rounded-lg shadow-xl max-w-2xl w-full mx-4 p-6 max-h-[90vh] overflow-y-auto transition-all duration-300 transform opacity-100 scale-100 translate-y-0 border border-white/20">
-            {/* Close Button */}
-            <button
-              onClick={closeVariantDialog}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-            
-            <div className="flex items-center gap-3 mb-6">
-              <Package className="h-6 w-6" style={{color: '#F39236'}} />
-              <h2 className="text-xl font-semibold text-gray-900">
-                {editingVariantIndex !== null ? 'Varyant Düzenle' : 'Varyant Ekle'}
-              </h2>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="edit_sku" className="block text-sm font-medium text-gray-700 mb-2">
-                    SKU *
-                  </label>
-                  <input
-                    type="text"
-                    id="edit_sku"
-                    name="sku"
-                    value={editingVariant.sku}
-                    onChange={(e) => handleEditingVariantChange('sku', e.target.value)}
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 transition-colors"
-                    style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                    placeholder="VARYANT-001"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="edit_title" className="block text-sm font-medium text-gray-700 mb-2">
-                    Başlık
-                  </label>
-                  <input
-                    type="text"
-                    id="edit_title"
-                    name="title"
-                    value={editingVariant.title}
-                    onChange={(e) => handleEditingVariantChange('title', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 transition-colors"
-                    style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                    placeholder="Kırmızı, Büyük"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="edit_price" className="block text-sm font-medium text-gray-700 mb-2">
-                    Fiyat (₺) *
-                  </label>
-                  <input
-                    type="number"
-                    id="edit_price"
-                    name="price"
-                    value={editingVariant.price}
-                    onChange={(e) => handleEditingVariantChange('price', e.target.value)}
-                    required
-                    min="0"
-                    step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 transition-colors"
-                    style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                    placeholder="0.00"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="edit_compare_at_price" className="block text-sm font-medium text-gray-700 mb-2">
-                    Karşılaştırma Fiyatı (₺)
-                  </label>
-                  <input
-                    type="number"
-                    id="edit_compare_at_price"
-                    name="compare_at_price"
-                    value={editingVariant.compare_at_price}
-                    onChange={(e) => handleEditingVariantChange('compare_at_price', e.target.value)}
-                    min="0"
-                    step="0.01"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 transition-colors"
-                    style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                    placeholder="0.00"
-                  />
-                </div>
-                
-                <div>
-                  <label htmlFor="edit_stock_quantity" className="block text-sm font-medium text-gray-700 mb-2">
-                    Stok Miktarı *
-                  </label>
-                  <input
-                    type="number"
-                    id="edit_stock_quantity"
-                    name="stock_quantity"
-                    value={editingVariant.stock_quantity}
-                    onChange={(e) => handleEditingVariantChange('stock_quantity', e.target.value)}
-                    required
-                    min="0"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 transition-colors"
-                    style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-              
-              {/* Checkboxes Section */}
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="edit_track_inventory"
-                    name="track_inventory"
-                    checked={editingVariant.track_inventory}
-                    onChange={(e) => handleEditingVariantChange('track_inventory', e.target.checked)}
-                    className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
-                    style={{accentColor: '#F39236'}}
-                  />
-                  <label htmlFor="edit_track_inventory" className="ml-2 text-sm text-gray-700">
-                    Stok takibi yap
-                  </label>
-                </div>
-                
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="edit_continue_selling"
-                    name="continue_selling_when_out_of_stock"
-                    checked={editingVariant.continue_selling_when_out_of_stock}
-                    onChange={(e) => handleEditingVariantChange('continue_selling_when_out_of_stock', e.target.checked)}
-                    className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
-                    style={{accentColor: '#F39236'}}
-                  />
-                  <label htmlFor="edit_continue_selling" className="ml-2 text-sm text-gray-700">
-                    Stok bittiğinde satmaya devam et
-                  </label>
-                </div>
-                
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="edit_is_active"
-                    name="is_active"
-                    checked={editingVariant.is_active}
-                    onChange={(e) => handleEditingVariantChange('is_active', e.target.checked)}
-                    className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
-                    style={{accentColor: '#F39236'}}
-                  />
-                  <label htmlFor="edit_is_active" className="ml-2 text-sm text-gray-700">
-                    Aktif
-                  </label>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-              <button
-                onClick={closeVariantDialog}
-                className="px-4 py-2 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                İptal
-              </button>
-              <button
-                onClick={saveVariant}
-                className="px-4 py-2 text-white font-medium rounded-lg transition-colors hover:opacity-90"
-                style={{backgroundColor: '#F39236'}}
-              >
-                {editingVariantIndex !== null ? 'Varyant Güncelle' : 'Varyant Ekle'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Video Dialog */}
+      <VideoDialog 
+        isOpen={showVideoDialog}
+        video={selectedVideo}
+        onClose={() => setShowVideoDialog(false)}
+      />
+
     </div>
   )
 }
