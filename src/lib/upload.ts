@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { Database } from './supabase'
+import type { Database } from '@/types/database'
 
 export type UploadResult = {
   success: boolean

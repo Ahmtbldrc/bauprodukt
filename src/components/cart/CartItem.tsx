@@ -60,6 +60,12 @@ export const CartItem: React.FC<CartItemProps> = ({
   // Fetch full product details for dynamic routing
   const { data: fullProduct } = useProductById(item.product.id)
 
+  // Create fallback URL structure when brand/category data is not available
+  // The API view includes brand_slug and category_slug fields
+  const productUrl = (fullProduct as any)?.brand_slug && (fullProduct as any)?.category_slug 
+    ? `/${(fullProduct as any).brand_slug}/${(fullProduct as any).category_slug}/${fullProduct?.slug || item.product.slug}`
+    : `/products/${fullProduct?.slug || item.product.slug}`
+
   const loading = isLoading || actionLoading
 
   const handleQuantityChange = async (newQuantity: number) => {
@@ -96,7 +102,7 @@ export const CartItem: React.FC<CartItemProps> = ({
     <div className="flex items-center gap-4 py-4 border-b border-gray-200">
       {/* Product Image */}
       <div className="flex-shrink-0">
-        <Link href={fullProduct ? `/${fullProduct.brand?.slug}/${fullProduct.category?.slug}/${fullProduct.slug}` : '#'}>
+        <Link href={productUrl}>
           <div className="w-16 h-16 bg-gray-200 rounded-md overflow-hidden">
             {item.product.image_url ? (
               <Image
@@ -117,7 +123,7 @@ export const CartItem: React.FC<CartItemProps> = ({
 
       {/* Product Details */}
       <div className="flex-grow">
-        <Link href={fullProduct ? `/${fullProduct.brand?.slug}/${fullProduct.category?.slug}/${fullProduct.slug}` : '#'}>
+        <Link href={productUrl}>
           <h3 
             className="font-medium text-gray-900 transition-colors hover:opacity-80"
             onMouseEnter={(e) => (e.target as HTMLElement).style.color = '#F39236'}
