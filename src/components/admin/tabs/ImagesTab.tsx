@@ -29,6 +29,7 @@ interface ProductImage {
   id?: string
   image_url: string
   is_cover: boolean
+  order_index?: number
 }
 
 interface ImagesTabProps {
@@ -36,6 +37,7 @@ interface ImagesTabProps {
   setImages: (images: ProductImage[]) => void
   refetchImages?: () => void
   openDeleteDialog: (index: number) => void
+  productId: string
 }
 
 // Toast notification item for AnimatedList
@@ -262,7 +264,7 @@ function SortableImageItem({ image, index, onRemove, onSetCover, onImageChange }
   )
 }
 
-export default function ImagesTab({ images, setImages, refetchImages, openDeleteDialog }: ImagesTabProps) {
+export default function ImagesTab({ images, setImages, refetchImages, openDeleteDialog, productId }: ImagesTabProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -288,43 +290,63 @@ export default function ImagesTab({ images, setImages, refetchImages, openDelete
     fileInputRef.current?.click()
   }
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('handleFileChange triggered', e.target.files)
     const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onload = (event) => {
-        const result = event.target?.result as string
+      try {
+        console.log('File selected:', file.name, file.size, file.type)
+        console.log('ProductId:', productId)
         
-        // Create a canvas to resize the image to 120x120
-        const img = new window.Image()
-        img.onload = () => {
-          const canvas = document.createElement('canvas')
-          const ctx = canvas.getContext('2d')
-          
-          // Set canvas size to 120x120
-          canvas.width = 120
-          canvas.height = 120
-          
-          if (ctx) {
-            // Draw the resized image maintaining aspect ratio
-            ctx.drawImage(img, 0, 0, 120, 120)
-            
-            // Convert to base64 with consistent quality
-            const resizedImageUrl = canvas.toDataURL('image/jpeg', 0.9)
-            
-            const newImage: ProductImage = {
-              image_url: resizedImageUrl,
-              is_cover: images.length === 0 // İlk resim kapak resmi olsun
-            }
-            setImages([...images, newImage])
-            
-            // Show success toast
-            showToast('Bild erfolgreich hinzugefügt!', 'success')
-          }
+        // Show loading toast
+        showToast('Bild wird hochgeladen...', 'success')
+        
+        // Create FormData for file upload
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('order_index', images.length.toString())
+        formData.append('is_cover', (images.length === 0).toString()) // First image becomes cover
+        
+        console.log('FormData created:', {
+          file: file.name,
+          order_index: images.length.toString(),
+          is_cover: (images.length === 0).toString()
+        })
+        
+        // Upload image to API
+        const response = await fetch(`/api/products/${productId}/images`, {
+          method: 'POST',
+          body: formData,
+        })
+        
+        console.log('API Response status:', response.status)
+        console.log('API Response headers:', response.headers)
+        
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('API Error response:', errorText)
+          const error = await response.json().catch(() => ({ error: 'Failed to parse error' }))
+          throw new Error(error.error || 'Failed to upload image')
         }
-        img.src = result
+        
+        const result = await response.json()
+        console.log('API Success result:', result)
+        
+        // Update local state with the uploaded image
+        if (result.data) {
+          setImages([...images, result.data])
+          showToast('Bild erfolgreich hochgeladen!', 'success')
+        }
+        
+        // Refresh images from API to ensure consistency
+        if (refetchImages) {
+          refetchImages()
+        }
+        
+      } catch (error) {
+        console.error('Image upload error:', error)
+        showToast(`Fehler beim Hochladen: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`, 'error')
       }
-      reader.readAsDataURL(file)
     }
   }
 
@@ -357,7 +379,6 @@ export default function ImagesTab({ images, setImages, refetchImages, openDelete
       }
 
       // API'ye kapak resmi güncelleme isteği gönder
-      const productId = window.location.pathname.split('/')[3] // URL'den product ID'yi al
       const response = await fetch(`/api/products/${productId}/images/${targetImage.id}/cover`, {
         method: 'PUT',
         headers: {
@@ -397,22 +418,106 @@ export default function ImagesTab({ images, setImages, refetchImages, openDelete
     }
   }
 
-  const handleImageChange = (index: number, imageUrl: string) => {
-    const newImages = [...images]
-    newImages[index] = { ...newImages[index], image_url: imageUrl }
-    setImages(newImages)
-          showToast('Bild aktualisiert!', 'success')
+  const handleImageChange = async (index: number, imageUrl: string) => {
+    try {
+      const newImages = [...images]
+      newImages[index] = { ...newImages[index], image_url: imageUrl }
+      setImages(newImages)
+      
+      // If the image has an ID, update it in the API
+      if (newImages[index].id) {
+        const imagesToUpdate = newImages.map((image, idx) => ({
+          image_url: image.image_url,
+          is_cover: image.is_cover,
+          order_index: idx
+        }))
+        
+        const response = await fetch(`/api/products/${productId}/images`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            images: imagesToUpdate
+          }),
+        })
+        
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Failed to update image')
+        }
+        
+        showToast('Bild aktualisiert!', 'success')
+        
+        // Refresh images from API to ensure consistency
+        if (refetchImages) {
+          refetchImages()
+        }
+      } else {
+        showToast('Bild aktualisiert!', 'success')
+      }
+    } catch (error) {
+      console.error('Error updating image:', error)
+      showToast(`Fehler beim Aktualisieren: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`, 'error')
+      
+      // Revert on error
+      if (refetchImages) {
+        refetchImages()
+      }
+    }
   }
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event
 
     if (over && active.id !== over.id) {
       const oldIndex = parseInt(active.id.toString().split('-')[1])
       const newIndex = parseInt(over.id.toString().split('-')[1])
       
-      setImages(arrayMove(images, oldIndex, newIndex))
-      showToast('Bildreihenfolge aktualisiert!', 'success')
+      try {
+        // Update local state immediately for responsive UI
+        const newImages = arrayMove(images, oldIndex, newIndex)
+        setImages(newImages)
+        
+        // Prepare images data for API update
+        const imagesToUpdate = newImages.map((image, index) => ({
+          image_url: image.image_url,
+          is_cover: image.is_cover,
+          order_index: index
+        }))
+        
+        // Update order in API
+        const response = await fetch(`/api/products/${productId}/images`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            images: imagesToUpdate
+          }),
+        })
+        
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Failed to update image order')
+        }
+        
+        showToast('Bildreihenfolge aktualisiert!', 'success')
+        
+        // Refresh images from API to ensure consistency
+        if (refetchImages) {
+          refetchImages()
+        }
+        
+      } catch (error) {
+        console.error('Error updating image order:', error)
+        showToast(`Fehler beim Aktualisieren der Reihenfolge: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`, 'error')
+        
+        // Revert to original order on error
+        if (refetchImages) {
+          refetchImages()
+        }
+      }
     }
   }
 

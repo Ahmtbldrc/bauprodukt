@@ -9,4 +9,5 @@ export {
   useProductsByBrand 
 } from './useProducts'
 export { useBanners, useActiveBanners } from './useBanners'
-export { useWaitlist } from './useWaitlist' 
+export { useWaitlist } from './useWaitlist'
+export { useDocuments } from './useDocuments' 

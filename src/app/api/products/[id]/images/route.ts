@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { supabase } from '@/lib/supabase'
 import { createClient } from '@/lib/supabase/server'
 import { deleteFile, uploadFile, validateFile } from '@/lib/upload'
 
@@ -10,7 +11,6 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { id: productId } = await params
-    const supabase = createClient()
 
     const { data, error } = await supabase
       .from('product_images')
@@ -43,12 +43,27 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     const { id: productId } = await params
-    const supabase = createClient()
+    console.log('POST /api/products/[id]/images - ProductId:', productId)
+    
     const formData = await request.formData()
+    
+    console.log('FormData received:', {
+      hasFile: formData.has('file'),
+      hasOrderIndex: formData.has('order_index'),
+      hasIsCover: formData.has('is_cover')
+    })
     
     const file = formData.get('file') as File
     const orderIndex = parseInt(formData.get('order_index') as string) || 0
     const isCover = formData.get('is_cover') === 'true'
+    
+    console.log('Parsed data:', {
+      fileName: file?.name,
+      fileSize: file?.size,
+      fileType: file?.type,
+      orderIndex,
+      isCover
+    })
 
     // Dosya kontrolü
     if (!file) {
@@ -162,7 +177,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
     // Dosyaları storage'dan sil (best effort)
     if (images && images.length > 0) {
-      const deletePromises = images.map(img => 
+      const deletePromises = images.map((img: { image_url: string }) => 
         deleteFile(img.image_url, 'images').catch(err => 
           console.error('Failed to delete file:', img.image_url, err)
         )

@@ -377,3 +377,98 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     )
   }
 }
+
+// DELETE endpoint for deleting variants (admin functionality)
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { id } = await params
+    const supabase = createClient()
+    const body = await request.json()
+
+    const { variantId } = body
+
+    if (!variantId) {
+      return NextResponse.json(
+        { error: 'Variant ID is required' },
+        { status: 400 }
+      )
+    }
+
+    // Check if product exists
+    const { error: productError } = await supabase
+      .from('products')
+      .select('id')
+      .eq('id', id)
+      .single()
+
+    if (productError) {
+      if (productError.code === 'PGRST116') {
+        return NextResponse.json(
+          { error: 'Product not found' },
+          { status: 404 }
+        )
+      }
+      return NextResponse.json(
+        { error: 'Failed to validate product' },
+        { status: 500 }
+      )
+    }
+
+    // Check if variant exists and belongs to this product
+    const { data: variant, error: variantCheckError } = await supabase
+      .from('product_variants')
+      .select('id, product_id')
+      .eq('id', variantId)
+      .eq('product_id', id)
+      .single()
+
+    if (variantCheckError) {
+      if (variantCheckError.code === 'PGRST116') {
+        return NextResponse.json(
+          { error: 'Variant not found' },
+          { status: 404 }
+        )
+      }
+      return NextResponse.json(
+        { error: 'Failed to validate variant' },
+        { status: 500 }
+      )
+    }
+
+    // Delete variant attribute values first (foreign key constraint)
+    const { error: attributesDeleteError } = await supabase
+      .from('variant_attribute_values')
+      .delete()
+      .eq('variant_id', variantId)
+
+    if (attributesDeleteError) {
+      console.error('Failed to delete variant attributes:', attributesDeleteError)
+      // Continue with variant deletion even if attribute deletion fails
+    }
+
+    // Delete the variant
+    const { error: deleteError } = await supabase
+      .from('product_variants')
+      .delete()
+      .eq('id', variantId)
+
+    if (deleteError) {
+      console.error('Variant deletion error:', deleteError)
+      return NextResponse.json(
+        { error: 'Failed to delete variant' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      message: 'Variant deleted successfully',
+      deleted_variant_id: variantId
+    })
+  } catch (error) {
+    console.error('Variant deletion API error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}

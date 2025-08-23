@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import { useProductById, useProductVariants, useProductImages } from '@/hooks/useProducts'
+import { useDocuments } from '@/hooks/useDocuments'
 import { useAllBrands } from '@/hooks/useBrands'
 import { useAllCategories } from '@/hooks/useCategories'
 import { Info, Settings, Package, ImageIcon, FileText, Calculator, Play } from 'lucide-react'
@@ -75,6 +76,7 @@ export default function EditProductPage() {
   const { data: product, isLoading: isProductLoading, error: productError } = useProductById(productId)
   const { data: variantsResponse, isLoading: isVariantsLoading } = useProductVariants(productId)
   const { data: imagesResponse, isLoading: isImagesLoading, refetch: refetchImages } = useProductImages(productId)
+  const { data: documentsResponse, isLoading: isDocumentsLoading, refetch: refetchDocuments } = useDocuments(productId)
   const { data: brandsResponse } = useAllBrands()
   const { data: categoriesResponse } = useAllCategories()
   
@@ -115,6 +117,25 @@ export default function EditProductPage() {
 
   const [documents, setDocuments] = useState<DocumentImage[]>([])
 
+  // Update documents when documentsResponse changes
+  useEffect(() => {
+    console.log('Documents response changed:', documentsResponse)
+    if (documentsResponse?.data) {
+      console.log('Raw documents data:', documentsResponse.data)
+      const formattedDocuments: DocumentImage[] = documentsResponse.data.map(doc => ({
+        id: doc.id,
+        file: new File([], doc.title), // Placeholder file
+        previewUrl: doc.file_url,
+        name: doc.title,
+        file_url: doc.file_url,
+        file_type: doc.file_type,
+        file_size: doc.file_size
+      }))
+      console.log('Formatted documents:', formattedDocuments)
+      setDocuments(formattedDocuments)
+    }
+  }, [documentsResponse])
+
   const [conversionFactors, setConversionFactors] = useState<ConversionFactors>({
     length_units: true,
     weight_units: true,
@@ -139,13 +160,7 @@ export default function EditProductPage() {
     index: null
   })
 
-  const [variantsDeleteDialog, setVariantsDeleteDialog] = useState<{
-    isOpen: boolean
-    index: number | null
-  }>({
-    isOpen: false,
-    index: null
-  })
+
 
   const [imagesDeleteDialog, setImagesDeleteDialog] = useState<{
     isOpen: boolean
@@ -217,29 +232,7 @@ export default function EditProductPage() {
     }
   }
 
-  const openVariantsDeleteDialog = (index: number) => {
-    setVariantsDeleteDialog({ isOpen: true, index })
-  }
 
-  const closeVariantsDeleteDialog = () => {
-    setVariantsDeleteDialog({ isOpen: false, index: null })
-  }
-
-  const confirmVariantsDelete = async () => {
-    if (variantsDeleteDialog.index === null) return
-    
-    try {
-      // Remove from local state
-      const newVariants = variants.filter((_, i) => i !== variantsDeleteDialog.index)
-      setVariants(newVariants)
-      
-      closeVariantsDeleteDialog()
-      toast.success('Variante erfolgreich gelöscht!')
-    } catch (error) {
-      console.error('Error deleting variant:', error)
-      toast.error('Fehler beim Löschen der Variante')
-    }
-  }
 
   const openImagesDeleteDialog = (index: number) => {
     setImagesDeleteDialog({ isOpen: true, index })
@@ -253,18 +246,46 @@ export default function EditProductPage() {
     if (imagesDeleteDialog.index === null) return
     
     try {
-      // Remove from local state
-      const newImages = images.filter((_, i) => i !== imagesDeleteDialog.index)
-      setImages(newImages)
+      const imageToDelete = images[imagesDeleteDialog.index]
+      
+      // Make API call to delete the image from database
+      if (imageToDelete.id) {
+        const response = await fetch(`/api/products/${productId}/images/${imageToDelete.id}`, {
+          method: 'DELETE',
+        })
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}))
+          throw new Error(errorData.error || 'Failed to delete image')
+        }
+        
+        const successData = await response.json()
+        console.log('Image delete success:', successData)
+        
+        // Update local state with the remaining images from API response
+        if (successData.data) {
+          setImages(successData.data)
+        } else {
+          // Fallback: Remove from local state
+          const newImages = images.filter((_, i) => i !== imagesDeleteDialog.index)
+          setImages(newImages)
+        }
+      } else {
+        // If no ID, just remove from local state (for new images not yet saved)
+        const newImages = images.filter((_, i) => i !== imagesDeleteDialog.index)
+        setImages(newImages)
+      }
       
       closeImagesDeleteDialog()
       toast.success('Bild erfolgreich gelöscht!')
-      refetchImages() // Refresh images from API
+      refetchImages() // Refresh images from API to ensure consistency
     } catch (error) {
       console.error('Error deleting image:', error)
-      toast.error('Fehler beim Löschen des Bildes')
+      toast.error(`Fehler beim Löschen des Bildes: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`)
     }
   }
+
+
 
   const openDocumentsDeleteDialog = (index: number) => {
     setDocumentsDeleteDialog({ isOpen: true, index })
@@ -279,16 +300,28 @@ export default function EditProductPage() {
     
     try {
       const documentToDelete = documents[documentsDeleteDialog.index]
+      console.log('Attempting to delete document:', documentToDelete)
       
       // Make API call to delete the document from database
       if (documentToDelete.id) {
-        const response = await fetch(`/api/products/${productId}/documents/${documentToDelete.id}`, {
+        console.log('Making DELETE request to:', `/api/products/${productId}/documents?id=${documentToDelete.id}`)
+        
+        const response = await fetch(`/api/products/${productId}/documents?id=${documentToDelete.id}`, {
           method: 'DELETE',
         })
         
+        console.log('Delete response status:', response.status)
+        
         if (!response.ok) {
-          throw new Error('Failed to delete document')
+          const errorData = await response.json().catch(() => ({}))
+          console.error('Delete response error:', errorData)
+          throw new Error(errorData.error || 'Failed to delete document')
         }
+        
+        const successData = await response.json()
+        console.log('Delete success:', successData)
+      } else {
+        console.warn('Document has no ID, skipping API call')
       }
       
       // Remove from local state
@@ -297,6 +330,7 @@ export default function EditProductPage() {
       
       closeDocumentsDeleteDialog()
       toast.success('Dokument erfolgreich gelöscht!')
+      refetchDocuments() // Refresh documents from API
     } catch (error) {
       console.error('Error deleting document:', error)
       toast.error('Fehler beim Löschen des Dokuments')
@@ -817,7 +851,6 @@ export default function EditProductPage() {
               setVariants={setVariants}
               productId={productId}
               isSaving={isSavingVariants}
-              openDeleteDialog={openVariantsDeleteDialog}
             />
           )}
 
@@ -828,6 +861,7 @@ export default function EditProductPage() {
               setImages={setImages}
               refetchImages={refetchImages}
               openDeleteDialog={openImagesDeleteDialog}
+              productId={productId}
             />
           )}
 
@@ -913,6 +947,8 @@ export default function EditProductPage() {
             />
           </div>
         )}
+
+
       </div>
 
       {/* Video Dialog */}
@@ -934,17 +970,7 @@ export default function EditProductPage() {
         variant="danger"
       />
 
-      {/* Variants Delete Dialog */}
-      <ConfirmDialog
-        isOpen={variantsDeleteDialog.isOpen}
-        onClose={closeVariantsDeleteDialog}
-        onConfirm={confirmVariantsDelete}
-        title="Variante löschen"
-        message="Sind Sie sicher, dass Sie diese Variante löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
-        confirmText="Ja, löschen"
-        cancelText="Abbrechen"
-        variant="danger"
-      />
+
 
       {/* Images Delete Dialog */}
       <ConfirmDialog

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Package, Plus, GripVertical, Edit, Trash2, Settings, Palette, Ruler, Hammer, Tag } from 'lucide-react'
+import { ConfirmDialog } from '@/components/ui'
 
 
 interface Attribute {
@@ -33,7 +34,6 @@ interface VariantsTabProps {
   setVariants: (variants: Variant[]) => void
   productId: string
   isSaving?: boolean
-  openDeleteDialog: (index: number) => void
 }
 
 // Predefined attribute types
@@ -117,8 +117,7 @@ function Toast({ message, type, isVisible, onClose }: {
 export default function VariantsTab({
   variants,
   setVariants,
-  productId,
-  openDeleteDialog
+  productId
 }: VariantsTabProps) {
   console.log('🔄 VariantsTab rendered')
   console.log('variants prop:', variants)
@@ -138,6 +137,17 @@ export default function VariantsTab({
     is_active: true,
     position: 0,
     attributes: []
+  })
+  
+  // State for delete confirmation dialog
+  const [deleteDialog, setDeleteDialog] = useState<{
+    isOpen: boolean
+    variantIndex: number | null
+    variantTitle: string
+  }>({
+    isOpen: false,
+    variantIndex: null,
+    variantTitle: ''
   })
   
   // State for toast
@@ -185,8 +195,59 @@ export default function VariantsTab({
 
 
 
-  const removeVariant = (index: number) => {
-    openDeleteDialog(index)
+  const openDeleteDialog = (index: number) => {
+    const variant = variants[index]
+    setDeleteDialog({
+      isOpen: true,
+      variantIndex: index,
+      variantTitle: variant.title || variant.sku
+    })
+  }
+
+  const closeDeleteDialog = () => {
+    setDeleteDialog({
+      isOpen: false,
+      variantIndex: null,
+      variantTitle: ''
+    })
+  }
+
+  const confirmDeleteVariant = async () => {
+    if (deleteDialog.variantIndex === null) return
+    
+    const variant = variants[deleteDialog.variantIndex]
+    if (!variant.id) {
+      showToast('Variante hatası: ID bulunamadı', 'error')
+      closeDeleteDialog()
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/products/${productId}/variants`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          variantId: variant.id
+        }),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Variante silinemedi')
+      }
+
+      // Remove from local state
+      const newVariants = variants.filter((_, i) => i !== deleteDialog.variantIndex)
+      setVariants(newVariants)
+      
+      showToast('Variante başarıyla silindi!', 'success')
+      closeDeleteDialog()
+    } catch (error) {
+      console.error('Fehler beim Löschen der Variante:', error)
+      showToast(`Hata: ${error instanceof Error ? error.message : 'Bilinmeyen hata'}`, 'error')
+    }
   }
 
   const closeVariantDialog = () => {
@@ -397,7 +458,7 @@ export default function VariantsTab({
                   </button>
                   <button
                     type="button"
-                    onClick={() => removeVariant(index)}
+                    onClick={() => openDeleteDialog(index)}
                     className="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition-colors"
                     title="Variante löschen"
                   >
@@ -798,6 +859,18 @@ export default function VariantsTab({
         type={toast.type}
         isVisible={toast.isVisible}
         onClose={() => setToast({ isVisible: false, message: '', type: 'success' })}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteDialog.isOpen}
+        onClose={closeDeleteDialog}
+        onConfirm={confirmDeleteVariant}
+        title="Variante löschen"
+        message={`Sind Sie sicher, dass Sie die Variante "${deleteDialog.variantTitle}" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.`}
+        confirmText="Ja, löschen"
+        cancelText="Abbrechen"
+        variant="danger"
       />
     </div>
   )

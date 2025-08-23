@@ -144,3 +144,73 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     )
   }
 }
+
+// DELETE: Delete a specific document for a product
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  try {
+    const { id: productId } = await params
+    const url = new URL(request.url)
+    const documentId = url.searchParams.get('id')
+    
+    if (!documentId) {
+      return NextResponse.json(
+        { error: 'Document ID is required' },
+        { status: 400 }
+      )
+    }
+
+    const supabase = createClient()
+    
+    // First, get the document to check if it exists and get the file URL
+    const { data: document, error: fetchError } = await supabase
+      .from('product_documents')
+      .select('*')
+      .eq('id', documentId)
+      .eq('product_id', productId)
+      .single()
+
+    if (fetchError) {
+      if (fetchError.code === 'PGRST116') {
+        return NextResponse.json(
+          { error: 'Document not found' },
+          { status: 404 }
+        )
+      }
+      console.error('Document fetch error:', fetchError)
+      return NextResponse.json(
+        { error: 'Failed to fetch document' },
+        { status: 500 }
+      )
+    }
+
+    // Delete the document from database
+    const { error: deleteError } = await supabase
+      .from('product_documents')
+      .delete()
+      .eq('id', documentId)
+      .eq('product_id', productId)
+
+    if (deleteError) {
+      console.error('Document deletion error:', deleteError)
+      return NextResponse.json(
+        { error: 'Failed to delete document' },
+        { status: 500 }
+      )
+    }
+
+    // Note: File deletion from storage should be handled separately
+    // as it requires different permissions and error handling
+    // The file will remain in storage but the database reference is removed
+
+    return NextResponse.json({
+      message: 'Document deleted successfully',
+      deletedDocument: document
+    })
+  } catch (error) {
+    console.error('Document deletion API error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}

@@ -116,6 +116,9 @@ export interface DocumentImage {
   file: File
   previewUrl: string
   name: string
+  file_url?: string
+  file_type?: string
+  file_size?: number
 }
 
 export interface ConversionFactors {
