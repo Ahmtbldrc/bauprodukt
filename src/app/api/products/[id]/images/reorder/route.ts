@@ -55,7 +55,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     // Bulk update orders
     const updatePromises = imageOrders.map(({ id, order_index }) =>
-      supabase
+      (supabase as any)
         .from('product_images')
         .update({ order_index })
         .eq('id', id)
@@ -75,7 +75,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Fetch updated images to return
-    const { data: updatedImages, error: updateFetchError } = await supabase
+    const { data: updatedImages, error: updateFetchError } = await (supabase as any)
       .from('product_images')
       .select('*')
       .eq('product_id', productId)

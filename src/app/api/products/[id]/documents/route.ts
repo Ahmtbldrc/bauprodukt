@@ -52,7 +52,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('product_documents')
       .insert({
         product_id: id,
@@ -99,7 +99,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // First, deactivate all existing documents for this product
-    const { error: deactivateError } = await supabase
+    const { error: deactivateError } = await (supabase as any)
       .from('product_documents')
       .update({ is_active: false })
       .eq('product_id', id)
@@ -122,7 +122,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       is_active: true
     }))
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('product_documents')
       .insert(documentsToInsert)
       .select('*')
@@ -162,7 +162,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const supabase = createClient()
     
     // First, get the document to check if it exists and get the file URL
-    const { data: document, error: fetchError } = await supabase
+    const { data: document, error: fetchError } = await (supabase as any)
       .from('product_documents')
       .select('*')
       .eq('id', documentId)
@@ -184,7 +184,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Delete the document from database
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await (supabase as any)
       .from('product_documents')
       .delete()
       .eq('id', documentId)

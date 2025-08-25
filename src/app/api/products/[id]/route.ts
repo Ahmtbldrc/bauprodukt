@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const isAdmin = userRole === 'admin'
 
     // Use products_with_default_variants view for variant support
-    let query = supabase
+    let query = (supabase as any)
       .from('products_with_default_variants')
       .select(`
         *,
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       query = query.eq('status', 'active')
     }
     
-    const { data, error } = await query.single()
+    const { data, error } = await (query as any).single()
 
     if (error) {
       if (error.code === 'PGRST116') {
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     if (variant) {
       // Get specific variant details
-      const { data: variantData } = await supabase
+      const { data: variantData } = await (supabase as any)
         .from('product_variants_detailed')
         .select('*')
         .eq('id', variant)
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get all available variants for this product
-    const { data: allVariants } = await supabase
+    const { data: allVariants } = await (supabase as any)
       .from('product_variants_detailed')
       .select('*')
       .eq('product_id', id)
@@ -83,14 +83,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     availableVariants = allVariants || []
 
     // Get product attributes for variant selection UI
-    const { data: attributesSummary } = await supabase
+    const { data: attributesSummary } = await (supabase as any)
       .from('product_attributes_summary')
       .select('*')
       .eq('product_id', id)
       .single()
 
     // Get PDF information
-    const { data: pdfData } = await supabase
+    const { data: pdfData } = await (supabase as any)
       .from('product_pdfs')
       .select('*')
       .eq('product_id', id)
@@ -205,7 +205,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         .trim()
     }
 
-    const { data, error: updateError } = await supabase
+    const { data, error: updateError } = await (supabase as any)
       .from('products')
       .update(validation.data)
       .eq('id', id)
@@ -266,7 +266,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     // Add audit log for product update (admin only, middleware ensures this)
     const userEmail = request.headers.get('x-user-email') || 'unknown'
     try {
-      await supabase
+      await (supabase as any)
         .from('audit_log')
         .insert({
           actor: userEmail,
@@ -282,7 +282,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Fetch the updated product directly from products table to ensure all fields
-    const { data: updatedProduct, error: fetchError } = await supabase
+    const { data: updatedProduct, error: fetchError } = await (supabase as any)
       .from('products')
       .select('*')
       .eq('id', id)
@@ -313,7 +313,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const supabase = createClient()
 
     // Check if product exists before deletion
-    const { error: fetchError } = await supabase
+    const { error: fetchError } = await (supabase as any)
       .from('products')
       .select('id')
       .eq('id', id)
@@ -334,7 +334,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('products')
       .delete()
       .eq('id', id)
@@ -350,7 +350,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     // Add audit log for product deletion (admin only, middleware ensures this)
     const userEmail = request.headers.get('x-user-email') || 'unknown'
     try {
-      await supabase
+      await (supabase as any)
         .from('audit_log')
         .insert({
           actor: userEmail,

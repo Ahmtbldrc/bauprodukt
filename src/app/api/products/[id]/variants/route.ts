@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const supabase = createClient()
 
     // Check if product exists first
-    const { data: product, error: productError } = await supabase
+    const { data: product, error: productError } = await (supabase as any)
       .from('products')
       .select('id, name, slug')
       .eq('id', id)
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get all variants for this product
-    const { data: variants, error: variantsError } = await supabase
+    const { data: variants, error: variantsError } = await (supabase as any)
       .from('product_variants_detailed')
       .select('*')
       .eq('product_id', id)
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get product attributes for variant selection UI
-    const { data: attributesSummary, error: attributesError } = await supabase
+    const { data: attributesSummary, error: attributesError } = await (supabase as any)
       .from('product_attributes_summary')
       .select('*')
       .eq('product_id', id)
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if product exists
-    const { error: productError } = await supabase
+    const { error: productError } = await (supabase as any)
       .from('products')
       .select('id')
       .eq('id', id)
@@ -130,7 +130,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Create variant
-    const { data: variant, error: variantError } = await supabase
+    const { data: variant, error: variantError } = await (supabase as any)
       .from('product_variants')
       .insert([{
         product_id: id,
@@ -167,7 +167,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         attribute_value_id: attributeValueId
       }))
 
-      const { error: attributesError } = await supabase
+      const { error: attributesError } = await (supabase as any)
         .from('variant_attribute_values')
         .insert(attributeValueInserts)
 
@@ -178,7 +178,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Return the created variant with details
-    const { data: createdVariant } = await supabase
+    const { data: createdVariant } = await (supabase as any)
       .from('product_variants_detailed')
       .select('*')
       .eq('id', variant.id)
@@ -214,7 +214,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
 
       // Check if product exists
-      const { error: productError } = await supabase
+      const { error: productError } = await (supabase as any)
         .from('products')
         .select('id')
         .eq('id', id)
@@ -272,7 +272,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
           position: variant.position || 0
         }))
 
-        const { data: insertedVariants, error: insertError } = await supabase
+        const { data: insertedVariants, error: insertError } = await (supabase as any)
           .from('product_variants')
           .insert(variantsToInsert)
           .select('*')
@@ -340,7 +340,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
 
       // Update variant
-      const { data: updatedVariant, error: updateError } = await supabase
+      const { data: updatedVariant, error: updateError } = await (supabase as any)
         .from('product_variants')
         .update({
           sku,
@@ -395,7 +395,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if product exists
-    const { error: productError } = await supabase
+    const { error: productError } = await (supabase as any)
       .from('products')
       .select('id')
       .eq('id', id)
@@ -415,7 +415,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if variant exists and belongs to this product
-    const { error: variantCheckError } = await supabase
+    const { error: variantCheckError } = await (supabase as any)
       .from('product_variants')
       .select('id, product_id')
       .eq('id', variantId)
@@ -436,7 +436,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Delete variant attribute values first (foreign key constraint)
-    const { error: attributesDeleteError } = await supabase
+    const { error: attributesDeleteError } = await (supabase as any)
       .from('variant_attribute_values')
       .delete()
       .eq('variant_id', variantId)
@@ -447,7 +447,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Delete the variant
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await (supabase as any)
       .from('product_variants')
       .delete()
       .eq('id', variantId)

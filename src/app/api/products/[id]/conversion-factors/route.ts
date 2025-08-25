@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { id } = await params
     const supabase = createClient()
     
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('product_conversion_factors')
       .select('*')
       .eq('product_id', id)
@@ -56,7 +56,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { length_units, weight_units, volume_units, temperature_units } = body
 
     // Check if conversion factors already exist
-    const { data: existingData } = await supabase
+    const { data: existingData } = await (supabase as any)
       .from('product_conversion_factors')
       .select('id')
       .eq('product_id', id)
@@ -66,7 +66,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     if (existingData) {
       // Update existing
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('product_conversion_factors')
         .update({
           length_units: length_units ?? true,
@@ -89,7 +89,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       result = data
     } else {
       // Create new
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('product_conversion_factors')
         .insert({
           product_id: id,
@@ -128,7 +128,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { id } = await params
     const supabase = createClient()
     
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('product_conversion_factors')
       .delete()
       .eq('product_id', id)

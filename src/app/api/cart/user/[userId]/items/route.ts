@@ -24,15 +24,26 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { product_id, variant_id, quantity } = validation.data
 
     // Fetch product and optional variant
-    const { data: product, error: productError } = await supabase
+    const { data: product, error: productError } = await (supabase as any)
       .from('products')
       .select('id, name, slug, price, discount_price, stock, image_url')
       .eq('id', product_id)
       .single()
 
-    let variant: Record<string, unknown> | null = null
+    type VariantDetailed = {
+      id: string
+      sku: string
+      title: string | null
+      price: number
+      compare_at_price: number | null
+      stock_quantity: number
+      track_inventory: boolean
+      continue_selling_when_out_of_stock: boolean
+      attributes: any[]
+    }
+    let variant: VariantDetailed | null = null
     if (variant_id) {
-      const { data: variantData, error: variantError } = await supabase
+      const { data: variantData, error: variantError } = await (supabase as any)
         .from('product_variants_detailed')
         .select('*')
         .eq('id', variant_id)
@@ -46,7 +57,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         console.error('Variant fetch error:', variantError)
         return NextResponse.json({ error: 'Failed to fetch variant' }, { status: 500 })
       }
-      variant = variantData
+      variant = variantData as VariantDetailed
     }
 
     if (productError) {
@@ -67,7 +78,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Find or create cart by user
     let cart
-    const { data: existingCart, error: cartFetchError } = await supabase
+    const { data: existingCart, error: cartFetchError } = await (supabase as any)
       .from('carts')
       .select('*')
       .eq('user_id', userId)
@@ -81,7 +92,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (existingCart) {
       cart = existingCart
     } else {
-      const { data: newCart, error: cartCreateError } = await supabase
+      const { data: newCart, error: cartCreateError } = await (supabase as any)
         .from('carts')
         .insert([{ user_id: userId }])
         .select('*')
@@ -94,7 +105,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check existing item (variant-aware)
-    let existingItemQuery = supabase
+    let existingItemQuery = (supabase as any)
       .from('cart_items')
       .select('*')
       .eq('cart_id', cart.id)
@@ -103,7 +114,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (variant_id) existingItemQuery = existingItemQuery.eq('variant_id', variant_id)
     else existingItemQuery = existingItemQuery.is('variant_id', null)
 
-    const { data: existingItem, error: itemFetchError } = await existingItemQuery.single()
+    const { data: existingItem, error: itemFetchError } = await (existingItemQuery as any).single()
     if (itemFetchError && itemFetchError.code !== 'PGRST116') {
       console.error('Cart item fetch error:', itemFetchError)
       return NextResponse.json({ error: 'Failed to check existing item' }, { status: 500 })
@@ -122,7 +133,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           { status: 400 }
         )
       }
-      const { data: updatedItem, error: updateError } = await supabase
+      const { data: updatedItem, error: updateError } = await (supabase as any)
         .from('cart_items')
         .update({ quantity: newQuantity, price: effectivePrice })
         .eq('id', existingItem.id)
@@ -134,7 +145,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
       cartItem = updatedItem
     } else {
-      const { data: newItem, error: createError } = await supabase
+      const { data: newItem, error: createError } = await (supabase as any)
         .from('cart_items')
         .insert([{ cart_id: cart.id, product_id, variant_id, quantity, price: effectivePrice }])
         .select('*')

@@ -14,7 +14,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const { id: productId, imageId } = await params
 
     // Önce resmi getir (dosyayı silmek ve cover kontrolü için)
-    const { data: targetImage, error: fetchError } = await supabase
+    const { data: targetImage, error: fetchError } = await (supabase as any)
       .from('product_images')
       .select('*')
       .eq('id', imageId)
@@ -32,7 +32,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     let needNewCover = false
     if (targetImage.is_cover) {
       // Bu ürünün başka resimleri var mı kontrol et
-      const { data: otherImages, error: otherImagesError } = await supabase
+      const { data: otherImages, error: otherImagesError } = await (supabase as any)
         .from('product_images')
         .select('id, order_index')
         .eq('product_id', productId)
@@ -51,7 +51,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       // Başka resim varsa onu cover yap
       if (otherImages && otherImages.length > 0) {
         needNewCover = true
-        const { error: newCoverError } = await supabase
+        const { error: newCoverError } = await (supabase as any)
           .from('product_images')
           .update({ is_cover: true })
           .eq('id', otherImages[0].id)
@@ -67,7 +67,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Database'den sil
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await (supabase as any)
       .from('product_images')
       .delete()
       .eq('id', imageId)
@@ -90,7 +90,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Güncellenmiş resim listesini getir
-    const { data: remainingImages, error: remainingError } = await supabase
+    const { data: remainingImages, error: remainingError } = await (supabase as any)
       .from('product_images')
       .select('*')
       .eq('product_id', productId)

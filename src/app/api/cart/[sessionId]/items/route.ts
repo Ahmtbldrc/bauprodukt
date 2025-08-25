@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Sepet items'larını variant bilgileri ile getir
-    const { data, error } = await supabase
+    const { data: rows, error } = await (supabase as any)
       .from('cart_items_with_variants')
       .select('*')
       .eq('session_id', sessionId)
@@ -32,7 +32,27 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const items = data.map(item => ({
+    type CartItemsWithVariantsRow = {
+      item_id: string
+      product_id: string
+      variant_id: string | null
+      quantity: number
+      item_price: number
+      item_total: number
+      is_available: boolean
+      product_name: string | null
+      product_slug: string | null
+      product_image: string | null
+      product_stock: number | null
+      variant_sku: string | null
+      variant_title: string | null
+      variant_stock: number | null
+      variant_attributes: any[] | null
+    }
+
+    const data = (rows || []) as CartItemsWithVariantsRow[]
+
+    const items = data.map((item: CartItemsWithVariantsRow) => ({
       id: item.item_id,
       product_id: item.product_id,
       variant_id: item.variant_id,
@@ -56,9 +76,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       } : null
     }))
 
-    const total_amount = items.reduce((sum, item) => sum + (item.total_price || 0), 0)
-    const total_items = items.reduce((sum, item) => sum + (item.quantity || 0), 0)
-    const unavailable_items = items.filter(item => !item.is_available).length
+    const total_amount = items.reduce((sum: number, item) => sum + (item.total_price || 0), 0)
+    const total_items = items.reduce((sum: number, item) => sum + (item.quantity || 0), 0)
+    const unavailable_items = items.filter((item) => !item.is_available).length
 
     return NextResponse.json({
       items,
@@ -99,7 +119,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { product_id, variant_id, quantity } = validation.data
 
     // Product ve variant bilgilerini al
-    const { data: product, error: productError } = await supabase
+    const { data: product, error: productError } = await (supabase as any)
       .from('products')
       .select('id, name, slug, price, discount_price, stock, image_url')
       .eq('id', product_id)
@@ -107,7 +127,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     let variant = null
     if (variant_id) {
-      const { data: variantData, error: variantError } = await supabase
+      const { data: variantData, error: variantError } = await (supabase as any)
         .from('product_variants_detailed')
         .select('*')
         .eq('id', variant_id)
@@ -128,7 +148,18 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           { status: 500 }
         )
       }
-      variant = variantData
+      type VariantDetailed = {
+        id: string
+        sku: string
+        title: string | null
+        price: number
+        compare_at_price: number | null
+        stock_quantity: number
+        track_inventory: boolean
+        continue_selling_when_out_of_stock: boolean
+        attributes: any[]
+      }
+      variant = variantData as VariantDetailed
     }
 
     if (productError) {
@@ -159,7 +190,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Sepeti bul veya oluştur
     let cart
-    const { data: existingCart, error: cartFetchError } = await supabase
+    const { data: existingCart, error: cartFetchError } = await (supabase as any)
       .from('carts')
       .select('*')
       .eq('session_id', sessionId)
@@ -177,7 +208,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       cart = existingCart
     } else {
       // Yeni sepet oluştur
-      const { data: newCart, error: cartCreateError } = await supabase
+      const { data: newCart, error: cartCreateError } = await (supabase as any)
         .from('carts')
         .insert([{ session_id: sessionId }])
         .select('*')
@@ -194,7 +225,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Enhanced existing item check for variant-optional products
-    let existingItemQuery = supabase
+    let existingItemQuery = (supabase as any)
       .from('cart_items')
       .select('*')
       .eq('cart_id', cart.id)
@@ -209,7 +240,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       existingItemQuery = existingItemQuery.is('variant_id', null)
     }
 
-    const { data: existingItem, error: itemFetchError } = await existingItemQuery.single()
+    const { data: existingItem, error: itemFetchError } = await (existingItemQuery as any).single()
 
     if (itemFetchError && itemFetchError.code !== 'PGRST116') {
       console.error('Cart item fetch error:', itemFetchError)
@@ -237,7 +268,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         )
       }
 
-      const { data: updatedItem, error: updateError } = await supabase
+      const { data: updatedItem, error: updateError } = await (supabase as any)
         .from('cart_items')
         .update({ 
           quantity: newQuantity,
@@ -257,7 +288,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       cartItem = updatedItem
     } else {
       // Yeni item ekle
-      const { data: newItem, error: createError } = await supabase
+      const { data: newItem, error: createError } = await (supabase as any)
         .from('cart_items')
         .insert([{
           cart_id: cart.id,

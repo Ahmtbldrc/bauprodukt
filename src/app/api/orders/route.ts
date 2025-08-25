@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     const orderNumber = `BP${Math.floor(Math.random() * 999999 + 1).toString().padStart(6, '0')}`
 
     // Create draft order (no emails will be sent)
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await (supabase as any)
       .from('orders')
       .insert({
         order_number: orderNumber,
@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       total_price: item.price * item.quantity
     }))
 
-    const { error: itemsError } = await supabase
+    const { error: itemsError } = await (supabase as any)
       .from('order_items')
       .insert(orderItems)
 

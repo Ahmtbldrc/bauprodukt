@@ -18,7 +18,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get order with payment fields and items
-    const { data: orderData, error } = await supabase
+    const { data: orderData, error } = await (supabase as any)
       .from('orders')
       .select(`
         *,
@@ -53,7 +53,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Order items'ları organize et
-    const items = orderData.order_items?.map((item: { id: string; product_id: string; quantity: number; unit_price: number; total_price: number; products?: { name: string; slug: string } }) => ({
+    type OrderItemRow = { id: string; product_id: string; quantity: number; unit_price: number; total_price: number; products?: { name: string; slug: string } }
+    const items = (orderData.order_items as OrderItemRow[] | undefined)?.map((item: OrderItemRow) => ({
       id: item.id,
       product_id: item.product_id,
       product_name: item.products?.name,
@@ -130,7 +131,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const updateData = validation.data
 
     // Siparişin var olduğunu kontrol et
-    const { data: existingOrder, error: fetchError } = await supabase
+    const { data: existingOrder, error: fetchError } = await (supabase as any)
       .from('orders')
       .select('id, status')
       .eq('id', orderId)
@@ -158,7 +159,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Siparişi güncelle
-    const { data: updatedOrder, error: updateError } = await supabase
+    const { data: updatedOrder, error: updateError } = await (supabase as any)
       .from('orders')
       .update(updateData)
       .eq('id', orderId)
@@ -174,7 +175,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Get updated order with payment fields and items
-    const { data: orderWithItems, error: fetchOrderError } = await supabase
+    type OrderItemRow = { id: string; product_id: string; quantity: number; unit_price: number; total_price: number; products?: { name: string; slug: string } }
+    const { data: orderWithItems, error: fetchOrderError } = await (supabase as any)
       .from('orders')
       .select(`
         *,
@@ -200,7 +202,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Order items'ları organize et
-    const items = orderWithItems.order_items?.map((item: { id: string; product_id: string; quantity: number; unit_price: number; total_price: number; products?: { name: string; slug: string } }) => ({
+    const items = (orderWithItems.order_items as OrderItemRow[] | undefined)?.map((item: OrderItemRow) => ({
       id: item.id,
       product_id: item.product_id,
       product_name: item.products?.name,
@@ -258,7 +260,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Siparişin var olduğunu kontrol et
-    const { data: existingOrder, error: fetchError } = await supabase
+    const { data: existingOrder, error: fetchError } = await (supabase as any)
       .from('orders')
       .select('id, status')
       .eq('id', orderId)

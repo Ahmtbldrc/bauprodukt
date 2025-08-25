@@ -63,7 +63,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         .trim()
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('brands')
       .update(validation.data)
       .eq('id', id)

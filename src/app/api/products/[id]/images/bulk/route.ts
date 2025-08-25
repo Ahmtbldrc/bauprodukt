@@ -62,7 +62,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // 2. Varsa mevcut cover'ı kaldır (eğer yeni cover geliyorsa)
     if (isCoverFlags.some(Boolean)) {
-      await supabase
+      await (supabase as any)
         .from('product_images')
         .update({ is_cover: false })
         .eq('product_id', productId)
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const uploadResults = await Promise.all(uploadPromises)
 
     // 4. BULK INSERT: Tüm kayıtları tek seferde ekle
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('product_images')
       .insert(uploadResults)
       .select('*')

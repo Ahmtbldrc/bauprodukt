@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Find guest cart by session
-    const { data: guestCart, error: guestErr } = await supabase
+    const { data: guestCart, error: guestErr } = await (supabase as any)
       .from('carts')
       .select('id')
       .eq('session_id', sessionId)
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     // Find or create user cart
     let userCart
-    const { data: existingUserCart, error: userCartErr } = await supabase
+    const { data: existingUserCart, error: userCartErr } = await (supabase as any)
       .from('carts')
       .select('*')
       .eq('user_id', userId)
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
     if (existingUserCart) {
       userCart = existingUserCart
     } else {
-      const { data: created, error: createErr } = await supabase
+      const { data: created, error: createErr } = await (supabase as any)
         .from('carts')
         .insert([{ 
           user_id: userId,
@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Merge items
-    const { data: guestItems, error: itemsErr } = await supabase
+    const { data: guestItems, error: itemsErr } = await (supabase as any)
       .from('cart_items')
       .select('*')
       .eq('cart_id', guestCart.id)
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
     }
 
     for (const gi of guestItems || []) {
-      const { data: existing, error: exErr } = await supabase
+      const { data: existing, error: exErr } = await (supabase as any)
         .from('cart_items')
         .select('*')
         .eq('cart_id', userCart.id)
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
       }
 
       if (existing) {
-        const { error: updErr } = await supabase
+        const { error: updErr } = await (supabase as any)
           .from('cart_items')
           .update({ quantity: existing.quantity + gi.quantity })
           .eq('id', existing.id)
@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ error: 'Failed to update merged item' }, { status: 500 })
         }
       } else {
-        const { error: insErr } = await supabase
+        const { error: insErr } = await (supabase as any)
           .from('cart_items')
           .insert([{ 
             cart_id: userCart.id, 
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Remove guest cart
-    const { error: delErr } = await supabase
+    const { error: delErr } = await (supabase as any)
       .from('carts')
       .delete()
       .eq('id', guestCart.id)

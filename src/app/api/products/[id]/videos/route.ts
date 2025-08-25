@@ -52,7 +52,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('product_videos')
       .insert({
         product_id: id,
@@ -100,7 +100,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // First, deactivate all existing videos for this product
-    const { error: deactivateError } = await supabase
+    const { error: deactivateError } = await (supabase as any)
       .from('product_videos')
       .update({ is_active: false })
       .eq('product_id', id)
@@ -124,7 +124,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       is_active: true
     }))
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('product_videos')
       .insert(videosToInsert)
       .select('*')

@@ -11,7 +11,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Find cart by user
-    const { data: cart, error: cartErr } = await supabase
+    const { data: cart, error: cartErr } = await (supabase as any)
       .from('carts')
       .select('*')
       .eq('user_id', userId)
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Fetch details by cart_id
-    const { data, error } = await supabase
+    const { data: rows, error } = await (supabase as any)
       .from('cart_details')
       .select('*')
       .eq('cart_id', cart.id)
@@ -44,6 +44,23 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       console.error('Cart details fetch error:', error)
       return NextResponse.json({ error: 'Failed to fetch cart details' }, { status: 500 })
     }
+
+    const data = (rows || []) as Array<{
+      cart_id: string | null
+      session_id: string | null
+      cart_created_at: string | null
+      cart_updated_at: string | null
+      expires_at: string | null
+      item_id: string | null
+      product_id: string | null
+      quantity: number | null
+      item_price: number | null
+      item_total: number | null
+      product_name: string | null
+      product_slug: string | null
+      product_image: string | null
+      product_stock: number | null
+    }>
 
     if (!data || data.length === 0) {
       return NextResponse.json({
@@ -60,8 +77,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const cartInfo = data[0]
     const items = data
-      .filter(item => item.item_id !== null)
-      .map(item => ({
+      .filter((item) => item.item_id !== null)
+      .map((item) => ({
         id: item.item_id,
         product_id: item.product_id,
         quantity: item.quantity,
@@ -76,8 +93,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         }
       }))
 
-    const total_amount = items.reduce((sum, item) => sum + (item.total_price || 0), 0)
-    const total_items = items.reduce((sum, item) => sum + (item.quantity || 0), 0)
+    const total_amount = items.reduce((sum: number, item) => sum + (item.total_price || 0), 0)
+    const total_items = items.reduce((sum: number, item) => sum + (item.quantity || 0), 0)
 
     return NextResponse.json({
       cart_id: cartInfo.cart_id,
@@ -102,7 +119,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
     }
 
-    const { data: cart, error: fetchError } = await supabase
+    const { data: cart, error: fetchError } = await (supabase as any)
       .from('carts')
       .select('id')
       .eq('user_id', userId)
@@ -116,7 +133,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Failed to fetch cart' }, { status: 500 })
     }
 
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await (supabase as any)
       .from('carts')
       .delete()
       .eq('id', cart.id)

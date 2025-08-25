@@ -36,7 +36,7 @@ export async function PUT(request: NextRequest) {
     const { order_number, tracking_url, tracking_number, expected_delivery_date } = validation.data
 
     // Check if order exists and get customer info
-    const { data: order, error: fetchError } = await supabase
+    const { data: order, error: fetchError } = await (supabase as any)
       .from('orders')
       .select('id, order_number, status, customer_name, customer_email')
       .eq('order_number', order_number)
@@ -57,7 +57,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update tracking information and set status to delivered
-    const { data: updatedOrder, error: updateError } = await supabase
+    const { data: updatedOrder, error: updateError } = await (supabase as any)
       .from('orders')
       .update({ 
         tracking_url,
@@ -132,7 +132,7 @@ export async function GET(request: NextRequest) {
     const supabase = createClient()
 
     // Get tracking information for order
-    const { data: order, error } = await supabase
+    const { data: order, error } = await (supabase as any)
       .from('orders')
       .select('id, order_number, tracking_url, tracking_number, expected_delivery_date, status')
       .eq('order_number', orderNumber)

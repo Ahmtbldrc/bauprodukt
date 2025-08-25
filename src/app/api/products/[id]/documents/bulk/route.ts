@@ -88,7 +88,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // 3. BULK INSERT: Tüm kayıtları tek seferde ekle
     console.log('Inserting documents to database:', uploadResults)
     const supabase = createClient()
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('product_documents')
       .insert(uploadResults)
       .select('*')

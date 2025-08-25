@@ -33,7 +33,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if product exists
-    const { error: productError } = await supabase
+    const { error: productError } = await (supabase as any)
       .from('products')
       .select('id')
       .eq('id', id)
@@ -53,7 +53,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if variant exists
-    const { error: variantCheckError } = await supabase
+    const { error: variantCheckError } = await (supabase as any)
       .from('product_variants')
       .select('id')
       .eq('id', variantId)
@@ -68,7 +68,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Update variant
-    const { data: updatedVariant, error: updateError } = await supabase
+    const { data: updatedVariant, error: updateError } = await (supabase as any)
       .from('product_variants')
       .update({
         sku,
@@ -111,7 +111,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const supabase = createClient()
 
     // Check if product exists
-    const { error: productError } = await supabase
+    const { error: productError } = await (supabase as any)
       .from('products')
       .select('id')
       .eq('id', id)
@@ -131,7 +131,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if variant exists
-    const { error: variantCheckError } = await supabase
+    const { error: variantCheckError } = await (supabase as any)
       .from('product_variants')
       .select('id')
       .eq('id', variantId)
@@ -146,7 +146,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Delete variant
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await (supabase as any)
       .from('product_variants')
       .delete()
       .eq('id', variantId)

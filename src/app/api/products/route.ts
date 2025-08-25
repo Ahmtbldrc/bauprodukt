@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const to = from + limit - 1
 
     // Use products_with_default_variants view for variant support
-    let query = supabase
+    let query = (supabase as any)
       .from('products_with_default_variants')
       .select(`
         *,
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
       // For now, we'll handle this after the initial query
     }
 
-    const { data, error, count } = await query
+    const { data, error, count } = await (query as any)
 
     if (error) {
       console.error('Products fetch error:', error)
@@ -90,15 +90,15 @@ export async function GET(request: NextRequest) {
     let filteredData = data
     if (variant && data) {
       // Get products that have the specified variant
-      const { data: productsWithVariant } = await supabase
+      const { data: productsWithVariant } = await (supabase as any)
         .from('product_variants')
         .select('product_id')
         .eq('id', variant)
         .eq('is_active', true)
 
       if (productsWithVariant && productsWithVariant.length > 0) {
-        const productIdsWithVariant = productsWithVariant.map(pv => pv.product_id)
-        filteredData = data.filter(product => productIdsWithVariant.includes(product.id))
+        const productIdsWithVariant = (productsWithVariant as Array<{ product_id: string }>).map((pv) => pv.product_id)
+        filteredData = data.filter((product: ProductWithDefaultVariant) => productIdsWithVariant.includes(product.id))
       } else {
         filteredData = []
       }
@@ -110,7 +110,7 @@ export async function GET(request: NextRequest) {
         // If specific variant requested, get that variant's details
         let selectedVariant = null
         if (variant) {
-          const { data: variantData } = await supabase
+          const { data: variantData } = await (supabase as any)
             .from('product_variants_detailed')
             .select('*')
             .eq('id', variant)
@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
         .trim()
     }
 
-    const { data, error: createError } = await supabase
+    const { data, error: createError } = await (supabase as any)
       .from('products')
       .insert([validation.data])
       .select('*')
@@ -245,7 +245,7 @@ export async function POST(request: NextRequest) {
     // Add audit log for product creation (admin only, middleware ensures this)
     const userEmail = request.headers.get('x-user-email') || 'unknown'
     try {
-      await supabase
+      await (supabase as any)
         .from('audit_log')
         .insert({
           actor: userEmail,
@@ -261,7 +261,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch the created product with relations
-    const { data: createdProduct, error: fetchError } = await supabase
+    const { data: createdProduct, error: fetchError } = await (supabase as any)
       .from('products_with_relations')
       .select('*')
       .eq('id', data.id)

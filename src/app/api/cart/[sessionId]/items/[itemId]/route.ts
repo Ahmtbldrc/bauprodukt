@@ -21,7 +21,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     // Sepet item'ını getir
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('cart_details')
       .select('*')
       .eq('session_id', sessionId)
@@ -89,7 +89,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { quantity } = validation.data
 
     // Önce cart item'ını ve product bilgisini kontrol et
-    const { data: cartItemWithProduct, error: fetchError } = await supabase
+    const { data: cartItemWithProduct, error: fetchError } = await (supabase as any)
       .from('cart_details')
       .select('*')
       .eq('session_id', sessionId)
@@ -119,7 +119,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Güncel ürün fiyatını al (indirim değişmiş olabilir)
-    const { data: product, error: productError } = await supabase
+    const { data: product, error: productError } = await (supabase as any)
       .from('products')
       .select('price, discount_price')
       .eq('id', cartItemWithProduct.product_id)
@@ -136,7 +136,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const effectivePrice = product.discount_price || product.price
 
     // Cart item'ı güncelle
-    const { data: updatedItem, error: updateError } = await supabase
+    const { data: updatedItem, error: updateError } = await (supabase as any)
       .from('cart_items')
       .update({ 
         quantity: quantity,
@@ -190,7 +190,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Önce item'ın bu session'a ait olduğunu kontrol et
-    const { error: fetchError } = await supabase
+    const { error: fetchError } = await (supabase as any)
       .from('cart_details')
       .select('cart_id, item_id')
       .eq('session_id', sessionId)

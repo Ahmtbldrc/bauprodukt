@@ -17,7 +17,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const rejectionReason = body.reason || 'No reason provided'
     
     // Get waitlist entry
-    const { data: entry, error: fetchError } = await supabase
+    const { data: entry, error: fetchError } = await (supabase as any)
       .from('waitlist_updates')
       .select('*')
       .eq('id', id)
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     
     try {
       // Delete waitlist entry
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await (supabase as any)
         .from('waitlist_updates')
         .delete()
         .eq('id', id)
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       
       // Create audit log for rejection
       try {
-        await supabase
+        await (supabase as any)
           .from('audit_log')
           .insert({
             actor: userEmail,

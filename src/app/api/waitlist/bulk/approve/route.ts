@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     for (const id of ids) {
       try {
         // Get waitlist entry
-        const { data: entry, error: fetchError } = await supabase
+        const { data: entry, error: fetchError } = await (supabase as any)
           .from('waitlist_updates')
           .select('*')
           .eq('id', id)
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
             updated_at: new Date().toISOString()
           }
           
-          const { error: updateError } = await supabase
+          const { error: updateError } = await (supabase as any)
             .from('products')
             .update(updateData)
             .eq('id', entry.product_id)
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
           // Handle documents separately
           if (documents && Array.isArray(documents)) {
             // First deactivate existing documents
-            await supabase
+            await (supabase as any)
               .from('product_documents')
               .update({ is_active: false })
               .eq('product_id', entry.product_id)
@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
                 is_active: true
               }))
 
-              const { error: docsError } = await supabase
+              const { error: docsError } = await (supabase as any)
                 .from('product_documents')
                 .insert(documentsToInsert)
 
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
           // Handle videos separately
           if (videos && Array.isArray(videos)) {
             // First deactivate existing videos
-            await supabase
+            await (supabase as any)
               .from('product_videos')
               .update({ is_active: false })
               .eq('product_id', entry.product_id)
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
                 is_active: true
               }))
 
-              const { error: videosError } = await supabase
+              const { error: videosError } = await (supabase as any)
                 .from('product_videos')
                 .insert(videosToInsert)
 
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
 
           // Handle conversion factors separately
           if (conversion_factors) {
-            const { error: cfError } = await supabase
+            const { error: cfError } = await (supabase as any)
               .from('product_conversion_factors')
               .upsert({
                 product_id: entry.product_id,
@@ -171,7 +171,7 @@ export async function POST(request: NextRequest) {
           // Handle variants separately
           if (variants && Array.isArray(variants)) {
             // First deactivate existing variants
-            await supabase
+            await (supabase as any)
               .from('product_variants')
               .update({ is_active: false })
               .eq('product_id', entry.product_id)
@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
                 position: variant.position || 0
               }))
 
-              const { error: variantsError } = await supabase
+              const { error: variantsError } = await (supabase as any)
                 .from('product_variants')
                 .insert(variantsToInsert)
 
@@ -231,7 +231,7 @@ export async function POST(request: NextRequest) {
             updated_at: new Date().toISOString()
           }
           
-          const { data: newProduct, error: createError } = await supabase
+          const { data: newProduct, error: createError } = await (supabase as any)
             .from('products')
             .insert(newProductData)
             .select('id')
@@ -255,7 +255,7 @@ export async function POST(request: NextRequest) {
                 is_active: true
               }))
 
-              const { error: docsError } = await supabase
+              const { error: docsError } = await (supabase as any)
                 .from('product_documents')
                 .insert(documentsToInsert)
 
@@ -278,7 +278,7 @@ export async function POST(request: NextRequest) {
                 is_active: true
               }))
 
-              const { error: videosError } = await supabase
+              const { error: videosError } = await (supabase as any)
                 .from('product_videos')
                 .insert(videosToInsert)
 
@@ -290,7 +290,7 @@ export async function POST(request: NextRequest) {
 
           // Handle conversion factors separately
           if (conversion_factors) {
-            const { error: cfError } = await supabase
+            const { error: cfError } = await (supabase as any)
               .from('product_conversion_factors')
               .insert({
                 product_id: productId,
@@ -318,7 +318,7 @@ export async function POST(request: NextRequest) {
                 position: variant.position || 0
               }))
 
-              const { error: variantsError } = await supabase
+              const { error: variantsError } = await (supabase as any)
                 .from('product_variants')
                 .insert(variantsToInsert)
 
@@ -330,14 +330,14 @@ export async function POST(request: NextRequest) {
         }
         
         // Delete waitlist entry
-        await supabase
+        await (supabase as any)
           .from('waitlist_updates')
           .delete()
           .eq('id', id)
         
         // Create audit log
         try {
-          await supabase
+          await (supabase as any)
             .from('audit_log')
             .insert({
               actor: userEmail,
@@ -369,7 +369,7 @@ export async function POST(request: NextRequest) {
     
     // Create summary audit log for bulk operation
     try {
-      await supabase
+      await (supabase as any)
         .from('audit_log')
         .insert({
           actor: userEmail,

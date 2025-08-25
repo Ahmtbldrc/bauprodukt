@@ -19,7 +19,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     const { quantity } = validation.data
 
     // Ensure item belongs to user's cart
-    const { data: userCart, error: cartFetchError } = await supabase
+    const { data: userCart, error: cartFetchError } = await (supabase as any)
       .from('carts')
       .select('id')
       .eq('user_id', userId)
@@ -33,7 +33,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Failed to fetch user cart' }, { status: 500 })
     }
 
-    const { data: cartItemWithProduct, error: fetchError } = await supabase
+    const { data: cartItemWithProduct, error: fetchError } = await (supabase as any)
       .from('cart_details')
       .select('*')
       .eq('cart_id', userCart.id)
@@ -54,7 +54,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Fetch current product price
-    const { data: product, error: productError } = await supabase
+    const { data: product, error: productError } = await (supabase as any)
       .from('products')
       .select('price, discount_price')
       .eq('id', cartItemWithProduct.product_id)
@@ -67,7 +67,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const effectivePrice = product.discount_price || product.price
 
-    const { data: updatedItem, error: updateError } = await supabase
+    const { data: updatedItem, error: updateError } = await (supabase as any)
       .from('cart_items')
       .update({ quantity, price: effectivePrice })
       .eq('id', itemId)
@@ -107,7 +107,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Verify item belongs to user's cart
-    const { data: userCart, error: cartFetchError } = await supabase
+    const { data: userCart, error: cartFetchError } = await (supabase as any)
       .from('carts')
       .select('id')
       .eq('user_id', userId)
@@ -121,7 +121,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Failed to fetch user cart' }, { status: 500 })
     }
 
-    const { error: verifyError } = await supabase
+    const { error: verifyError } = await (supabase as any)
       .from('cart_details')
       .select('cart_id, item_id')
       .eq('cart_id', userCart.id)

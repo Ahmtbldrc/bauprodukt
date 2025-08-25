@@ -12,7 +12,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     const supabase = createClient()
     
     // Soft delete by setting is_active to false
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('product_videos')
       .update({ is_active: false })
       .eq('id', videoId)

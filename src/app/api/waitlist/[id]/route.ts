@@ -12,7 +12,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { id } = await params
     
     // Get waitlist entry
-    const { data: entry, error: entryError } = await supabase
+    const { data: entry, error: entryError } = await (supabase as any)
       .from('waitlist_updates')
       .select('*')
       .eq('id', id)
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     
     // If this is an update to existing product, get current product and calculate diff
     if (entry.product_id) {
-      const { data: productData, error: productError } = await supabase
+      const { data: productData, error: productError } = await (supabase as any)
         .from('products')
         .select('*')
         .eq('id', entry.product_id)

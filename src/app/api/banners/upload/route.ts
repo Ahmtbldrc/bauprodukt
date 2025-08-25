@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/lib/supabase'
 import { validateBanner } from '@/schemas/database'
 import { uploadFile, validateFile, deleteFile } from '@/lib/upload'
+import type { Database } from '@/types/database'
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,23 +64,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Set order_index if not provided
+    // Set order_index automatically only when it wasn't provided
     if (bannerValidation.data.order_index === undefined) {
-      const { data: lastBanner } = await supabase
+      const { data: lastBannerRaw } = await supabase
         .from('banners')
         .select('order_index')
         .order('order_index', { ascending: false })
         .limit(1)
 
-      bannerValidation.data.order_index = lastBanner && lastBanner.length > 0 
-        ? lastBanner[0].order_index + 1 
-        : 0
+      const lastBanner = lastBannerRaw as Array<{ order_index: number }> | null
+      const lastOrder = lastBanner?.[0]?.order_index ?? -1
+      bannerValidation.data.order_index = lastOrder + 1
     }
 
-    // Create banner
-    const { data, error } = await supabase
+    // Create banner with correct Insert typing
+    const insertData: Database['public']['Tables']['banners']['Insert'] = {
+      title: bannerValidation.data.title ?? null,
+      image_url: bannerValidation.data.image_url ?? null,
+      link: bannerValidation.data.link ?? null,
+      order_index: bannerValidation.data.order_index,
+      is_active: bannerValidation.data.is_active
+    }
+
+    const { data, error } = await (supabase as any)
       .from('banners')
-      .insert([bannerValidation.data])
+      .insert([insertData])
       .select()
       .single()
 

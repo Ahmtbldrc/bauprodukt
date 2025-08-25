@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
         .trim()
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('brands')
       .insert([validation.data])
       .select()

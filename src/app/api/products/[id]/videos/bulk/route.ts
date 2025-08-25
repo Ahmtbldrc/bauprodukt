@@ -67,7 +67,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const uploadResults = await Promise.all(uploadPromises)
 
     // 3. BULK INSERT: Tüm kayıtları tek seferde ekle
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('product_videos')
       .insert(uploadResults)
       .select('*')

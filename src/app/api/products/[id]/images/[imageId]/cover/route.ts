@@ -29,7 +29,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     // Transaction benzeri işlem: 
     // 1. Önce mevcut cover'ı kaldır
-    const { error: removeCoverError } = await supabase
+    const { error: removeCoverError } = await (supabase as any)
       .from('product_images')
       .update({ is_cover: false })
       .eq('product_id', productId)
@@ -44,7 +44,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // 2. Yeni cover'ı ayarla
-    const { error: setCoverError } = await supabase
+    const { error: setCoverError } = await (supabase as any)
       .from('product_images')
       .update({ is_cover: true })
       .eq('id', imageId)
@@ -59,7 +59,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     }
 
     // Güncellenmiş resimleri getir
-    const { data: updatedImages, error: fetchError } = await supabase
+    const { data: updatedImages, error: fetchError } = await (supabase as any)
       .from('product_images')
       .select('*')
       .eq('product_id', productId)

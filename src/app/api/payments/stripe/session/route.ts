@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch the order
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await (supabase as any)
       .from('orders')
       .select('*')
       .eq('id', orderId)
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Update order with session information
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('orders')
       .update({
         payment_provider: 'stripe',
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log payment session creation
-    await supabase
+    await (supabase as any)
       .from('payment_sessions')
       .insert({
         order_id: orderId,
