@@ -415,7 +415,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Check if variant exists and belongs to this product
-    const { data: variant, error: variantCheckError } = await supabase
+    const { error: variantCheckError } = await supabase
       .from('product_variants')
       .select('id, product_id')
       .eq('id', variantId)

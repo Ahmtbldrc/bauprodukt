@@ -76,7 +76,7 @@ export default function EditProductPage() {
   const { data: product, isLoading: isProductLoading, error: productError } = useProductById(productId)
   const { data: variantsResponse, isLoading: isVariantsLoading } = useProductVariants(productId)
   const { data: imagesResponse, isLoading: isImagesLoading, refetch: refetchImages } = useProductImages(productId)
-  const { data: documentsResponse, isLoading: isDocumentsLoading, refetch: refetchDocuments } = useDocuments(productId)
+  const { data: documentsResponse, refetch: refetchDocuments } = useDocuments(productId)
   const { data: brandsResponse } = useAllBrands()
   const { data: categoriesResponse } = useAllCategories()
   
@@ -824,12 +824,18 @@ export default function EditProductPage() {
       <div className="bg-white rounded-lg shadow">
         <form className="p-6">
           {/* General Tab */}
-                    {activeTab === 'general' && (
+          {activeTab === 'general' && (
             <GeneralTab
               formData={formData}
               brands={brands}
               categories={categories}
               handleInputChange={handleInputChange}
+              handleGeneralTechnicalSpecsChange={(value) => {
+                setFormData(prev => ({
+                  ...prev,
+                  general_technical_specs: value
+                }))
+              }}
             />
           )}
 

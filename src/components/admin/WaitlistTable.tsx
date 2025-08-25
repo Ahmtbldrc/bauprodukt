@@ -5,17 +5,16 @@ import Image from 'next/image'
 import { useWaitlist } from '@/hooks/useWaitlist'
 import { WaitlistEntry } from '@/types/waitlist'
 import { useAdminSearch } from '@/contexts/AdminSearchContext'
-import { ProductDetailView } from './ProductDetailView'
+import { useRouter } from 'next/navigation'
 import { Clock, AlertTriangle, CheckCircle, XCircle, Check, X, Package, Edit } from 'lucide-react'
 
 export function WaitlistTable() {
   const { waitlistFilters } = useAdminSearch()
+  const router = useRouter()
   const [selectedEntries, setSelectedEntries] = useState<string[]>([])
   const [isProcessing, setIsProcessing] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [currentLimit, setCurrentLimit] = useState(7)
-  const [selectedEntry, setSelectedEntry] = useState<WaitlistEntry | null>(null)
-  const [showProductDialog, setShowProductDialog] = useState(false)
 
   const {
     data: entries,
@@ -61,13 +60,7 @@ export function WaitlistTable() {
   }
 
   const handleProductClick = (entry: WaitlistEntry) => {
-    setSelectedEntry(entry)
-    setShowProductDialog(true)
-  }
-
-  const closeProductDialog = () => {
-    setShowProductDialog(false)
-    setSelectedEntry(null)
+    router.push(`/admin/waitlist/${entry.id}`)
   }
 
   const handleApprove = async (id: string) => {
@@ -389,16 +382,6 @@ export function WaitlistTable() {
         </div>
       </div>
 
-      {/* Product Detail Dialog */}
-      {showProductDialog && selectedEntry && (
-        <ProductDetailView
-          entry={selectedEntry}
-          onApprove={handleApprove}
-          onReject={handleReject}
-          isProcessing={isProcessing}
-          onClose={closeProductDialog}
-        />
-      )}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 
 export interface Document {
@@ -22,7 +22,7 @@ export function useDocuments(productId: string) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchDocuments = async () => {
+  const fetchDocuments = useCallback(async () => {
     if (!productId) return
 
     try {
@@ -52,11 +52,11 @@ export function useDocuments(productId: string) {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [productId])
 
   useEffect(() => {
     fetchDocuments()
-  }, [productId])
+  }, [productId, fetchDocuments])
 
   return {
     data,

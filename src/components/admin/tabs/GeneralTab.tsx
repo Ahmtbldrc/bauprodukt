@@ -33,9 +33,15 @@ interface GeneralTabProps {
   brands: Array<{ id: string; name: string }>
   categories: Array<{ id: string; name: string; emoji?: string }>
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void
+  handleGeneralTechnicalSpecsChange: (value: Array<{
+    id?: string
+    title: string
+    description: string
+    sort_order: number
+  }>) => void
 }
 
-export default function GeneralTab({ formData, brands, categories, handleInputChange }: GeneralTabProps) {
+export default function GeneralTab({ formData, brands, categories, handleInputChange, handleGeneralTechnicalSpecsChange }: GeneralTabProps) {
   const [showDialog, setShowDialog] = useState(false)
   const [newTechSpec, setNewTechSpec] = useState('')
 
@@ -47,20 +53,14 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
         description: newTechSpec.trim(),
         sort_order: formData.general_technical_specs.length
       }]
-      const event = {
-        target: { name: 'general_technical_specs', value: updatedSpecs }
-      } as unknown as React.ChangeEvent<HTMLInputElement>
-      handleInputChange(event)
+      handleGeneralTechnicalSpecsChange(updatedSpecs)
       setNewTechSpec('')
     }
   }
 
   const removeTechSpec = (index: number) => {
     const updatedSpecs = formData.general_technical_specs.filter((_, i) => i !== index)
-    const event = {
-      target: { name: 'general_technical_specs', value: updatedSpecs }
-    } as unknown as React.ChangeEvent<HTMLInputElement>
-    handleInputChange(event)
+    handleGeneralTechnicalSpecsChange(updatedSpecs)
   }
 
   const openDialog = () => {

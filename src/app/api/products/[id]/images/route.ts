@@ -84,7 +84,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // Eğer cover olarak işaretlenmişse, mevcut cover'ları kaldır
     if (isCover) {
-      await supabase
+      await (supabase as any)
         .from('product_images')
         .update({ is_cover: false })
         .eq('product_id', productId)
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         image_url: uploadResult.url!,
         order_index: orderIndex,
         is_cover: isCover
-      })
+      } as any)
       .select('*')
       .single()
 
@@ -262,7 +262,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
       const { data: insertedImages, error: insertError } = await supabase
         .from('product_images')
-        .insert(imagesToInsert)
+        .insert(imagesToInsert as any)
         .select('*')
 
       if (insertError) {

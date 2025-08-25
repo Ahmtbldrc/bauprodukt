@@ -95,14 +95,14 @@ export function useWaitlist(options: {
       if (error) throw error
       
       // Calculate statistics
-      const stats: WaitlistStats = {
+      const stats = {
         total_entries: data.length,
-        new_products: data.filter(e => !e.product_id).length,
-        pending_updates: data.filter(e => e.product_id).length,
-        manual_review_required: data.filter(e => e.requires_manual_review).length,
-        invalid_discounts: data.filter(e => e.has_invalid_discount).length,
+        new_products: (data as any[]).filter(e => !e.product_id).length,
+        pending_updates: (data as any[]).filter(e => e.product_id).length,
+        manual_review_required: (data as any[]).filter(e => e.requires_manual_review).length,
+        invalid_discounts: (data as any[]).filter(e => e.has_invalid_discount).length,
         by_reason: {},
-        recent_entries: data
+        recent_entries: (data as any[])
           .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
           .slice(0, 10)
           .map(entry => ({
@@ -116,21 +116,21 @@ export function useWaitlist(options: {
           })),
         average_price_drop_percentage: 0,
         version_statistics: {
-          total_revisions: data.reduce((sum, e) => sum + (e.version || 1), 0),
+          total_revisions: (data as any[]).reduce((sum, e) => sum + (e.version || 1), 0),
           average_revisions: data.length > 0 
-            ? data.reduce((sum, e) => sum + (e.version || 1), 0) / data.length
+            ? (data as any[]).reduce((sum, e) => sum + (e.version || 1), 0) / data.length
             : 0,
-          max_revisions: Math.max(...data.map(e => e.version || 1), 0)
+          max_revisions: Math.max(...(data as any[]).map(e => e.version || 1), 0)
         },
         health_indicators: {
           queue_health: data.length < 100 ? 'good' : data.length < 200 ? 'warning' : 'critical',
-          error_rate: data.length > 0 ? Math.round((data.filter(e => e.has_invalid_discount).length / data.length) * 100 * 100) / 100 : 0,
-          review_rate: data.length > 0 ? Math.round((data.filter(e => e.requires_manual_review).length / data.length) * 100 * 100) / 100 : 0
+          error_rate: data.length > 0 ? Math.round(((data as any[]).filter(e => e.has_invalid_discount).length / data.length) * 100 * 100) / 100 : 0,
+          review_rate: data.length > 0 ? Math.round(((data as any[]).filter(e => e.requires_manual_review).length / data.length) * 100 * 100) / 100 : 0
         }
-      }
+      } as WaitlistStats
       
       // Count by reason
-      data.forEach(entry => {
+      (data as any[]).forEach((entry: any) => {
         const reason = entry.reason || 'unknown'
         stats.by_reason[reason] = (stats.by_reason[reason] || 0) + 1
       })

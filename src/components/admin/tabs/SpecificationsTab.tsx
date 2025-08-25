@@ -17,12 +17,13 @@ interface Specifications {
 interface SpecificationsTabProps {
   specifications: Specifications
   handleSpecificationChange: (field: string, value: string | TechnicalSpec[]) => void
+  openDeleteDialog: (index: number) => void
   onSave?: () => void
   isSaving?: boolean
-  openDeleteDialog: (index: number) => void
+  isAutoSaving?: boolean
 }
 
-export default function SpecificationsTab({ specifications, handleSpecificationChange, onSave, isSaving, openDeleteDialog }: SpecificationsTabProps) {
+export default function SpecificationsTab({ specifications, handleSpecificationChange, openDeleteDialog, onSave, isSaving, isAutoSaving }: SpecificationsTabProps) {
   console.log('SpecificationsTab render - specifications:', specifications)
   console.log('Technical specs count:', specifications.technical_specs?.length)
   
@@ -32,7 +33,7 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
     sort_order: 0
   })
 
-  const handleAddSpec = () => {
+  const handleAddSpec = async () => {
     if (newSpec.title.trim() && newSpec.description.trim()) {
       const specs = [...specifications.technical_specs]
       const maxSortOrder = specs.length > 0 ? Math.max(...specs.map(s => s.sort_order)) : 0
@@ -40,6 +41,8 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
         ...newSpec,
         sort_order: maxSortOrder + 1
       }
+      
+      // Update local state first - this will trigger automatic saving
       handleSpecificationChange('technical_specs', [...specs, specToAdd])
       setNewSpec({ title: '', description: '', sort_order: 0 })
     }
@@ -52,6 +55,12 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
       <div className="flex items-center gap-3 mb-6">
         <Settings className="h-6 w-6 text-[#F39236]" />
         <h3 className="text-xl font-semibold text-gray-900">Technische Spezifikationen</h3>
+        {isAutoSaving && (
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#F39236]"></div>
+            <span>Wird gespeichert...</span>
+          </div>
+        )}
       </div>
 
       {/* Custom Technical Specifications */}
@@ -92,11 +101,11 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
                 e.stopPropagation()
                 handleAddSpec()
               }}
-              disabled={!newSpec.title.trim() || !newSpec.description.trim()}
+              disabled={!newSpec.title.trim() || !newSpec.description.trim() || isAutoSaving}
               className="px-4 py-2 bg-[#F39236] text-white rounded-md hover:bg-[#E67E22] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2"
             >
               <Plus className="h-4 w-4" />
-              Hinzufügen
+              {isAutoSaving ? 'Wird gespeichert...' : 'Hinzufügen'}
             </button>
           </div>
         </div>
@@ -150,7 +159,8 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
                               e.stopPropagation()
                               openDeleteDialog(index)
                             }}
-                            className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors duration-150"
+                            disabled={isAutoSaving}
+                            className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Löschen"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -165,7 +175,7 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
         </div>
       </div>
       
-      {/* Save Button */}
+      {/* Save Button - Only show when onSave is provided */}
       {onSave && (
         <div className="flex justify-end mt-6">
           <button
@@ -175,7 +185,7 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
               e.stopPropagation()
               onSave()
             }}
-            disabled={isSaving}
+            disabled={isSaving || isAutoSaving}
             className="px-6 py-3 bg-[#F39236] text-white rounded-md hover:bg-[#E67E22] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2"
           >
             <Settings className="h-4 w-4" />
