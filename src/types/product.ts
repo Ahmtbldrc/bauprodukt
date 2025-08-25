@@ -31,4 +31,17 @@ export interface Product {
   bestseller?: boolean
   onSale?: boolean
   discountPercentage?: number
+  // Additional fields from database
+  art_nr?: string
+  hersteller_nr?: string
+  stock?: number
+  discount_price?: number
+  specifications_data?: any
+  general_technical_specs?: any
+  product_images?: Array<{
+    id: string
+    image_url: string
+    order_index: number
+    is_cover: boolean
+  }>
 } 

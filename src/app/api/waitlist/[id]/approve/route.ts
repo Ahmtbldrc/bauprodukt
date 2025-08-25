@@ -52,9 +52,29 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         
         beforeState = currentProduct
         
-        // Update existing product
+        // Extract documents and other fields from payload
+        const { 
+          documents, 
+          videos, 
+          conversion_factors, 
+          technical_specs,
+          general_technical_specs,
+          specifications_data,
+          variants,
+          ...productData 
+        } = entry.payload_json as any
+        
+        // Prepare specifications_data for products table
+        const finalSpecificationsData = {
+          ...specifications_data,
+          ...(technical_specs && { technical_specs }),
+          ...(general_technical_specs && { general_technical_specs })
+        }
+        
+        // Update existing product (without special fields)
         const updateData = {
-          ...entry.payload_json,
+          ...productData,
+          ...(Object.keys(finalSpecificationsData).length > 0 && { specifications_data: finalSpecificationsData }),
           status: 'active',
           updated_at: new Date().toISOString()
         }
@@ -67,13 +87,139 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         if (updateError) {
           throw new Error(`Failed to update product: ${updateError.message}`)
         }
+
+        // Handle documents separately
+        if (documents && Array.isArray(documents)) {
+          // First deactivate existing documents
+          await supabase
+            .from('product_documents')
+            .update({ is_active: false })
+            .eq('product_id', entry.product_id)
+
+          // Insert new documents
+          if (documents.length > 0) {
+            const documentsToInsert = documents.map((doc: any) => ({
+              product_id: entry.product_id,
+              title: doc.title,
+              file_url: doc.file_url,
+              file_type: doc.file_type,
+              file_size: doc.file_size,
+              is_active: true
+            }))
+
+            const { error: docsError } = await supabase
+              .from('product_documents')
+              .insert(documentsToInsert)
+
+            if (docsError) {
+              console.error('Failed to insert documents:', docsError)
+            }
+          }
+        }
+
+        // Handle videos separately
+        if (videos && Array.isArray(videos)) {
+          // First deactivate existing videos
+          await supabase
+            .from('product_videos')
+            .update({ is_active: false })
+            .eq('product_id', entry.product_id)
+
+          // Insert new videos
+          if (videos.length > 0) {
+            const videosToInsert = videos.map((video: any) => ({
+              product_id: entry.product_id,
+              title: video.title,
+              video_url: video.video_url,
+              thumbnail_url: video.thumbnail_url,
+              duration: video.duration,
+              file_size: video.file_size,
+              is_active: true
+            }))
+
+            const { error: videosError } = await supabase
+              .from('product_videos')
+              .insert(videosToInsert)
+
+            if (videosError) {
+              console.error('Failed to insert videos:', videosError)
+            }
+          }
+        }
+
+        // Handle conversion factors separately
+        if (conversion_factors) {
+          const { error: cfError } = await supabase
+            .from('product_conversion_factors')
+            .upsert({
+              product_id: entry.product_id,
+              ...conversion_factors
+            })
+
+          if (cfError) {
+            console.error('Failed to upsert conversion factors:', cfError)
+          }
+        }
+
+        // Handle variants separately
+        if (variants && Array.isArray(variants)) {
+          // First deactivate existing variants
+          await supabase
+            .from('product_variants')
+            .update({ is_active: false })
+            .eq('product_id', entry.product_id)
+
+          // Insert new variants
+          if (variants.length > 0) {
+            const variantsToInsert = variants.map((variant: any) => ({
+              product_id: entry.product_id,
+              sku: variant.sku,
+              title: variant.title,
+              price: variant.price,
+              compare_at_price: variant.compare_at_price,
+              stock_quantity: variant.stock_quantity,
+              track_inventory: variant.track_inventory,
+              continue_selling_when_out_of_stock: variant.continue_selling_when_out_of_stock,
+              is_active: true,
+              position: variant.position || 0
+            }))
+
+            const { error: variantsError } = await supabase
+              .from('product_variants')
+              .insert(variantsToInsert)
+
+            if (variantsError) {
+              console.error('Failed to insert variants:', variantsError)
+            }
+          }
+        }
       } else {
         // This is a new product
         action = 'approve_new'
         
-        // Create new product
+        // Extract documents and other fields from payload
+        const { 
+          documents, 
+          videos, 
+          conversion_factors, 
+          technical_specs,
+          general_technical_specs,
+          specifications_data,
+          variants,
+          ...productData 
+        } = entry.payload_json as any
+        
+        // Prepare specifications_data for products table
+        const finalSpecificationsData = {
+          ...specifications_data,
+          ...(technical_specs && { technical_specs }),
+          ...(general_technical_specs && { general_technical_specs })
+        }
+        
+        // Create new product (without special fields)
         const newProductData = {
-          ...entry.payload_json,
+          ...productData,
+          ...(Object.keys(finalSpecificationsData).length > 0 && { specifications_data: finalSpecificationsData }),
           status: 'active',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -90,6 +236,91 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         }
         
         productId = newProduct.id
+
+        // Handle documents separately
+        if (documents && Array.isArray(documents)) {
+          if (documents.length > 0) {
+            const documentsToInsert = documents.map((doc: any) => ({
+              product_id: productId,
+              title: doc.title,
+              file_url: doc.file_url,
+              file_type: doc.file_type,
+              file_size: doc.file_size,
+              is_active: true
+            }))
+
+            const { error: docsError } = await supabase
+              .from('product_documents')
+              .insert(documentsToInsert)
+
+            if (docsError) {
+              console.error('Failed to insert documents:', docsError)
+            }
+          }
+        }
+
+        // Handle videos separately
+        if (videos && Array.isArray(videos)) {
+          if (videos.length > 0) {
+            const videosToInsert = videos.map((video: any) => ({
+              product_id: productId,
+              title: video.title,
+              video_url: video.video_url,
+              thumbnail_url: video.thumbnail_url,
+              duration: video.duration,
+              file_size: video.file_size,
+              is_active: true
+            }))
+
+            const { error: videosError } = await supabase
+              .from('product_videos')
+              .insert(videosToInsert)
+
+            if (videosError) {
+              console.error('Failed to insert videos:', videosError)
+            }
+          }
+        }
+
+        // Handle conversion factors separately
+        if (conversion_factors) {
+          const { error: cfError } = await supabase
+            .from('product_conversion_factors')
+            .insert({
+              product_id: productId,
+              ...conversion_factors
+            })
+
+          if (cfError) {
+            console.error('Failed to insert conversion factors:', cfError)
+          }
+        }
+
+        // Handle variants separately
+        if (variants && Array.isArray(variants)) {
+          if (variants.length > 0) {
+            const variantsToInsert = variants.map((variant: any) => ({
+              product_id: productId,
+              sku: variant.sku,
+              title: variant.title,
+              price: variant.price,
+              compare_at_price: variant.compare_at_price,
+              stock_quantity: variant.stock_quantity,
+              track_inventory: variant.track_inventory,
+              continue_selling_when_out_of_stock: variant.continue_selling_when_out_of_stock,
+              is_active: true,
+              position: variant.position || 0
+            }))
+
+            const { error: variantsError } = await supabase
+              .from('product_variants')
+              .insert(variantsToInsert)
+
+            if (variantsError) {
+              console.error('Failed to insert variants:', variantsError)
+            }
+          }
+        }
       }
       
       // Delete waitlist entry after successful approval

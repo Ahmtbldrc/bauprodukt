@@ -3,7 +3,7 @@
 import { AddToCartButton } from '@/components/cart'
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
-import { ChevronUp, ChevronDown, Download, ShoppingCart } from 'lucide-react'
+import { ChevronUp, ChevronDown, Download, ShoppingCart, Play } from 'lucide-react'
 import { 
   useBrandBySlug, 
   useCategoryBySlug, 
@@ -13,6 +13,54 @@ import {
 import { formatPrice, generateBrandURL, generateCategoryURL } from '@/lib/url-utils'
 import Image from 'next/image'
 import { Lens } from '@/components/magicui/lens'
+import VideoDialog from '@/components/ui/VideoDialog'
+import { CustomerDocumentsTab } from '@/components/customer'
+
+// Types for API data
+interface TechnicalSpec {
+  id?: string
+  title: string
+  description: string
+  sort_order: number
+}
+
+interface ProductVariant {
+  id: string
+  sku: string
+  title: string
+  price: number
+  compare_at_price?: number
+  stock_quantity: number
+  track_inventory: boolean
+  continue_selling_when_out_of_stock: boolean
+  is_active: boolean
+  position: number
+  attributes: any[]
+}
+
+interface ProductDocument {
+  id: string
+  title: string
+  file_url: string
+  file_type?: string
+  file_size?: number
+}
+
+interface ProductVideo {
+  id: string
+  title: string
+  video_url: string
+  thumbnail_url?: string
+  duration?: number
+  file_size?: number
+}
+
+interface ConversionFactors {
+  length_units: boolean
+  weight_units: boolean
+  volume_units: boolean
+  temperature_units: boolean
+}
 
 
 interface ProductPageContentProps {
@@ -30,9 +78,25 @@ export default function ProductPageContent({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0)
   const [selectedValues, setSelectedValues] = useState<Record<string, string>>({
-    color: 'red',
-    size: 'medium',
-    material: 'metal'
+    color: 'Rot',
+    size: 'Mittel',
+    material: 'Metall'
+  })
+  
+  // Video dialog state
+  const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false)
+  const [selectedVideoIndex, setSelectedVideoIndex] = useState(0)
+
+  // New state for dynamic data from admin APIs
+  const [variants, setVariants] = useState<ProductVariant[]>([])
+  const [specifications, setSpecifications] = useState<TechnicalSpec[]>([])
+  const [documents, setDocuments] = useState<ProductDocument[]>([])
+  const [videos, setVideos] = useState<ProductVideo[]>([])
+  const [conversionFactors, setConversionFactors] = useState<ConversionFactors>({
+    length_units: false,
+    weight_units: false,
+    volume_units: false,
+    temperature_units: false
   })
 
   // Fetch brand, category and product data
@@ -41,6 +105,94 @@ export default function ProductPageContent({
   const { 
     data: product, 
   } = useProductByBrandCategorySlug(brand?.id, category?.id, productSlug)
+
+  // Load dynamic data when product is loaded
+  useEffect(() => {
+    if (product?.id) {
+      // Load specifications from product data
+      const loadSpecifications = async () => {
+        try {
+          const productData = product as any
+          if (productData.specifications_data) {
+            // Check if it's already an object or needs parsing
+            let specs = productData.specifications_data
+            if (typeof specs === 'string') {
+              specs = JSON.parse(specs)
+            }
+            if (specs.technical_specs && Array.isArray(specs.technical_specs)) {
+              setSpecifications(specs.technical_specs)
+            }
+          }
+        } catch (error) {
+          console.error('Error loading specifications:', error)
+        }
+      }
+
+      // Load variants
+      const loadVariants = async () => {
+        try {
+          const response = await fetch(`/api/products/${product.id}/variants/customer`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.variants && Array.isArray(data.variants)) {
+              setVariants(data.variants)
+            }
+          }
+        } catch (error) {
+          console.error('Error loading variants:', error)
+        }
+      }
+
+      // Load documents
+      const loadDocuments = async () => {
+        try {
+          const response = await fetch(`/api/products/${product.id}/documents/customer`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.data && Array.isArray(data.data)) {
+              setDocuments(data.data)
+            }
+          }
+        } catch (error) {
+          console.error('Error loading documents:', error)
+        }
+      }
+
+      // Load videos
+      const loadVideos = async () => {
+        try {
+          const response = await fetch(`/api/products/${product.id}/videos/customer`)
+          if (response.ok) {
+            const data = await response.json()
+            if (data.data && Array.isArray(data.data)) {
+              setVideos(data.data)
+            }
+          }
+        } catch (error) {
+          console.error('Error loading videos:', error)
+        }
+      }
+
+      // Load conversion factors
+      const loadConversionFactors = async () => {
+        try {
+          const response = await fetch(`/api/products/${product.id}/conversion-factors/customer`)
+          if (response.ok) {
+            const data = await response.json()
+            setConversionFactors(data)
+          }
+        } catch (error) {
+          console.error('Error loading conversion factors:', error)
+        }
+      }
+
+      loadSpecifications()
+      loadVariants()
+      loadDocuments()
+      loadVideos()
+      loadConversionFactors()
+    }
+  }, [product])
 
   // Fetch related products from same brand
   const { 
@@ -113,6 +265,79 @@ export default function ProductPageContent({
     const actualIndex = thumbnailStartIndex + index
     setSelectedImageIndex(actualIndex)
   }
+
+  const handleVideoClick = (index: number) => {
+    setSelectedVideoIndex(index)
+    setIsVideoDialogOpen(true)
+  }
+
+  // Generate variant options from variants data
+  const generateVariantOptions = () => {
+    const options: Record<string, string[]> = {
+      color: [],
+      size: [],
+      material: []
+    }
+
+    variants.forEach(variant => {
+      // Check if variant has attributes array
+      if (variant.attributes && Array.isArray(variant.attributes)) {
+        variant.attributes.forEach(attr => {
+          if (attr.attribute_name === 'color' && !options.color.includes(attr.value)) {
+            options.color.push(attr.value)
+          } else if (attr.attribute_name === 'size' && !options.size.includes(attr.value)) {
+            options.size.push(attr.value)
+          } else if (attr.attribute_name === 'material' && !options.material.includes(attr.value)) {
+            options.material.push(attr.value)
+          }
+        })
+      }
+      
+      // Also check variant title for common patterns
+      if (variant.title) {
+        const title = variant.title.toLowerCase()
+        if (title.includes('rot') || title.includes('red') && !options.color.includes('Rot')) {
+          options.color.push('Rot')
+        } else if (title.includes('blau') || title.includes('blue') && !options.color.includes('Blau')) {
+          options.color.push('Blau')
+        } else if (title.includes('grün') || title.includes('green') && !options.color.includes('Grün')) {
+          options.color.push('Grün')
+        }
+        
+        if (title.includes('klein') || title.includes('small') && !options.size.includes('Klein')) {
+          options.size.push('Klein')
+        } else if (title.includes('mittel') || title.includes('medium') && !options.size.includes('Mittel')) {
+          options.size.push('Mittel')
+        } else if (title.includes('groß') || title.includes('large') && !options.size.includes('Groß')) {
+          options.size.push('Groß')
+        }
+        
+        if (title.includes('metall') || title.includes('metal') && !options.material.includes('Metall')) {
+          options.material.push('Metall')
+        } else if (title.includes('kunststoff') || title.includes('plastic') && !options.material.includes('Kunststoff')) {
+          options.material.push('Kunststoff')
+        } else if (title.includes('holz') || title.includes('wood') && !options.material.includes('Holz')) {
+          options.material.push('Holz')
+        }
+      }
+    })
+
+    return options
+  }
+
+  const variantOptions = generateVariantOptions()
+  
+  // Set default selected values if variants are available
+  useEffect(() => {
+    if (variants.length > 0) {
+      const options = generateVariantOptions()
+      setSelectedValues(prev => ({
+        color: options.color.length > 0 ? options.color[0] : prev.color,
+        size: options.size.length > 0 ? options.size[0] : prev.size,
+        material: options.material.length > 0 ? options.material[0] : prev.material
+      }))
+    }
+  }, [variants])
 
   return (
     <main className="flex-1 py-8">
@@ -311,74 +536,145 @@ export default function ProductPageContent({
                   <div className="prose max-w-none w-full">
                     <div className="bg-white rounded-lg border border-gray-200 overflow-hidden w-full mx-0 p-4">
                       <div className="grid grid-cols-1">
-                        <div className="flex border-b border-gray-100">
-                          <div className="w-1/3 px-4 py-1 text-xs font-bold text-gray-900" style={{background: '#FFF0E2'}}>Marke</div>
-                          <div className="w-2/3 px-4 py-1 text-xs" style={{background: '#FFF0E2'}}>{brand?.name || '-'}</div>
-                        </div>
-                        <div className="flex border-b border-gray-100">
-                          <div className="w-1/3 px-4 py-1 text-xs font-bold text-gray-900">Serie</div>
-                          <div className="w-2/3 px-4 py-1 text-xs">Smart</div>
-                        </div>
-                        <div className="flex border-b border-gray-100">
-                          <div className="w-1/3 px-4 py-1 text-xs font-bold text-gray-900" style={{background: '#FFF0E2'}}>Ausprägung</div>
-                          <div className="w-2/3 px-4 py-1 text-xs" style={{background: '#FFF0E2'}}>AD 153 mm, leer</div>
-                        </div>
-                        <div className="flex border-b border-gray-100">
-                          <div className="w-1/3 px-4 py-1 text-xs font-bold text-gray-900">Energieeffizienzklasse</div>
-                          <div className="w-2/3 px-4 py-1 text-xs">D</div>
-                        </div>
-                        <div className="flex border-b border-gray-100">
-                          <div className="w-1/3 px-4 py-1 text-xs font-bold text-gray-900" style={{background: '#FFF0E2'}}>Durchflussmenge 1. Abgang</div>
-                          <div className="w-2/3 px-4 py-1 text-xs" style={{background: '#FFF0E2'}}>L/min.</div>
-                        </div>
-                        <div className="flex border-b border-gray-100">
-                          <div className="w-1/3 px-4 py-1 text-xs font-bold text-gray-900">Geräuschgruppe</div>
-                          <div className="w-2/3 px-4 py-1 text-xs">I</div>
-                        </div>
-                        <div className="flex border-b border-gray-100">
-                          <div className="w-1/3 px-4 py-1 text-xs font-bold text-gray-900" style={{background: '#FFF0E2'}}>Farbe</div>
-                          <div className="w-2/3 px-4 py-1 text-xs" style={{background: '#FFF0E2'}}>Verchromt</div>
-                        </div>
-                        <div className="flex border-b border-gray-100">
-                          <div className="w-1/3 px-4 py-1 text-xs font-bold text-gray-900">Gewicht</div>
-                          <div className="w-2/3 px-4 py-1 text-xs">1.135 kg</div>
-                        </div>
-                        <div className="flex">
-                          <div className="w-1/3 px-4 py-1 text-xs font-bold text-gray-900" style={{background: '#FFF0E2'}}>Volumen</div>
-                          <div className="w-2/3 px-4 py-1 text-xs" style={{background: '#FFF0E2'}}>0.002 m³</div>
-                        </div>
+                        {(() => {
+                          const productData = product as any
+                          let specs: any[] = []
+                          
+                          if (productData?.specifications_data) {
+                            try {
+                              let specsData = productData.specifications_data
+                              if (typeof specsData === 'string') {
+                                specsData = JSON.parse(specsData)
+                              }
+                              if (specsData.technical_specs && Array.isArray(specsData.technical_specs)) {
+                                specs = specsData.technical_specs
+                              }
+                            } catch (e) {
+                              console.error('Error parsing specifications:', e)
+                            }
+                          }
+                          
+                          if (specs.length === 0) {
+                            return (
+                              <div className="text-center py-8">
+                                <p className="text-gray-500 text-sm">Keine technischen Spezifikationen verfügbar</p>
+                              </div>
+                            )
+                          }
+                          
+                          return specs.map((spec: any, index: number) => (
+                            <div key={spec.id || index} className={`flex ${index === specs.length - 1 ? '' : 'border-b border-gray-100'}`}>
+                              <div className={`w-1/3 px-4 py-1 text-xs font-bold text-gray-900 ${index % 2 === 0 ? '' : ''}`} style={index % 2 === 0 ? {background: '#FFF0E2'} : {}}>
+                                {spec.title}
+                              </div>
+                              <div className={`w-2/3 px-4 py-1 text-xs ${index % 2 === 0 ? '' : ''}`} style={index % 2 === 0 ? {background: '#FFF0E2'} : {}}>
+                                {spec.description}
+                              </div>
+                            </div>
+                          ))
+                        })()}
                       </div>
                     </div>
+
+
                   </div>
                 )}
                 
                 {activeTab === 'documents' && (
-                  <div className="prose max-w-none w-full">
-                    <h3>Dokumente</h3>
-                    <p>Hier finden Sie alle relevanten Dokumente für dieses Produkt.</p>
-                    <div className="bg-white rounded-lg border border-gray-200 p-6">
-                      <p className="text-gray-500">Keine Dokumente verfügbar</p>
-                    </div>
-                  </div>
+                  <CustomerDocumentsTab documents={documents} />
                 )}
                 
                 {activeTab === 'conversion' && (
                   <div className="prose max-w-none w-full">
                     <h3>Umrechnungsfaktoren</h3>
-                    <p>Technische Umrechnungsfaktoren für dieses Produkt.</p>
-                    <div className="bg-white rounded-lg border border-gray-200 p-6">
-                      <p className="text-gray-500">Keine Umrechnungsfaktoren verfügbar</p>
-                    </div>
+                    {conversionFactors.length_units || conversionFactors.weight_units || conversionFactors.volume_units || conversionFactors.temperature_units ? (
+                      <div className="bg-white rounded-lg border border-gray-200 p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {conversionFactors.length_units && (
+                            <div className="p-4 border border-gray-200 rounded-lg">
+                              <h4 className="font-medium text-gray-900 mb-2">Längeneinheiten</h4>
+                              <p className="text-sm text-gray-600">mm ↔ cm ↔ m ↔ km</p>
+                            </div>
+                          )}
+                          {conversionFactors.weight_units && (
+                            <div className="p-4 border border-gray-200 rounded-lg">
+                              <h4 className="font-medium text-gray-900 mb-2">Gewichtseinheiten</h4>
+                              <p className="text-sm text-gray-600">g ↔ kg ↔ t</p>
+                            </div>
+                          )}
+                          {conversionFactors.volume_units && (
+                            <div className="p-4 border border-gray-200 rounded-lg">
+                              <h4 className="font-medium text-gray-900 mb-2">Volumeneinheiten</h4>
+                              <p className="text-sm text-gray-600">ml ↔ l ↔ m³</p>
+                            </div>
+                          )}
+                          {conversionFactors.temperature_units && (
+                            <div className="p-4 border border-gray-200 rounded-lg">
+                              <h4 className="font-medium text-gray-900 mb-2">Temperatureinheiten</h4>
+                              <p className="text-sm text-gray-600">°C ↔ °F ↔ K</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-white rounded-lg border border-gray-200 p-6">
+                        <p className="text-gray-500">Keine Umrechnungsfaktoren verfügbar</p>
+                      </div>
+                    )}
                   </div>
                 )}
                 
                 {activeTab === 'videos' && (
                   <div className="prose max-w-none w-full">
                     <h3>Videos</h3>
-                    <p>Produktvideos und Anleitungen.</p>
-                    <div className="bg-white rounded-lg border border-gray-200 p-6">
-                      <p className="text-gray-500">Keine Videos verfügbar</p>
-                    </div>
+                    {videos.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {videos.map((video, index) => (
+                          <div 
+                            key={video.id} 
+                            className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                            onClick={() => handleVideoClick(index)}
+                          >
+                            {video.thumbnail_url ? (
+                              <div className="aspect-video bg-gray-100 relative">
+                                <Image
+                                  src={video.thumbnail_url}
+                                  alt={video.title}
+                                  width={300}
+                                  height={200}
+                                  className="w-full h-full object-cover"
+                                />
+                                {/* Play button overlay */}
+                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 hover:bg-opacity-20 transition-all">
+                                  <Play className="h-12 w-12 text-white opacity-0 hover:opacity-100 transition-opacity" />
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="aspect-video bg-gray-100 flex items-center justify-center relative">
+                                <Play className="h-12 w-12 text-gray-400" />
+                                {/* Play button overlay */}
+                                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 hover:bg-opacity-20 transition-all">
+                                  <Play className="h-12 w-12 text-white opacity-0 hover:opacity-100 transition-opacity" />
+                                </div>
+                              </div>
+                            )}
+                            <div className="p-4">
+                              <h4 className="font-medium text-gray-900 text-sm mb-2">{video.title}</h4>
+                              {video.duration && (
+                                <p className="text-xs text-gray-500">{Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}</p>
+                              )}
+                              <div className="mt-3 w-full bg-[#F39236] text-white text-sm py-2 px-4 rounded hover:bg-[#E67E22] transition-colors text-center">
+                                Video ansehen
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="bg-white rounded-lg border border-gray-200 p-6">
+                        <p className="text-gray-500">Keine Videos verfügbar</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -529,7 +825,7 @@ export default function ProductPageContent({
                 {/* Article and Manufacturer Numbers */}
                 <div className="mb-6">
                   <p className="text-xs" style={{color: '#A3A3A3'}}>
-                    Art-Nr. 123456789 | Hersteller-Nr. 987654321
+                    Art-Nr. {product?.art_nr || '-'} | Hersteller-Nr. {product?.hersteller_nr || '-'}
                   </p>
                 </div>
                 
@@ -551,82 +847,115 @@ export default function ProductPageContent({
                   </div>
                 </div>
 
-                {/* Static Variant Selector */}
-                <div className="mb-6">
-                  <div className="grid grid-cols-3 gap-4">
-                    {/* Color Selection */}
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Farbe
-                      </label>
-                      <select
-                        value={selectedValues.color}
-                        onChange={(e) => setSelectedValues(prev => ({ ...prev, color: e.target.value }))}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-[#F39236]"
-                      >
-                        <option value="red">Rot</option>
-                        <option value="blue">Blau</option>
-                        <option value="green">Grün</option>
-                      </select>
-                    </div>
+                {/* Dynamic Variant Selector based on variants data */}
+                {variants.length > 0 && (
+                  <div className="mb-6">
+                    <div className="grid grid-cols-3 gap-4">
+                      {/* Color Selection */}
+                      {variantOptions.color.length > 0 && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 mb-2 block">
+                            Farbe
+                          </label>
+                          <select
+                            value={selectedValues.color}
+                            onChange={(e) => setSelectedValues(prev => ({ ...prev, color: e.target.value }))}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-[#F39236]"
+                          >
+                            {variantOptions.color.map(color => (
+                              <option key={color} value={color}>{color}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
 
-                    {/* Size Selection */}
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Größe
-                      </label>
-                      <select
-                        value={selectedValues.size}
-                        onChange={(e) => setSelectedValues(prev => ({ ...prev, size: e.target.value }))}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-[#F39236]"
-                      >
-                        <option value="small">Klein</option>
-                        <option value="medium">Mittel</option>
-                        <option value="large">Groß</option>
-                      </select>
-                    </div>
+                      {/* Size Selection */}
+                      {variantOptions.size.length > 0 && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 mb-2 block">
+                            Größe
+                          </label>
+                          <select
+                            value={selectedValues.size}
+                            onChange={(e) => setSelectedValues(prev => ({ ...prev, size: e.target.value }))}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-[#F39236]"
+                          >
+                            {variantOptions.size.map(size => (
+                              <option key={size} value={size}>{size}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
 
-                    {/* Material Selection */}
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">
-                        Material
-                      </label>
-                      <select
-                        value={selectedValues.material}
-                        onChange={(e) => setSelectedValues(prev => ({ ...prev, material: e.target.value }))}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-[#F39236]"
-                      >
-                        <option value="plastic">Kunststoff</option>
-                        <option value="metal">Metall</option>
-                        <option value="wood">Holz</option>
-                      </select>
+                      {/* Material Selection */}
+                      {variantOptions.material.length > 0 && (
+                        <div>
+                          <label className="text-sm font-medium text-gray-700 mb-2 block">
+                            Material
+                          </label>
+                          <select
+                            value={selectedValues.material}
+                            onChange={(e) => setSelectedValues(prev => ({ ...prev, material: e.target.value }))}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-[#F39236]"
+                          >
+                            {variantOptions.material.map(material => (
+                              <option key={material} value={material}>{material}</option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
+                )}
                 
                 <div className="mb-3">
                   <h3 className="font-bold text-gray-900 mb-1 text-base">Technische Eigenschaften:</h3>
                   <ul className="space-y-0.5">
-                    <li className="flex items-center text-xs" style={{color: '#A3A3A3'}}>
-                      <span className="mr-1">›</span>
-                      Premium Qualitätsmaterial
-                    </li>
-                    <li className="flex items-center text-xs" style={{color: '#A3A3A3'}}>
-                      <span className="mr-1">›</span>
-                      Langlebiges Design
-                    </li>
-                    <li className="flex items-center text-xs" style={{color: '#A3A3A3'}}>
-                      <span className="mr-1">›</span>
-                      Einfache Installation
-                    </li>
-                    <li className="flex items-center text-xs" style={{color: '#A3A3A3'}}>
-                      <span className="mr-1">›</span>
-                      2 Jahre Garantie
-                    </li>
-                    <li className="flex items-center text-xs" style={{color: '#A3A3A3'}}>
-                      <span className="mr-1">›</span>
-                      CE-Zertifikat
-                    </li>
+                    {(() => {
+                      const productData = product as any
+                      if (productData?.general_technical_specs) {
+                        let specs = productData.general_technical_specs
+                        if (typeof specs === 'string') {
+                          try {
+                            specs = JSON.parse(specs)
+                          } catch (e) {
+                            specs = null
+                          }
+                        }
+                        if (specs && Array.isArray(specs)) {
+                          return specs.map((spec: any, index: number) => (
+                            <li key={index} className="flex items-center text-xs" style={{color: '#A3A3A3'}}>
+                              <span className="mr-1">›</span>
+                              {spec.description || spec.title}
+                            </li>
+                          ))
+                        }
+                      }
+                      return (
+                        <>
+                          <li className="flex items-center text-xs" style={{color: '#A3A3A3'}}>
+                            <span className="mr-1">›</span>
+                            Premium Qualitätsmaterial
+                          </li>
+                          <li className="flex items-center text-xs" style={{color: '#A3A3A3'}}>
+                            <span className="mr-1">›</span>
+                            Langlebiges Design
+                          </li>
+                          <li className="flex items-center text-xs" style={{color: '#A3A3A3'}}>
+                            <span className="mr-1">›</span>
+                            Einfache Installation
+                          </li>
+                          <li className="flex items-center text-xs" style={{color: '#A3A3A3'}}>
+                            <span className="mr-1">›</span>
+                            2 Jahre Garantie
+                          </li>
+                          <li className="flex items-center text-xs" style={{color: '#A3A3A3'}}>
+                            <span className="mr-1">›</span>
+                            CE-Zertifikat
+                          </li>
+                        </>
+                      )
+                    })()}
                   </ul>
                 </div>
                 
@@ -796,6 +1125,14 @@ export default function ProductPageContent({
           </div>
         )}
       </div>
+      
+      {/* Video Dialog */}
+      <VideoDialog
+        isOpen={isVideoDialogOpen}
+        onClose={() => setIsVideoDialogOpen(false)}
+        videos={videos}
+        initialVideoIndex={selectedVideoIndex}
+      />
     </main>
   )
 } 
