@@ -21,7 +21,6 @@ import {
 } from '@/types/admin/product-edit'
 import { useAllBrands } from '@/hooks/useBrands'
 import { useAllCategories } from '@/hooks/useCategories'
-import { AdminLayout } from '@/components/admin'
 import PageHeader from '@/components/admin/PageHeader'
 import TabNavigation from '@/components/admin/TabNavigation'
 import LoadingState from '@/components/admin/LoadingState'
@@ -58,16 +57,6 @@ type TechnicalSpec = {
 interface SpecificationsData {
   technical_specs?: TechnicalSpec[]
   general_technical_specs?: TechnicalSpec[]
-}
-
-
-
-interface ProductDocumentResponse {
-  id: string
-  title: string
-  file_url: string
-  file_type?: string
-  file_size?: number
 }
 
 interface WaitlistProductData {
@@ -197,7 +186,7 @@ export default function WaitlistProductDetailPage() {
   })
 
   // Load waitlist entry function
-  const loadWaitlistEntry = async () => {
+  const loadWaitlistEntry = useCallback(async () => {
     try {
       setIsLoading(true)
       console.log('Loading waitlist entry:', entryId)
@@ -340,14 +329,14 @@ export default function WaitlistProductDetailPage() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [entryId])
 
   // Load waitlist entry
   useEffect(() => {
     if (entryId) {
       loadWaitlistEntry()
     }
-  }, [entryId])
+  }, [entryId, loadWaitlistEntry])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -359,7 +348,7 @@ export default function WaitlistProductDetailPage() {
 
   // Debounced auto-save function for specifications
   const debouncedAutoSave = useCallback(
-    debounce(async (field: string, value: string | TechnicalSpec[]) => {
+    (field: string, value: string | TechnicalSpec[]) => debounce(async () => {
       try {
         setIsAutoSaving(true)
         console.log('Debounced auto-saving specifications:', { field, value })
@@ -401,7 +390,7 @@ export default function WaitlistProductDetailPage() {
         setIsAutoSaving(false)
       }
     }, 1000), // 1 second delay
-    [entry?.payload_json, specifications]
+    [entry?.payload_json, specifications, entryId]
   )
 
   const handleSpecificationChange = async (field: string, value: string | TechnicalSpec[]) => {

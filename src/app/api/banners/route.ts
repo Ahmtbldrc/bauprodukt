@@ -74,12 +74,12 @@ export async function POST(request: NextRequest) {
         .limit(1)
 
       validation.data.order_index = lastBanner && lastBanner.length > 0 
-        ? lastBanner[0].order_index + 1 
+        ? (lastBanner[0] as any).order_index + 1 
         : 0
     }
 
     // Create banner
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('banners')
       .insert([validation.data])
       .select()

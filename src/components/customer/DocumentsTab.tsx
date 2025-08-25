@@ -18,15 +18,11 @@ interface CustomerDocumentsTabProps {
 }
 
 export default function CustomerDocumentsTab({ documents }: CustomerDocumentsTabProps) {
-  const [selectedDocument, setSelectedDocument] = useState<ProductDocument | null>(null)
+  const [selectedDocument] = useState<ProductDocument | null>(null)
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false)
   const [isCombinedPdfViewerOpen, setIsCombinedPdfViewerOpen] = useState(false)
   const [combinedPdfUrl, setCombinedPdfUrl] = useState<string | null>(null)
 
-  const handleViewDocument = (document: ProductDocument) => {
-    setSelectedDocument(document)
-    setIsPdfViewerOpen(true)
-  }
 
   const handleDownloadPdf = async () => {
     if (!selectedDocument) return

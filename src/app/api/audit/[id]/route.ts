@@ -5,7 +5,7 @@ interface RouteParams {
   params: Promise<{ id: string }>
 }
 
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(_: NextRequest, { params }: RouteParams) {
   // Middleware ensures admin access
   try {
     const supabase = createClient()
@@ -37,19 +37,19 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const relatedEntries = await getRelatedEntries(supabase, entry)
     
     // Calculate state diff if before and after states exist
-    const stateDiff = calculateStateDiff(entry.before_state, entry.after_state)
+    const stateDiff = calculateStateDiff((entry as any).before_state, (entry as any).after_state)
     
     const response = {
-      ...entry,
-      timestamp_formatted: new Date(entry.timestamp).toLocaleString(),
-      action_category: categorizeAction(entry.action),
-      target_summary: getTargetSummary(entry.target_type, entry.target_id, entry.after_state),
+      ...(entry as any),
+      timestamp_formatted: new Date((entry as any).timestamp).toLocaleString(),
+      action_category: categorizeAction((entry as any).action),
+      target_summary: getTargetSummary((entry as any).target_type, (entry as any).target_id, (entry as any).after_state),
       state_diff: stateDiff,
       related_entries: relatedEntries,
       metadata: {
-        has_before_state: !!entry.before_state,
-        has_after_state: !!entry.after_state,
-        has_reason: !!entry.reason,
+        has_before_state: !!(entry as any).before_state,
+        has_after_state: !!(entry as any).after_state,
+        has_reason: !!(entry as any).reason,
         state_change_count: stateDiff ? Object.keys(stateDiff).length : 0
       }
     }
@@ -75,25 +75,25 @@ async function getRelatedEntries(supabase: ReturnType<typeof createClient>, entr
     const { data: sameTargetEntries } = await supabase
       .from('audit_log')
       .select('id, action, timestamp, actor')
-      .eq('target_type', entry.target_type)
-      .eq('target_id', entry.target_id)
-      .neq('id', entry.id)
+      .eq('target_type', (entry as any).target_type)
+      .eq('target_id', (entry as any).target_id)
+      .neq('id', (entry as any).id)
       .order('timestamp', { ascending: false })
       .limit(10)
     
     // Get other entries by the same actor in the same time period (±1 hour)
     const timeWindow = 60 * 60 * 1000 // 1 hour in milliseconds
-    const entryTime = new Date(entry.timestamp as string).getTime()
+    const entryTime = new Date((entry as any).timestamp as string).getTime()
     const startTime = new Date(entryTime - timeWindow).toISOString()
     const endTime = new Date(entryTime + timeWindow).toISOString()
     
     const { data: sameActorEntries } = await supabase
       .from('audit_log')
       .select('id, action, timestamp, target_type, target_id')
-      .eq('actor', entry.actor)
+      .eq('actor', (entry as any).actor)
       .gte('timestamp', startTime)
       .lte('timestamp', endTime)
-      .neq('id', entry.id)
+      .neq('id', (entry as any).id)
       .order('timestamp', { ascending: false })
       .limit(5)
     

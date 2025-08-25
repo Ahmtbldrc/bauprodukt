@@ -79,11 +79,11 @@ export async function GET(request: NextRequest) {
     
     // Format the response data with additional computed fields
     const formattedData = (data || []).map(entry => ({
-      ...entry,
-      timestamp_formatted: new Date(entry.timestamp).toLocaleString(),
-      has_state_changes: !!(entry.before_state || entry.after_state),
-      action_category: categorizeAction(entry.action),
-      target_summary: getTargetSummary(entry.target_type, entry.target_id, entry.after_state)
+      ...(entry as any),
+      timestamp_formatted: new Date((entry as any).timestamp).toLocaleString(),
+      has_state_changes: !!((entry as any).before_state || (entry as any).after_state),
+      action_category: categorizeAction((entry as any).action),
+      target_summary: getTargetSummary((entry as any).target_type, (entry as any).target_id, (entry as any).after_state)
     }))
     
     return NextResponse.json({

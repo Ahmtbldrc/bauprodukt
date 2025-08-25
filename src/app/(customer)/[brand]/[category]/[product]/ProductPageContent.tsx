@@ -2,7 +2,7 @@
 
 import { AddToCartButton } from '@/components/cart'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ChevronUp, ChevronDown, Download, ShoppingCart, Play } from 'lucide-react'
 import { 
   useBrandBySlug, 
@@ -89,7 +89,7 @@ export default function ProductPageContent({
 
   // New state for dynamic data from admin APIs
   const [variants, setVariants] = useState<ProductVariant[]>([])
-  const [specifications, setSpecifications] = useState<TechnicalSpec[]>([])
+  const [, setSpecifications] = useState<TechnicalSpec[]>([])
   const [documents, setDocuments] = useState<ProductDocument[]>([])
   const [videos, setVideos] = useState<ProductVideo[]>([])
   const [conversionFactors, setConversionFactors] = useState<ConversionFactors>({
@@ -272,7 +272,7 @@ export default function ProductPageContent({
   }
 
   // Generate variant options from variants data
-  const generateVariantOptions = () => {
+  const generateVariantOptions = useCallback(() => {
     const options: Record<string, string[]> = {
       color: [],
       size: [],
@@ -323,7 +323,7 @@ export default function ProductPageContent({
     })
 
     return options
-  }
+  }, [variants])
 
   const variantOptions = generateVariantOptions()
   
@@ -337,7 +337,7 @@ export default function ProductPageContent({
         material: options.material.length > 0 ? options.material[0] : prev.material
       }))
     }
-  }, [variants])
+  }, [variants, generateVariantOptions])
 
   return (
     <main className="flex-1 py-8">
@@ -918,7 +918,7 @@ export default function ProductPageContent({
                         if (typeof specs === 'string') {
                           try {
                             specs = JSON.parse(specs)
-                          } catch (e) {
+                          } catch {
                             specs = null
                           }
                         }

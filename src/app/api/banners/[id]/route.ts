@@ -54,7 +54,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('banners')
       .update(validation.data)
       .eq('id', id)

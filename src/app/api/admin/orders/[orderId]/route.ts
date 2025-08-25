@@ -11,7 +11,7 @@ export async function PATCH(
     const { orderId } = await params
     const body = await request.json()
     
-    const { status } = body
+    const { status } = body as { status: string }
 
     if (!status) {
       return NextResponse.json(
@@ -30,7 +30,7 @@ export async function PATCH(
     }
 
     // Update order status
-    const { data: order, error } = await supabase
+    const { data: order, error } = await (supabase as any)
       .from('orders')
       .update({ 
         status,

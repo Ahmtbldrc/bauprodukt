@@ -64,7 +64,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Banner'ın image_url'ini güncelle
-    const { data, error: updateError } = await supabase
+    const { data, error: updateError } = await (supabase as any)
       .from('banners')
       .update({ image_url: uploadResult.url! })
       .eq('id', bannerId)
@@ -86,8 +86,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     // Eski resmi sil (eğer varsa)
-    if (existingBanner.image_url) {
-      await deleteFile(existingBanner.image_url, 'images').catch(err => 
+    if ((existingBanner as any).image_url) {
+      await deleteFile((existingBanner as any).image_url, 'images').catch(err => 
         console.error('Failed to delete old banner image:', err)
       )
     }
@@ -136,7 +136,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    if (!existingBanner.image_url) {
+    if (!(existingBanner as any).image_url) {
       return NextResponse.json(
         { error: 'Banner has no image to delete' },
         { status: 400 }
@@ -144,7 +144,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Banner'ın image_url'ini null yap
-    const { data, error: updateError } = await supabase
+    const { data, error: updateError } = await (supabase as any)
       .from('banners')
       .update({ image_url: null })
       .eq('id', bannerId)
@@ -160,7 +160,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Dosyayı storage'dan sil
-    await deleteFile(existingBanner.image_url, 'images').catch(err => 
+    await deleteFile((existingBanner as any).image_url, 'images').catch(err => 
       console.error('Failed to delete banner image file:', err)
     )
 
