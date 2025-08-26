@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Get all entries first for audit logging
-    const { data: entries, error: fetchError } = await supabase
+    const { data: entries, error: fetchError } = await (supabase as any)
       .from('waitlist_updates')
       .select('*')
       .in('id', ids)
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     // Process each entry
     for (const id of ids) {
       try {
-        const entry = entries?.find(e => e.id === id)
+        const entry = (entries as Array<{ id: string }> | null | undefined)?.find((e) => e.id === id) as any
         
         if (!entry) {
           results.failed++
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
         }
         
         // Delete waitlist entry
-        const { error: deleteError } = await supabase
+        const { error: deleteError } = await (supabase as any)
           .from('waitlist_updates')
           .delete()
           .eq('id', id)
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
         
         // Create audit log for each rejection
         try {
-          await supabase
+          await (supabase as any)
             .from('audit_log')
             .insert({
               actor: userEmail,
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     
     // Create summary audit log for bulk operation
     try {
-      await supabase
+      await (supabase as any)
         .from('audit_log')
         .insert({
           actor: userEmail,

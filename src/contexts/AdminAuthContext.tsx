@@ -126,7 +126,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
           }
 
           // Verify user is still admin
-          const { data: profileData, error: profileError } = await supabaseAdminClient
+          const { data: profileData, error: profileError } = await (supabaseAdminClient as any)
             .from('profiles')
             .select(`
               *,
@@ -190,7 +190,7 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
       }
 
       // Kullanıcı profilini al ve admin kontrolü yap
-      const { data: profileData, error: profileError } = await supabaseAdminClient
+      const { data: profileData, error: profileError } = await (supabaseAdminClient as any)
         .from('profiles')
         .select(`
           *,

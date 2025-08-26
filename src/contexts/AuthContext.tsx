@@ -129,7 +129,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         if (session?.user) {
           // Kullanıcı profilini al
-          const { data: profileData, error: profileError } = await supabase
+          const { data: profileData, error: profileError } = await (supabase as any)
             .from("profiles")
             .select(
               `
@@ -202,7 +202,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       // Kullanıcı profilini al
-      const { data: profileData, error: profileError } = await supabase
+      const { data: profileData, error: profileError } = await (supabase as any)
         .from("profiles")
         .select(
           `
@@ -290,14 +290,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       // Default user role'ü al
-      const { data: defaultRole } = await supabase
+      const { data: defaultRole } = await (supabase as any)
         .from("roles")
         .select("*")
         .eq("slug", "user")
         .single();
 
       // Kullanıcı profilini oluştur
-      const { error: profileError } = await supabase.from("profiles").insert({
+      const { error: profileError } = await (supabase as any).from("profiles").insert({
         user_id: authData.user.id,
         first_name: data.firstName,
         last_name: data.lastName,

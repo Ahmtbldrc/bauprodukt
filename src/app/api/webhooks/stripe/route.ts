@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       orderId = webhookEvent.metadata.order_id as string
     } else if (webhookEvent.sessionId) {
       // Look up order by session ID
-      const { data: order } = await supabase
+      const { data: order } = await (supabase as any)
         .from('orders')
         .select('id')
         .eq('provider_session_id', webhookEvent.sessionId)
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       }
     } else if (webhookEvent.paymentId) {
       // Look up order by payment intent ID
-      const { data: order } = await supabase
+      const { data: order } = await (supabase as any)
         .from('orders')
         .select('id')
         .eq('provider_payment_id', webhookEvent.paymentId)
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       } else {
         // If we can't find by payment_intent ID, try to find by session
         // and update the order with the payment_intent ID
-        const { data: sessionOrder } = await supabase
+        const { data: sessionOrder } = await (supabase as any)
           .from('orders')
           .select('id, provider_session_id')
           .eq('payment_provider', 'stripe')
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
                 orderId = order.id
                 
                 // Update order with payment intent ID for future lookups
-                await supabase
+                await (supabase as any)
                   .from('orders')
                   .update({ provider_payment_id: webhookEvent.paymentId })
                   .eq('id', order.id)
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Log the payment event
-    await supabase
+    await (supabase as any)
       .from('payment_events')
       .insert({
         order_id: orderId,
@@ -141,7 +141,7 @@ export async function POST(request: NextRequest) {
         updateData.provider_payment_id = webhookEvent.paymentId
       }
       
-      const { error: updateError } = await supabase
+      const { error: updateError } = await (supabase as any)
         .from('orders')
         .update(updateData)
         .eq('id', orderId)
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
       await sendPostPaymentNotifications(supabase, orderId)
 
       // Mark for Infoniqa sync
-      await supabase
+      await (supabase as any)
         .from('orders')
         .update({
           infoniqa_sync_status: 'pending',
@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
         updateData.provider_payment_id = webhookEvent.paymentId
       }
       
-      await supabase
+      await (supabase as any)
         .from('orders')
         .update(updateData)
         .eq('id', orderId)
@@ -198,7 +198,7 @@ async function sendPostPaymentNotifications(supabase: ReturnType<typeof createCl
     const { sendPostPaymentEmails } = await import('@/lib/email')
     
     // Fetch complete order details with customer and items
-    const { data: order } = await supabase
+    const { data: order } = await (supabase as any)
       .from('orders')
       .select(`
         *,
@@ -250,7 +250,7 @@ async function sendPostPaymentNotifications(supabase: ReturnType<typeof createCl
     const result = await sendPostPaymentEmails(emailData)
     
     // Log email sending results
-    await supabase
+    await (supabase as any)
       .from('payment_events')
       .insert({
         order_id: orderId,
@@ -271,7 +271,7 @@ async function sendPostPaymentNotifications(supabase: ReturnType<typeof createCl
     
     // Log error event
     try {
-      await supabase
+      await (supabase as any)
         .from('payment_events')
         .insert({
           order_id: orderId,

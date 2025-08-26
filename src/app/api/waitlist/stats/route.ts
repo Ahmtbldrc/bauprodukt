@@ -7,7 +7,7 @@ export async function GET() {
     const supabase = createClient()
     
     // Get all waitlist entries for statistics
-    const { data: allEntries, error } = await supabase
+    const { data: allEntries, error } = await (supabase as any)
       .from('waitlist_updates')
       .select('*')
     
@@ -20,17 +20,18 @@ export async function GET() {
     }
     
     // Calculate statistics
+    const entries = (allEntries || []) as Array<any>
     const stats = {
-      total_entries: allEntries.length,
-      new_products: allEntries.filter(e => !e.product_id).length,
-      pending_updates: allEntries.filter(e => e.product_id).length,
-      manual_review_required: allEntries.filter(e => e.requires_manual_review).length,
-      invalid_discounts: allEntries.filter(e => e.has_invalid_discount).length,
+      total_entries: entries.length,
+      new_products: entries.filter((e) => !e.product_id).length,
+      pending_updates: entries.filter((e) => e.product_id).length,
+      manual_review_required: entries.filter((e) => e.requires_manual_review).length,
+      invalid_discounts: entries.filter((e) => e.has_invalid_discount).length,
       by_reason: {} as Record<string, number>,
-      recent_entries: allEntries
+      recent_entries: entries
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, 10)
-        .map(entry => ({
+        .map((entry: any) => ({
           id: entry.id,
           product_slug: entry.product_slug,
           type: entry.product_id ? 'update' : 'new',
@@ -42,23 +43,23 @@ export async function GET() {
     }
     
     // Count by reason
-    allEntries.forEach(entry => {
+    entries.forEach((entry: any) => {
       const reason = entry.reason || 'unknown'
       stats.by_reason[reason] = (stats.by_reason[reason] || 0) + 1
     })
     
     // Calculate additional metrics
-    const priceDropEntries = allEntries.filter(e => e.price_drop_percentage && e.price_drop_percentage > 0)
+    const priceDropEntries = entries.filter((e: any) => e.price_drop_percentage && e.price_drop_percentage > 0)
     const averagePriceDrop = priceDropEntries.length > 0 
       ? priceDropEntries.reduce((sum, e) => sum + (e.price_drop_percentage || 0), 0) / priceDropEntries.length
       : 0
     
     const versionStats = {
-      total_revisions: allEntries.reduce((sum, e) => sum + (e.version || 1), 0),
-      average_revisions: allEntries.length > 0 
-        ? allEntries.reduce((sum, e) => sum + (e.version || 1), 0) / allEntries.length
+      total_revisions: entries.reduce((sum: number, e: any) => sum + (e.version || 1), 0),
+      average_revisions: entries.length > 0 
+        ? entries.reduce((sum: number, e: any) => sum + (e.version || 1), 0) / entries.length
         : 0,
-      max_revisions: Math.max(...allEntries.map(e => e.version || 1), 0)
+      max_revisions: Math.max(...entries.map((e: any) => e.version || 1), 0)
     }
     
     return NextResponse.json({

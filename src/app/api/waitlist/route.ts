@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50')
     
-    let query = supabase
+    let query = (supabase as any)
       .from('waitlist_updates')
       .select('*', { count: 'exact' })
     
@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
     const to = from + limit - 1
     query = query.range(from, to).order('created_at', { ascending: false })
     
-    const { data, error, count } = await query
+    const { data, error, count } = await (query as any)
     
     if (error) {
       console.error('Waitlist fetch error:', error)
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Format the response data
-    const formattedData = (data || []).map(entry => ({
+    const formattedData = (data || []).map((entry: any) => ({
       ...entry,
       type: entry.product_id ? 'update' : 'new',
       created_at: entry.created_at,
@@ -108,7 +108,7 @@ export async function PUT(request: NextRequest) {
     }
     
     // Get current waitlist entry for audit trail
-    const { data: currentEntry, error: fetchError } = await supabase
+    const { data: currentEntry, error: fetchError } = await (supabase as any)
       .from('waitlist_updates')
       .select('*')
       .eq('id', body.id)
@@ -161,7 +161,7 @@ export async function PUT(request: NextRequest) {
     }
     
     // Update the waitlist entry
-    const { data: updatedEntry, error: updateError } = await supabase
+    const { data: updatedEntry, error: updateError } = await (supabase as any)
       .from('waitlist_updates')
       .update(updateData)
       .eq('id', body.id)
@@ -178,7 +178,7 @@ export async function PUT(request: NextRequest) {
     
     // Create audit log entry
     try {
-      await supabase
+      await (supabase as any)
         .from('audit_log')
         .insert({
           actor: userEmail,
