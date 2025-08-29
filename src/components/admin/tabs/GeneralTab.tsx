@@ -86,7 +86,7 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
         <h3 className="text-xl font-semibold text-gray-900">Allgemeine Informationen</h3>
       </div>
 
-      {/* Ürün Adı ve Stok Kodu - Yan Yana */}
+      {/* Ürün Adı */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
@@ -101,22 +101,6 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200"
             style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
             required
-          />
-        </div>
-
-        <div>
-          <label htmlFor="stock_code" className="block text-sm font-medium text-gray-700 mb-2">
-            Lagerbestandscode
-          </label>
-          <input
-            type="text"
-            id="stock_code"
-            name="stock_code"
-            value={formData.stock_code}
-            onChange={handleInputChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200"
-            style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-            placeholder="Lagerbestandscode"
           />
         </div>
       </div>
