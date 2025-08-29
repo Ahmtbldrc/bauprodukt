@@ -908,56 +908,7 @@ export default function ProductPageContent({
                   </div>
                 )}
                 
-                <div className="mb-3">
-                  <h3 className="font-bold text-gray-900 mb-1 text-base">Technische Eigenschaften:</h3>
-                  <ul className="space-y-0.5">
-                    {(() => {
-                      const productData = product as any
-                      if (productData?.general_technical_specs) {
-                        let specs = productData.general_technical_specs
-                        if (typeof specs === 'string') {
-                          try {
-                            specs = JSON.parse(specs)
-                          } catch {
-                            specs = null
-                          }
-                        }
-                        if (specs && Array.isArray(specs)) {
-                          return specs.map((spec: any, index: number) => (
-                            <li key={index} className="flex items-center text-xs" style={{color: '#A3A3A3'}}>
-                              <span className="mr-1">›</span>
-                              {spec.description || spec.title}
-                            </li>
-                          ))
-                        }
-                      }
-                      return (
-                        <>
-                          <li className="flex items-center text-xs" style={{color: '#A3A3A3'}}>
-                            <span className="mr-1">›</span>
-                            Premium Qualitätsmaterial
-                          </li>
-                          <li className="flex items-center text-xs" style={{color: '#A3A3A3'}}>
-                            <span className="mr-1">›</span>
-                            Langlebiges Design
-                          </li>
-                          <li className="flex items-center text-xs" style={{color: '#A3A3A3'}}>
-                            <span className="mr-1">›</span>
-                            Einfache Installation
-                          </li>
-                          <li className="flex items-center text-xs" style={{color: '#A3A3A3'}}>
-                            <span className="mr-1">›</span>
-                            2 Jahre Garantie
-                          </li>
-                          <li className="flex items-center text-xs" style={{color: '#A3A3A3'}}>
-                            <span className="mr-1">›</span>
-                            CE-Zertifikat
-                          </li>
-                        </>
-                      )
-                    })()}
-                  </ul>
-                </div>
+                
                 
                 {/* Stock Status Badge */}
                 <div className="mb-6">

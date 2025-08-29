@@ -404,12 +404,7 @@ export default function WaitlistProductDetailPage() {
     debouncedAutoSave(field, value)
   }
 
-  const handleGeneralTechnicalSpecsChange = (value: TechnicalSpec[]) => {
-    setFormData(prev => ({
-      ...prev,
-      general_technical_specs: value
-    }))
-  }
+  
 
   const handleSaveGeneral = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -630,7 +625,6 @@ export default function WaitlistProductDetailPage() {
               brands={brands}
               categories={categories}
               handleInputChange={handleInputChange}
-              handleGeneralTechnicalSpecsChange={handleGeneralTechnicalSpecsChange}
             />
           )}
 

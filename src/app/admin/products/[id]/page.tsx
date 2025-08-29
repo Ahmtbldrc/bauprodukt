@@ -830,12 +830,6 @@ export default function EditProductPage() {
               brands={brands}
               categories={categories}
               handleInputChange={handleInputChange}
-              handleGeneralTechnicalSpecsChange={(value) => {
-                setFormData(prev => ({
-                  ...prev,
-                  general_technical_specs: value
-                }))
-              }}
             />
           )}
 
