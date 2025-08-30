@@ -510,25 +510,13 @@ export default function ProductPageContent({
                 {activeTab === 'details' && (
                   <div className="prose max-w-none w-full">
                     <h3>Produktbeschreibung</h3>
-                    <p>
-                      Dieses Produkt wurde mit den neuesten Technologien der Marke {brand?.name} hergestellt. 
-                      Als führendes Produkt in der Kategorie {category?.name} wurde es mit Fokus auf 
-                      Benutzererfahrung entwickelt.
-                    </p>
-                    
-                    <h4>Anwendungsbereiche</h4>
-                    <ul>
-                      <li>Professionelle Anwendung</li>
-                      <li>Haus- und Büroapplikationen</li>
-                      <li>Industrielle Projekte</li>
-                      <li>Dekorative Zwecke</li>
-                    </ul>
-                    
-                    <h4>Produkteigenschaften</h4>
-                    <p>
-                      {product?.description || 'Dieses hochwertige Produkt'} wurde aus erstklassigen Materialien gefertigt und 
-                      bietet jahrelange Nutzungsmöglichkeiten. Es zeichnet sich durch einfache Montage und Wartungsvorteile aus.
-                    </p>
+                    {product?.description ? (
+                      <div className="text-sm text-gray-700 whitespace-pre-line">
+                        {product.description}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-500">Keine Produktbeschreibung vorhanden.</p>
+                    )}
                   </div>
                 )}
                 

@@ -169,4 +169,4 @@ export interface WaitlistInfo {
   requires_manual_review: boolean
 }
 
-export type ActiveTab = 'general' | 'variants' | 'images' | 'specifications' | 'documents' | 'conversion' | 'videos'
+export type ActiveTab = 'general' | 'variants' | 'images' | 'specifications' | 'documents' | 'conversion' | 'videos' | 'description'

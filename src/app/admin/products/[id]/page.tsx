@@ -14,6 +14,7 @@ import SpecificationsTab from '@/components/admin/tabs/SpecificationsTab'
 import VariantsTab from '@/components/admin/tabs/VariantsTab'
 import ImagesTab from '@/components/admin/tabs/ImagesTab'
 import DocumentsTab from '@/components/admin/tabs/DocumentsTab'
+import DescriptionTab from '@/components/admin/tabs/DescriptionTab'
 import ConversionTab from '@/components/admin/tabs/ConversionTab'
 import VideosTab from '@/components/admin/tabs/VideosTab'
 import PageHeader from '@/components/admin/PageHeader'
@@ -107,6 +108,7 @@ export default function EditProductPage() {
   const [isSavingGeneral, setIsSavingGeneral] = useState(false)
   const [isSavingConversion, setIsSavingConversion] = useState(false)
   const [isSavingSpecifications, setIsSavingSpecifications] = useState(false)
+  const [isSavingDescription, setIsSavingDescription] = useState(false)
   const [isSavingVariants,] = useState(false)
 
 
@@ -821,6 +823,7 @@ export default function EditProductPage() {
 
   const tabs: Array<{ id: ActiveTab; label: string; icon: React.ComponentType<{ className?: string }> }> = [
     { id: 'general', label: 'Allgemeine Informationen', icon: Info },
+    { id: 'description', label: 'Produktbeschreibung', icon: FileText },
     { id: 'specifications', label: 'Technische Details', icon: Settings },
     { id: 'variants', label: 'Varianten', icon: Package },
     { id: 'images', label: 'Bilder', icon: ImageIcon },
@@ -874,6 +877,37 @@ export default function EditProductPage() {
               onSave={handleSaveSpecifications}
               isSaving={isSavingSpecifications}
               openDeleteDialog={openSpecificationsDeleteDialog}
+            />
+          )}
+
+          {/* Description Tab */}
+          {activeTab === 'description' && (
+            <DescriptionTab
+              description={formData.description}
+              onChange={handleInputChange}
+              onSave={async () => {
+                setIsSavingDescription(true)
+                try {
+                  const response = await fetch(`/api/products/${productId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ description: formData.description })
+                  })
+                  if (!response.ok) {
+                    const errorText = await response.text()
+                    throw new Error(errorText || 'Fehler beim Speichern der Beschreibung')
+                  }
+                  const updated = await response.json()
+                  setFormData(prev => ({ ...prev, description: updated.description || '' }))
+                  toast.success('Beschreibung gespeichert!')
+                } catch (err) {
+                  console.error(err)
+                  toast.error('Beschreibung konnte nicht gespeichert werden')
+                } finally {
+                  setIsSavingDescription(false)
+                }
+              }}
+              isSaving={isSavingDescription}
             />
           )}
 
@@ -969,6 +1003,8 @@ export default function EditProductPage() {
             />
           </div>
         )}
+
+        {/* Form Actions - Description tab uses its own button inside */}
 
         {/* Form Actions - Dönüşüm faktörleri için */}
         {activeTab === 'conversion' && (

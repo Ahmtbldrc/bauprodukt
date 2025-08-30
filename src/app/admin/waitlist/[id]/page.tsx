@@ -32,6 +32,7 @@ import SpecificationsTab from '@/components/admin/tabs/SpecificationsTab'
 import VariantsTab from '@/components/admin/tabs/VariantsTab'
 import ImagesTab from '@/components/admin/tabs/ImagesTab'
 import DocumentsTab from '@/components/admin/tabs/DocumentsTab'
+import DescriptionTab from '@/components/admin/tabs/DescriptionTab'
 import ConversionTab from '@/components/admin/tabs/ConversionTab'
 import VideosTab from '@/components/admin/tabs/VideosTab'
 import VideoDialog from '@/components/admin/VideoDialog'
@@ -133,6 +134,7 @@ export default function WaitlistProductDetailPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('general')
   const [isSavingGeneral, setIsSavingGeneral] = useState(false)
   const [isSavingConversion, setIsSavingConversion] = useState(false)
+  const [isSavingDescription, setIsSavingDescription] = useState(false)
   const [isAutoSaving, setIsAutoSaving] = useState(false)
 
   const [specifications, setSpecifications] = useState<Specifications>({
@@ -598,6 +600,7 @@ export default function WaitlistProductDetailPage() {
 
   const tabs: Array<{ id: ActiveTab; label: string; icon: React.ComponentType<{ className?: string }> }> = [
     { id: 'general', label: 'Allgemeine Informationen', icon: Info },
+    { id: 'description', label: 'Produktbeschreibung', icon: FileText },
     { id: 'specifications', label: 'Technische Details', icon: Settings },
     { id: 'variants', label: 'Varianten', icon: Package },
     { id: 'images', label: 'Bilder', icon: ImageIcon },
@@ -642,6 +645,40 @@ export default function WaitlistProductDetailPage() {
               handleSpecificationChange={handleSpecificationChange}
               openDeleteDialog={openSpecificationsDeleteDialog}
               isAutoSaving={isAutoSaving}
+            />
+          )}
+
+          {/* Description Tab */}
+          {activeTab === 'description' && (
+            <DescriptionTab
+              description={formData.description}
+              onChange={handleInputChange}
+              onSave={async () => {
+                setIsSavingDescription(true)
+                try {
+                  const updatedPayload = {
+                    ...entry?.payload_json,
+                    description: formData.description
+                  }
+                  const response = await fetch(`/api/waitlist/${entryId}/update`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ payload_json: updatedPayload })
+                  })
+                  if (!response.ok) {
+                    const errorText = await response.text()
+                    throw new Error(errorText || 'Fehler beim Speichern der Beschreibung')
+                  }
+                  toast.success('Beschreibung gespeichert!')
+                  await loadWaitlistEntry()
+                } catch (err) {
+                  console.error(err)
+                  toast.error('Beschreibung konnte nicht gespeichert werden')
+                } finally {
+                  setIsSavingDescription(false)
+                }
+              }}
+              isSaving={isSavingDescription}
             />
           )}
 
