@@ -126,6 +126,19 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
     }
 
+    // Fetch manual stock toggle directly from products table (not included in view)
+    let allowManualStockEdit = false
+    try {
+      const { data: flagRow } = await (supabase as any)
+        .from('products')
+        .select('allow_manual_stock_edit')
+        .eq('id', id)
+        .single()
+      allowManualStockEdit = !!flagRow?.allow_manual_stock_edit
+    } catch {
+      allowManualStockEdit = false
+    }
+
     // Prepare response with variant information
     const productWithVariants = {
       ...data,
@@ -168,7 +181,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         slug: data.category_slug,
         parent_id: data.category_parent_id,
         created_at: ''
-      } : null
+      } : null,
+      // Expose manual stock edit flag directly
+      allow_manual_stock_edit: allowManualStockEdit
     }
 
     return NextResponse.json(productWithVariants)
@@ -205,9 +220,15 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         .trim()
     }
 
+    // Ensure allow_manual_stock_edit is forwarded even if schema omitted it
+    const updatePayload = {
+      ...validation.data,
+      ...(typeof body.allow_manual_stock_edit === 'boolean' ? { allow_manual_stock_edit: body.allow_manual_stock_edit } : {})
+    }
+
     const { data, error: updateError } = await (supabase as any)
       .from('products')
-      .update(validation.data)
+      .update(updatePayload)
       .eq('id', id)
       .select('*')
       .single()

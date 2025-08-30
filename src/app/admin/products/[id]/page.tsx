@@ -96,6 +96,7 @@ export default function EditProductPage() {
     image_url: '',
     brand_id: '',
     category_id: '',
+    allow_manual_stock_edit: false,
     technical_specs: [],
     general_technical_specs: []
   })
@@ -573,11 +574,41 @@ export default function EditProductPage() {
     checkWaitlistStatus()
   }, [product])
 
+  // Load allow_manual_stock_edit directly from products table (no view dependency)
+  useEffect(() => {
+    const loadManualStockFlag = async () => {
+      if (!product) return
+      try {
+        const { data } = await (supabase as any)
+          .from('products')
+          .select('allow_manual_stock_edit')
+          .eq('id', product.id)
+          .single()
+
+        setFormData(prev => ({
+          ...prev,
+          allow_manual_stock_edit: data?.allow_manual_stock_edit ?? false
+        }))
+      } catch {
+        // default false if not found
+        setFormData(prev => ({
+          ...prev,
+          allow_manual_stock_edit: false
+        }))
+      }
+    }
+    loadManualStockFlag()
+  }, [product])
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
+    const target = e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    const { name } = target
+    const value = (target as HTMLInputElement).type === 'checkbox'
+      ? (target as HTMLInputElement).checked
+      : target.value
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value as any
     }))
   }
 
@@ -645,13 +676,14 @@ export default function EditProductPage() {
         price: formData.price ? parseFloat(formData.price) : 0,
         discount_price: formData.discount_price ? parseFloat(formData.discount_price) : null,
         stock: formData.stock ? parseInt(formData.stock) : 0,
-        stock_code: formData.stock_code || null,
-        art_nr: formData.art_nr || null,
-        hersteller_nr: formData.hersteller_nr || null,
-        image_url: formData.image_url || null,
-        brand_id: formData.brand_id || null,
-        category_id: formData.category_id || null,
-        general_technical_specs: formData.general_technical_specs || null,
+        stock_code: formData.stock_code || undefined,
+        art_nr: formData.art_nr || undefined,
+        hersteller_nr: formData.hersteller_nr || undefined,
+        image_url: formData.image_url || undefined,
+        brand_id: formData.brand_id || undefined,
+        category_id: formData.category_id || undefined,
+        general_technical_specs: formData.general_technical_specs || undefined,
+        allow_manual_stock_edit: formData.allow_manual_stock_edit ?? false,
       }
       
       console.log('Request Body:', requestBody)
@@ -720,7 +752,8 @@ export default function EditProductPage() {
           hersteller_nr: updatedProduct.hersteller_nr || prev.hersteller_nr,
           image_url: updatedProduct.image_url || prev.image_url,
           brand_id: updatedProduct.brand_id || prev.brand_id,
-          category_id: updatedProduct.category_id || prev.category_id
+          category_id: updatedProduct.category_id || prev.category_id,
+          allow_manual_stock_edit: (updatedProduct as any).allow_manual_stock_edit ?? prev.allow_manual_stock_edit
         }
         console.log('New form data:', newFormData)
         console.log('art_nr in new form:', newFormData.art_nr)

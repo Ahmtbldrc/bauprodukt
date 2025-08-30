@@ -123,6 +123,7 @@ export default function WaitlistProductDetailPage() {
     image_url: '',
     brand_id: '',
     category_id: '',
+    allow_manual_stock_edit: false,
     technical_specs: [],
     general_technical_specs: []
   })
@@ -219,6 +220,7 @@ export default function WaitlistProductDetailPage() {
           image_url: productData.image_url || '',
           brand_id: productData.brand_id || '',
           category_id: productData.category_id || '',
+          allow_manual_stock_edit: (productData as any).allow_manual_stock_edit ?? false,
           technical_specs: [],
           general_technical_specs: Array.isArray(productData.general_technical_specs) ? productData.general_technical_specs : []
         })
@@ -339,10 +341,14 @@ export default function WaitlistProductDetailPage() {
   }, [entryId, loadWaitlistEntry])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
+    const target = e.target as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    const { name } = target
+    const value = (target as HTMLInputElement).type === 'checkbox'
+      ? (target as HTMLInputElement).checked
+      : target.value
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value as any
     }))
   }
 
@@ -426,6 +432,7 @@ export default function WaitlistProductDetailPage() {
         brand_id: formData.brand_id || null,
         category_id: formData.category_id || null,
         general_technical_specs: formData.general_technical_specs || null,
+        allow_manual_stock_edit: formData.allow_manual_stock_edit ?? false,
       }
 
       console.log('Updated payload:', updatedPayload)

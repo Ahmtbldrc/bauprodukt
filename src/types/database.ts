@@ -134,6 +134,7 @@ export interface Product {
   images: Record<string, unknown>[] | null
   status: string
   is_changeable: boolean
+  allow_manual_stock_edit?: boolean
   language: string
   raw_variant_data: Record<string, unknown> | null
   brand_id: string | null

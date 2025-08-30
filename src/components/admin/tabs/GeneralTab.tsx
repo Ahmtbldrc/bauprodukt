@@ -16,6 +16,7 @@ interface GeneralTabProps {
     image_url: string
     brand_id: string
     category_id: string
+    allow_manual_stock_edit?: boolean
     technical_specs: Array<{
       id?: string
       title: string
@@ -184,11 +185,39 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
 
       {/* Lagerbestand */}
       <div className="grid grid-cols-1 gap-6">
-        {/* Stok Miktarı - Sol */}
+        {/* Toggle + Stock Input */}
         <div>
-          <label htmlFor="stock" className="block text-sm font-medium text-gray-700 mb-2">
-            Lagerbestand *
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label htmlFor="stock" className="block text-sm font-medium text-gray-700">
+              Lagerbestand *
+            </label>
+            <button
+              type="button"
+              aria-checked={!!formData.allow_manual_stock_edit}
+              role="switch"
+              onClick={() => {
+                const next = !formData.allow_manual_stock_edit
+                handleInputChange({
+                  target: {
+                    name: 'allow_manual_stock_edit',
+                    value: next,
+                    checked: next,
+                    type: 'checkbox'
+                  }
+                } as unknown as React.ChangeEvent<HTMLInputElement>)
+              }}
+              className="inline-flex items-center gap-2 cursor-pointer select-none"
+            >
+              <div
+                className={`w-10 h-6 rounded-full relative transition-colors duration-200 ${formData.allow_manual_stock_edit ? 'bg-[#F39236]' : 'bg-gray-200'}`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 h-5 w-5 bg-white rounded-full shadow transition-transform duration-200 ${formData.allow_manual_stock_edit ? 'translate-x-4' : ''}`}
+                />
+              </div>
+              <span className="text-xs text-gray-600">Manuelle Bearbeitung erlauben</span>
+            </button>
+          </div>
           <input
             type="number"
             id="stock"
@@ -196,9 +225,12 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
             value={formData.stock}
             onChange={handleInputChange}
             min="0"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200"
+            className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200 ${
+              formData.allow_manual_stock_edit ? '' : 'bg-gray-50'
+            }`}
             style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
             required
+            readOnly={!formData.allow_manual_stock_edit}
           />
         </div>
       </div>

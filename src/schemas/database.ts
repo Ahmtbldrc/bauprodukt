@@ -65,6 +65,7 @@ const baseProductSchema = z.object({
   image_url: z.string().url('Geçerli bir URL giriniz').optional(),
   brand_id: z.string().uuid('Geçerli bir marka seçiniz').optional(),
   category_id: z.string().uuid('Geçerli bir kategori seçiniz').optional(),
+  allow_manual_stock_edit: z.boolean().optional(),
   specifications_data: z.record(z.unknown()).optional(),
   general_technical_specs: z.array(z.object({
     id: z.string().optional(),
