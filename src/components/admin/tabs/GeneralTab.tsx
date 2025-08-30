@@ -65,7 +65,7 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
         <div>
           <div className="flex items-center justify-between mb-2">
             <label htmlFor="stock" className="block text-sm font-medium text-gray-700">
-              Lagerbestand *
+              Lagerbestand
             </label>
             <button
               type="button"
@@ -105,7 +105,6 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
               formData.allow_manual_stock_edit ? '' : 'bg-gray-50'
             }`}
             style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
-            required
             readOnly={!formData.allow_manual_stock_edit}
           />
         </div>
