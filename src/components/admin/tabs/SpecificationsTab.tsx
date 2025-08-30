@@ -54,7 +54,7 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
         <Settings className="h-6 w-6 text-[#F39236]" />
-        <h3 className="text-xl font-semibold text-gray-900">Technische Spezifikationen</h3>
+        <h3 className="text-xl font-semibold text-gray-900">Technische Details</h3>
         {isAutoSaving && (
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#F39236]"></div>
@@ -189,7 +189,7 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
             className="px-6 py-3 bg-[#F39236] text-white rounded-md hover:bg-[#E67E22] disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2"
           >
             <Settings className="h-4 w-4" />
-            {isSaving ? 'Wird gespeichert...' : 'Technische Spezifikationen speichern'}
+            {isSaving ? 'Wird gespeichert...' : 'Technische Details speichern'}
           </button>
         </div>
       )}

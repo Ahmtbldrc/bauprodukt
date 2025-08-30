@@ -598,7 +598,7 @@ export default function WaitlistProductDetailPage() {
 
   const tabs: Array<{ id: ActiveTab; label: string; icon: React.ComponentType<{ className?: string }> }> = [
     { id: 'general', label: 'Allgemeine Informationen', icon: Info },
-    { id: 'specifications', label: 'Technische Spezifikationen', icon: Settings },
+    { id: 'specifications', label: 'Technische Details', icon: Settings },
     { id: 'variants', label: 'Varianten', icon: Package },
     { id: 'images', label: 'Bilder', icon: ImageIcon },
     { id: 'documents', label: 'Dokumente', icon: FileText },
