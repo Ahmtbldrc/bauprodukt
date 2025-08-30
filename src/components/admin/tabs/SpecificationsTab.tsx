@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Settings, Plus, Trash2 } from 'lucide-react'
+import { Settings, Plus, Trash2, Pencil, Check, X } from 'lucide-react'
 
 interface TechnicalSpec {
   id?: string
@@ -33,6 +33,13 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
     sort_order: 0
   })
 
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingIndex, setEditingIndex] = useState<number | null>(null)
+  const [editingValues, setEditingValues] = useState<{ title: string; description: string }>({
+    title: '',
+    description: ''
+  })
+
   const handleAddSpec = async () => {
     if (newSpec.title.trim() && newSpec.description.trim()) {
       const specs = [...specifications.technical_specs]
@@ -46,6 +53,39 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
       handleSpecificationChange('technical_specs', [...specs, specToAdd])
       setNewSpec({ title: '', description: '', sort_order: 0 })
     }
+  }
+
+  const startEdit = (spec: TechnicalSpec, index: number) => {
+    setEditingId(spec.id ?? null)
+    setEditingIndex(index)
+    setEditingValues({ title: spec.title, description: spec.description })
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditingIndex(null)
+    setEditingValues({ title: '', description: '' })
+  }
+
+  const saveEdit = () => {
+    if (editingId === null && editingIndex === null) return
+    const specs = [...specifications.technical_specs]
+    const targetIndex = editingId
+      ? specs.findIndex(s => s.id === editingId)
+      : editingIndex ?? -1
+    if (targetIndex < 0) {
+      cancelEdit()
+      return
+    }
+    const target = specs[targetIndex]
+    const updated: TechnicalSpec = {
+      ...target,
+      title: editingValues.title.trim(),
+      description: editingValues.description.trim()
+    }
+    specs[targetIndex] = updated
+    handleSpecificationChange('technical_specs', specs)
+    cancelEdit()
   }
 
 
@@ -139,36 +179,105 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
               ) : (
                 specifications.technical_specs
                   .sort((a, b) => a.sort_order - b.sort_order)
-                  .map((spec, index) => (
-                    <tr key={spec.id || index} className="hover:bg-gray-50 transition-colors duration-150">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
-                        {index + 1}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className="font-medium text-gray-900">{spec.title}</span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        <span className="text-gray-700">{spec.description}</span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex gap-2">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              openDeleteDialog(index)
-                            }}
-                            disabled={isAutoSaving}
-                            className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="Löschen"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                  .map((spec, index) => {
+                    const isEditing = editingId ? spec.id === editingId : editingIndex === index
+                    return (
+                      <tr key={spec.id || index} className="hover:bg-gray-50 transition-colors duration-150">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
+                          {index + 1}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editingValues.title}
+                              onChange={(e) => setEditingValues({ ...editingValues, title: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200"
+                              style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
+                            />
+                          ) : (
+                            <span className="font-medium text-gray-900">{spec.title}</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {isEditing ? (
+                            <input
+                              type="text"
+                              value={editingValues.description}
+                              onChange={(e) => setEditingValues({ ...editingValues, description: e.target.value })}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200"
+                              style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
+                            />
+                          ) : (
+                            <span className="text-gray-700">{spec.description}</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex gap-2">
+                            {isEditing ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    saveEdit()
+                                  }}
+                                  disabled={isAutoSaving || !editingValues.title.trim() || !editingValues.description.trim()}
+                                  className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title="Speichern"
+                                >
+                                  <Check className="h-4 w-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    cancelEdit()
+                                  }}
+                                  disabled={isAutoSaving}
+                                  className="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-50 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title="Abbrechen"
+                                >
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    startEdit(spec, index)
+                                  }}
+                                  disabled={isAutoSaving}
+                                  className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title="Bearbeiten"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    openDeleteDialog(index)
+                                  }}
+                                  disabled={isAutoSaving}
+                                  className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  title="Löschen"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })
               )}
             </tbody>
           </table>
