@@ -4,6 +4,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { Bell, LogOut, Search, Plus, Package, BarChart3, X } from 'lucide-react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
 import { useAdminAuth } from '@/contexts/AdminAuthContext'
 import { useAdminSearch } from '@/contexts/AdminSearchContext'
 import { useRouter, usePathname } from 'next/navigation'
@@ -11,6 +13,9 @@ import { useRouter, usePathname } from 'next/navigation'
 export function AdminHeader() {
   const [activeFilter, setActiveFilter] = useState('Dieser Monat')
   const [showNotifications, setShowNotifications] = useState(false)
+  const [showCreateBrand, setShowCreateBrand] = useState(false)
+  const [brandName, setBrandName] = useState('')
+  const [brandSlug, setBrandSlug] = useState('')
   const [notifications, setNotifications] = useState<Array<{
     id: string
     type: 'waitlist' | 'order' | 'system'
@@ -25,6 +30,39 @@ export function AdminHeader() {
   const { searchQuery, setSearchQuery, waitlistFilters, setWaitlistFilters } = useAdminSearch()
   const router = useRouter()
   const pathname = usePathname()
+  const queryClient = useQueryClient()
+
+  const createBrandMutation = useMutation({
+    mutationFn: async (payload: { name: string; slug?: string }) => {
+      const response = await fetch('/api/brands', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: payload.name, slug: payload.slug }),
+      })
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        throw new Error(err?.error || 'Marke konnte nicht erstellt werden')
+      }
+      return response.json()
+    },
+    onSuccess: () => {
+      toast.success('Marke erfolgreich erstellt')
+      queryClient.invalidateQueries({ queryKey: ['brands'] })
+      setShowCreateBrand(false)
+      setBrandName('')
+      setBrandSlug('')
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || 'Fehler beim Erstellen der Marke')
+    },
+  })
+
+  const generateSlug = (text: string) =>
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .trim()
   
   const timeFilters = ['Heute', 'Diese Woche', 'Dieser Monat', 'Berichte']
 
@@ -228,6 +266,14 @@ export function AdminHeader() {
                 style={{ fontFamily: 'var(--font-blinker)' }}
               />
             </div>
+            <button
+              onClick={() => setShowCreateBrand(true)}
+              className="px-8 py-3 text-sm font-medium rounded-full border border-gray-300 bg-gray-900 text-white hover:bg-gray-800 transition-all duration-200 shadow-sm flex items-center gap-2"
+              style={{ fontFamily: 'var(--font-blinker)' }}
+            >
+              <Plus className="h-4 w-4" />
+              Neue Marke
+            </button>
           </div>
         )
       }
@@ -573,6 +619,75 @@ export function AdminHeader() {
           </div>
         </div>
       </div>
+
+      {/* Create Brand Dialog */}
+      {showCreateBrand && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div 
+            className="absolute inset-0 backdrop-blur-sm"
+            style={{ backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
+            onClick={() => !createBrandMutation.isPending && setShowCreateBrand(false)}
+          />
+          <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <button
+              onClick={() => !createBrandMutation.isPending && setShowCreateBrand(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              disabled={createBrandMutation.isPending}
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Neue Marke hinzufügen</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input
+                  type="text"
+                  value={brandName}
+                  onChange={(e) => setBrandName(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#F39237] focus:border-[#F39237]"
+                  placeholder="z.B. Bosch"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Slug (optional)</label>
+                <input
+                  type="text"
+                  value={brandSlug}
+                  onChange={(e) => setBrandSlug(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#F39237] focus:border-[#F39237]"
+                  placeholder="z.B. bosch"
+                />
+                <p className="text-xs text-gray-500 mt-1">Leer lassen, um automatisch aus dem Namen zu generieren.</p>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-100">
+              <button
+                onClick={() => setShowCreateBrand(false)}
+                disabled={createBrandMutation.isPending}
+                className="px-4 py-2 rounded-lg border disabled:opacity-50"
+                style={{
+                  color: '#F39237',
+                  borderColor: '#F39237',
+                }}
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={() => createBrandMutation.mutate({ name: brandName.trim(), slug: brandSlug.trim() || undefined })}
+                disabled={!brandName.trim() || createBrandMutation.isPending}
+                className="px-4 py-2 rounded-lg text-white disabled:opacity-50"
+                style={{
+                  backgroundColor: '#F39237',
+                }}
+              >
+                {createBrandMutation.isPending ? 'Wird erstellt...' : 'Erstellen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   )
 } 

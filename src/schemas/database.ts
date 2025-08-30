@@ -10,7 +10,7 @@ export const brandSchema = z.object({
 
 export const createBrandSchema = z.object({
   name: z.string().min(1, 'Marka adı gerekli').max(255, 'Marka adı çok uzun'),
-  slug: z.string().min(1, 'Slug gerekli').max(255, 'Slug çok uzun').regex(/^[a-z0-9-]+$/, 'Slug sadece küçük harf, rakam ve tire içerebilir')
+  slug: z.string().min(1, 'Slug gerekli').max(255, 'Slug çok uzun').regex(/^[a-z0-9-]+$/, 'Slug sadece küçük harf, rakam ve tire içerebilir').optional()
 })
 
 export const updateBrandSchema = createBrandSchema.partial()

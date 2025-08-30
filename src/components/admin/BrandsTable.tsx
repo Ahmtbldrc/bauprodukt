@@ -9,9 +9,17 @@ import Link from 'next/link'
 
 interface BrandsTableProps {
   onDeleteBrand?: (brandId: string) => void
+  onEditBrand?: (brand: {
+    id: string
+    name: string
+    slug: string
+    description?: string
+    logo?: string
+    created_at: string
+  }) => void
 }
 
-export function BrandsTable({ onDeleteBrand }: BrandsTableProps) {
+export function BrandsTable({ onDeleteBrand, onEditBrand }: BrandsTableProps) {
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(8)
   const { searchQuery } = useAdminSearch()
@@ -172,13 +180,23 @@ export function BrandsTable({ onDeleteBrand }: BrandsTableProps) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
-                        <Link
-                          href={`/admin/brands/${brand.id}`}
-                          className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
-                          title="Bearbeiten"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Link>
+                        {onEditBrand ? (
+                          <button
+                            onClick={() => onEditBrand(brand)}
+                            className="text-gray-700 p-1 rounded hover:bg-gray-100"
+                            title="Bearbeiten"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                        ) : (
+                          <Link
+                            href={`/admin/brands/${brand.id}`}
+                            className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
+                            title="Bearbeiten"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Link>
+                        )}
                         <button
                           onClick={() => onDeleteBrand?.(brand.id)}
                           className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"

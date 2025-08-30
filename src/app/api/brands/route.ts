@@ -54,22 +54,22 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    
+
+    // Generate slug from name if not provided BEFORE validation
+    if (!body.slug && body.name) {
+      body.slug = body.name
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .trim()
+    }
+
     const validation = validateBrand(body)
     if (!validation.success) {
       return NextResponse.json(
         { error: 'Validation failed', details: validation.error.errors },
         { status: 400 }
       )
-    }
-
-    // Generate slug from name if not provided
-    if (!body.slug) {
-      body.slug = body.name
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .trim()
     }
 
     const { data, error } = await (supabase as any)
