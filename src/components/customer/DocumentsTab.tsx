@@ -18,11 +18,37 @@ interface CustomerDocumentsTabProps {
 }
 
 export default function CustomerDocumentsTab({ documents }: CustomerDocumentsTabProps) {
-  const [selectedDocument] = useState<ProductDocument | null>(null)
+  const [selectedDocument, setSelectedDocument] = useState<ProductDocument | null>(null)
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false)
   const [isCombinedPdfViewerOpen, setIsCombinedPdfViewerOpen] = useState(false)
   const [combinedPdfUrl, setCombinedPdfUrl] = useState<string | null>(null)
 
+  // Split documents into images and PDFs
+  const pdfDocuments = documents.filter((doc) =>
+    (doc.file_type && /pdf/i.test(doc.file_type)) || /\.pdf($|\?)/i.test(doc.file_url)
+  )
+  const imageDocuments = documents.filter((doc) => !pdfDocuments.includes(doc))
+
+  const isPdf = (doc: ProductDocument) =>
+    (doc.file_type && /pdf/i.test(doc.file_type)) || /\.pdf($|\?)/i.test(doc.file_url)
+
+  const downloadFile = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url)
+      if (!response.ok) throw new Error('Download failed')
+      const blob = await response.blob()
+      const objectUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = objectUrl
+      link.download = filename
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(objectUrl)
+    } catch (error) {
+      console.error('Error downloading file:', error)
+    }
+  }
 
   const handleDownloadPdf = async () => {
     if (!selectedDocument) return
@@ -117,15 +143,15 @@ export default function CustomerDocumentsTab({ documents }: CustomerDocumentsTab
     }
   }
 
-  const handleDownloadAllAsPdf = async () => {
-    if (documents.length === 0) return
+  const handleDownloadImagesAsPdf = async () => {
+    if (imageDocuments.length === 0) return
 
     try {
       const pdf = new jsPDF('p', 'mm', 'a4')
       
       // Process all images sequentially - each gets its own page
-      for (let i = 0; i < documents.length; i++) {
-        const doc = documents[i]
+      for (let i = 0; i < imageDocuments.length; i++) {
+        const doc = imageDocuments[i]
         
         // Each document gets its own page (except first one)
         if (i > 0) {
@@ -220,7 +246,7 @@ export default function CustomerDocumentsTab({ documents }: CustomerDocumentsTab
       }
       
       // Save PDF after all images are processed
-      pdf.save('alle_produktdokumente.pdf')
+      pdf.save('bilder_als_pdf.pdf')
       
     } catch (error) {
       console.error('Error creating PDF:', error)
@@ -228,15 +254,15 @@ export default function CustomerDocumentsTab({ documents }: CustomerDocumentsTab
     }
   }
 
-  const handleViewCombinedPdf = async () => {
-    if (documents.length === 0) return
+  const handleViewCombinedImagesPdf = async () => {
+    if (imageDocuments.length === 0) return
 
     try {
       const pdf = new jsPDF('p', 'mm', 'a4')
       
       // Process all images sequentially - each gets its own page
-      for (let i = 0; i < documents.length; i++) {
-        const doc = documents[i]
+      for (let i = 0; i < imageDocuments.length; i++) {
+        const doc = imageDocuments[i]
         
         // Each document gets its own page (except first one)
         if (i > 0) {
@@ -342,6 +368,24 @@ export default function CustomerDocumentsTab({ documents }: CustomerDocumentsTab
     }
   }
 
+  const handleDownloadAllPdfs = async () => {
+    try {
+      if (imageDocuments.length > 0) {
+        await handleDownloadImagesAsPdf()
+      }
+      // Trigger downloads for all additional PDF documents
+      for (const doc of pdfDocuments) {
+        try {
+          await downloadFile(doc.file_url, `${doc.title || 'dokument'}.pdf`)
+        } catch (err) {
+          console.error('Error downloading PDF:', err)
+        }
+      }
+    } catch (error) {
+      console.error('Error downloading PDFs:', error)
+    }
+  }
+
   if (documents.length === 0) {
     return (
       <div className="space-y-6">
@@ -375,50 +419,78 @@ export default function CustomerDocumentsTab({ documents }: CustomerDocumentsTab
           <span className="text-sm text-gray-600 bg-gray-100 px-3 py-2 rounded-lg">
             {documents.length} Dokument{documents.length === 1 ? '' : 'e'}
           </span>
-          
-          <button
-            onClick={handleDownloadAllAsPdf}
-            className="flex items-center gap-2 px-4 py-2 bg-[#F39236] text-white rounded-lg hover:bg-[#E67E22] transition-colors"
-          >
-            <Download className="h-4 w-4" />
-            Alle als PDF herunterladen
-          </button>
+          {(imageDocuments.length > 0 || pdfDocuments.length > 0) && (
+            <button
+              onClick={handleDownloadAllPdfs}
+              className="flex items-center gap-2 px-4 py-2 bg-[#F39236] text-white rounded-lg hover:bg-[#E67E22] transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              Alle als PDF herunterladen
+            </button>
+          )}
         </div>
       </div>
 
-      {/* PDF Card with Image */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <div className="text-center">
-          {/* PDF Image with Play Icon */}
-          <div className="relative mb-6">
-            <div className="w-32 h-40 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 mx-auto flex items-center justify-center">
-              <div className="text-center">
-                <FileText className="h-16 w-16 text-gray-400 mx-auto mb-2" />
-                <p className="text-xs text-gray-500">PDF</p>
+      {/* Cards: Combined images PDF and each existing PDF side by side */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {imageDocuments.length > 0 && (
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="text-center">
+              <div className="relative mb-6">
+                <div className="w-32 h-40 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 mx-auto flex items-center justify-center">
+                  <div className="text-center">
+                    <FileText className="h-16 w-16 text-gray-400 mx-auto mb-2" />
+                    <p className="text-xs text-gray-500">PDF</p>
+                  </div>
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <button
+                    onClick={handleViewCombinedImagesPdf}
+                    className="w-12 h-12 bg-[#F39236] rounded-full flex items-center justify-center hover:bg-[#E67E22] transition-colors shadow-lg border-2 border-[#F39236]"
+                  >
+                    <Eye className="h-6 w-6 text-white" />
+                  </button>
+                </div>
               </div>
-            </div>
-            
-            {/* Play/View Icon Overlay */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <button
-                onClick={handleViewCombinedPdf}
-                className="w-12 h-12 bg-[#F39236] rounded-full flex items-center justify-center hover:bg-[#E67E22] transition-colors shadow-lg border-2 border-[#F39236]"
-              >
-                <Eye className="h-6 w-6 text-white" />
-              </button>
+              <p className="text-sm text-gray-600">
+                {imageDocuments.length} Bild{imageDocuments.length === 1 ? '' : 'er'} zu einem PDF zusammengefasst
+              </p>
             </div>
           </div>
-          
-          <p className="text-sm text-gray-600">
-            {documents.length} Dokument{documents.length === 1 ? '' : 'e'} in einem PDF zusammengefasst
-          </p>
-        </div>
+        )}
+
+        {pdfDocuments.map((doc) => (
+          <div key={doc.id} className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="text-center">
+              <div className="relative mb-6">
+                <div className="w-32 h-40 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 mx-auto flex items-center justify-center">
+                  <div className="text-center">
+                    <FileText className="h-16 w-16 text-gray-400 mx-auto mb-2" />
+                    <p className="text-xs text-gray-500">PDF</p>
+                  </div>
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <button
+                    onClick={() => {
+                      setSelectedDocument(doc)
+                      setIsPdfViewerOpen(true)
+                    }}
+                    className="w-12 h-12 bg-[#F39236] rounded-full flex items-center justify-center hover:bg-[#E67E22] transition-colors shadow-lg border-2 border-[#F39236]"
+                  >
+                    <Eye className="h-6 w-6 text-white" />
+                  </button>
+                </div>
+              </div>
+              <p className="text-sm text-gray-600 truncate">{doc.title}</p>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* PDF Viewer Modal */}
       {isPdfViewerOpen && selectedDocument && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg max-w-4xl max-h-[90vh] overflow-hidden">
+          <div className="bg-white rounded-lg w-full max-w-6xl max-h-[92vh] overflow-hidden">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">
@@ -426,13 +498,23 @@ export default function CustomerDocumentsTab({ documents }: CustomerDocumentsTab
               </h3>
               
               <div className="flex items-center gap-2">
-                <button
-                  onClick={handleDownloadPdf}
-                  className="flex items-center gap-2 px-3 py-2 bg-[#F39236] text-white rounded hover:bg-[#E67E22] transition-colors"
-                >
-                  <Download className="h-4 w-4" />
-                  PDF herunterladen
-                </button>
+                {isPdf(selectedDocument) ? (
+                  <button
+                    onClick={() => downloadFile(selectedDocument.file_url, `${selectedDocument.title || 'dokument'}.pdf`)}
+                    className="flex items-center gap-2 px-3 py-2 bg-[#F39236] text-white rounded hover:bg-[#E67E22] transition-colors"
+                  >
+                    <Download className="h-4 w-4" />
+                    PDF herunterladen
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleDownloadPdf}
+                    className="flex items-center gap-2 px-3 py-2 bg-[#F39236] text-white rounded hover:bg-[#E67E22] transition-colors"
+                  >
+                    <Download className="h-4 w-4" />
+                    PDF herunterladen
+                  </button>
+                )}
                 
                 <button
                   onClick={() => setIsPdfViewerOpen(false)}
@@ -444,16 +526,26 @@ export default function CustomerDocumentsTab({ documents }: CustomerDocumentsTab
             </div>
             
             {/* Modal Content */}
-            <div className="p-4 max-h-[70vh] overflow-y-auto">
-              <div className="text-center">
-                <Image
-                  src={selectedDocument.file_url}
-                  alt={selectedDocument.title}
-                  width={600}
-                  height={600}
-                  className="max-w-full h-auto rounded-lg shadow-lg"
-                />
-              </div>
+            <div className="p-4 max-h-[80vh] overflow-y-auto">
+              {isPdf(selectedDocument) ? (
+                <div className="bg-gray-100 rounded-lg overflow-hidden min-h-[80vh]">
+                  <iframe
+                    src={selectedDocument.file_url}
+                    className="w-full h-[80vh] border-0"
+                    title={selectedDocument.title}
+                  />
+                </div>
+              ) : (
+                <div className="text-center">
+                  <Image
+                    src={selectedDocument.file_url}
+                    alt={selectedDocument.title}
+                    width={900}
+                    height={900}
+                    className="max-w-full h-auto rounded-lg shadow-lg"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -476,7 +568,7 @@ export default function CustomerDocumentsTab({ documents }: CustomerDocumentsTab
           />
           
           {/* Dialog */}
-          <div className="relative bg-white/90 backdrop-blur-sm rounded-lg shadow-xl max-w-6xl w-full mx-4 p-6 max-h-[90vh] overflow-y-auto transition-all duration-300 transform opacity-100 scale-100 translate-y-0 border border-white/20">
+          <div className="relative bg-white/90 backdrop-blur-sm rounded-lg shadow-xl max-w-[1200px] w-full mx-4 p-6 max-h-[92vh] overflow-y-auto transition-all duration-300 transform opacity-100 scale-100 translate-y-0 border border-white/20">
             {/* Close Button */}
             <button
               onClick={() => {
@@ -499,10 +591,10 @@ export default function CustomerDocumentsTab({ documents }: CustomerDocumentsTab
             
             {/* PDF Viewer */}
             <div className="mb-6">
-              <div className="bg-gray-100 rounded-lg overflow-hidden min-h-[600px]">
+              <div className="bg-gray-100 rounded-lg overflow-hidden min-h-[720px]">
                 <iframe
                   src={combinedPdfUrl}
-                  className="w-full h-full min-h-[600px] border-0"
+                  className="w-full h-full min-h-[720px] border-0"
                   title="Birleşik PDF Görüntüleyici"
                 />
               </div>
@@ -510,7 +602,7 @@ export default function CustomerDocumentsTab({ documents }: CustomerDocumentsTab
             
             <div className="flex justify-end mt-6 pt-4 border-t border-gray-100">
               <button
-                onClick={handleDownloadAllAsPdf}
+                onClick={handleDownloadImagesAsPdf}
                 className="px-4 py-2 bg-[#F39236] text-white font-medium rounded-lg hover:bg-[#E67E22] transition-colors"
               >
                 PDF İndir
