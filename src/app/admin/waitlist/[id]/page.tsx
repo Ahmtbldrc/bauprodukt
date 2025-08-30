@@ -153,7 +153,7 @@ export default function WaitlistProductDetailPage() {
 
   const [videos, setVideos] = useState<ProductVideo[]>([])
   const [showVideoDialog, setShowVideoDialog] = useState(false)
-  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null)
+  const [selectedVideo] = useState<Video | null>(null)
 
   // Dialog states
   const [specificationsDeleteDialog, setSpecificationsDeleteDialog] = useState<{
@@ -482,10 +482,7 @@ export default function WaitlistProductDetailPage() {
     }
   }
 
-  const openVideoDialog = (video: Video) => {
-    setSelectedVideo(video)
-    setShowVideoDialog(true)
-  }
+  
 
   // Dialog management functions
   const openSpecificationsDeleteDialog = (index: number) => {
@@ -749,7 +746,6 @@ export default function WaitlistProductDetailPage() {
                 }))
                 setVideos(transformedVideos)
               }}
-              openVideoDialog={openVideoDialog}
               openDeleteDialog={openVideosDeleteDialog}
               productId={entry.product_id || ''}
             />

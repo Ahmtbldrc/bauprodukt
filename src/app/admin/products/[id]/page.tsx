@@ -152,7 +152,7 @@ export default function EditProductPage() {
 
   // Video dialog state
   const [showVideoDialog, setShowVideoDialog] = useState(false)
-  const [selectedVideo, setSelectedVideo] = useState<Video | null>(null)
+  const [selectedVideo] = useState<Video | null>(null)
 
   // Dialog state'leri için
   const [specificationsDeleteDialog, setSpecificationsDeleteDialog] = useState<{
@@ -658,10 +658,7 @@ export default function EditProductPage() {
   }
 
 
-  const openVideoDialog = (video: Video) => {
-    setSelectedVideo(video)
-    setShowVideoDialog(true)
-  }
+  
 
 
   // Genel bilgiler için kaydetme fonksiyonu
@@ -981,7 +978,6 @@ export default function EditProductPage() {
                 console.log('Main page: Updating videos state:', transformedVideos)
                 setVideos(transformedVideos)
               }}
-              openVideoDialog={openVideoDialog}
               openDeleteDialog={openVideosDeleteDialog}
               productId={productId}
             />

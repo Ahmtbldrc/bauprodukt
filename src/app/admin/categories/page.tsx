@@ -24,9 +24,7 @@ export default function CategoriesPage() {
   const { data: allCategoriesResponse } = useAllCategories()
   const allCategories = allCategoriesResponse?.data || []
 
-  const [isCreateOpen, setIsCreateOpen] = useState(false)
-  const [createName, setCreateName] = useState('')
-  const [createSlug, setCreateSlug] = useState('')
+  
 
   const deleteMutation = useMutation({
     mutationFn: async (categoryId: string) => {
@@ -77,30 +75,7 @@ export default function CategoriesPage() {
     }
   })
 
-  const createMutation = useMutation({
-    mutationFn: async (payload: { name: string; slug: string }) => {
-      const res = await fetch('/api/categories', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: payload.name, slug: payload.slug })
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err?.error || 'Fehler beim Erstellen der Kategorie')
-      }
-      return res.json()
-    },
-    onSuccess: () => {
-      toast.success('Kategorie erfolgreich erstellt')
-      queryClient.invalidateQueries({ queryKey: ['categories'] })
-      setIsCreateOpen(false)
-      setCreateName('')
-      setCreateSlug('')
-    },
-    onError: (error: any) => {
-      toast.error(error?.message || 'Erstellung fehlgeschlagen')
-    }
-  })
+  
 
   const handleDeleteCategory = (categoryId: string) => {
     setDeleteCategoryId(categoryId)

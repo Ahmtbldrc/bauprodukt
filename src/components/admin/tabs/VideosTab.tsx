@@ -18,7 +18,6 @@ interface Video {
 interface VideosTabProps {
   videos: Video[]
   setVideos: (videos: Video[]) => void
-  openVideoDialog: (video: Video) => void
   openDeleteDialog: (index: number) => void
   productId: string
 }
@@ -56,7 +55,7 @@ function Toast({ message, type, isVisible, onClose }: {
   )
 }
 
-export default function VideosTab({ videos, setVideos, openVideoDialog, openDeleteDialog, productId }: VideosTabProps) {
+export default function VideosTab({ videos, setVideos, openDeleteDialog, productId }: VideosTabProps) {
   const [toast, setToast] = useState<{
     isVisible: boolean
     message: string
@@ -124,16 +123,20 @@ export default function VideosTab({ videos, setVideos, openVideoDialog, openDele
   }
 
   const handleAddYouTube = async () => {
+    setIsAdding(true)
     if (!productId) {
       showToast('Produkt-ID fehlt. Speichern nicht möglich.', 'error')
+      setIsAdding(false)
       return
     }
     if (!newTitle.trim() || !newUrl.trim()) {
       showToast('Titel und YouTube-Link erforderlich.', 'error')
+      setIsAdding(false)
       return
     }
     if (!isYouTubeUrl(newUrl)) {
       showToast('Bitte einen gültigen YouTube-Link eingeben.', 'error')
+      setIsAdding(false)
       return
     }
     const videoId = getYouTubeId(newUrl)
@@ -163,6 +166,7 @@ export default function VideosTab({ videos, setVideos, openVideoDialog, openDele
       console.error(err)
       showToast('YouTube-Video konnte nicht gespeichert werden.', 'error')
     }
+    setIsAdding(false)
   }
 
   const showToast = (message: string, type: 'success' | 'error') => {
