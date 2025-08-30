@@ -5,6 +5,7 @@ import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { Bell, LogOut, Search, Plus, Package, BarChart3, X } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useAllCategories } from '@/hooks/useCategories'
 import toast from 'react-hot-toast'
 import { useAdminAuth } from '@/contexts/AdminAuthContext'
 import { useAdminSearch } from '@/contexts/AdminSearchContext'
@@ -16,6 +17,15 @@ export function AdminHeader() {
   const [showCreateBrand, setShowCreateBrand] = useState(false)
   const [brandName, setBrandName] = useState('')
   const [brandSlug, setBrandSlug] = useState('')
+  const [showCreateCategory, setShowCreateCategory] = useState(false)
+  const [categoryName, setCategoryName] = useState('')
+  const [categorySlug, setCategorySlug] = useState('')
+  const [categorySlugTouched, setCategorySlugTouched] = useState(false)
+  const [categoryEmoji, setCategoryEmoji] = useState('')
+  const [categoryParentId, setCategoryParentId] = useState<string | ''>('')
+
+  const { data: allCategoriesResponse } = useAllCategories()
+  const allCategories = allCategoriesResponse?.data || []
   const [notifications, setNotifications] = useState<Array<{
     id: string
     type: 'waitlist' | 'order' | 'system'
@@ -57,12 +67,57 @@ export function AdminHeader() {
     },
   })
 
-  const generateSlug = (text: string) =>
-    text
+  const createCategoryMutation = useMutation({
+    mutationFn: async (payload: { name: string; slug?: string }) => {
+      const response = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          name: payload.name, 
+          slug: payload.slug, 
+          emoji: categoryEmoji.trim() || undefined,
+          parent_id: categoryParentId || null
+        }),
+      })
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        throw new Error(err?.error || 'Kategorie konnte nicht erstellt werden')
+      }
+      return response.json()
+    },
+    onSuccess: () => {
+      toast.success('Kategorie erfolgreich erstellt')
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      setShowCreateCategory(false)
+      setCategoryName('')
+      setCategorySlug('')
+      setCategorySlugTouched(false)
+      setCategoryEmoji('')
+      setCategoryParentId('')
+    },
+    onError: (error: any) => {
+      toast.error(error?.message || 'Fehler beim Erstellen der Kategorie')
+    },
+  })
+
+  const generateSlug = (text: string) => {
+    const turkishMap: Record<string, string> = {
+      'ı': 'i', 'İ': 'i',
+      'ö': 'o', 'Ö': 'o',
+      'ü': 'u', 'Ü': 'u',
+      'ç': 'c', 'Ç': 'c',
+      'ğ': 'g', 'Ğ': 'g',
+      'ş': 's', 'Ş': 's',
+    }
+    const replaced = text.replace(/[ıİöÖüÜçÇğĞşŞ]/g, (ch) => turkishMap[ch] || ch)
+    return replaced
       .toLowerCase()
+      .normalize('NFD').replace(/\p{Diacritic}+/gu, '')
       .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
       .trim()
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+  }
   
   const timeFilters = ['Heute', 'Diese Woche', 'Dieser Monat', 'Berichte']
 
@@ -236,14 +291,14 @@ export function AdminHeader() {
                 style={{ fontFamily: 'var(--font-blinker)' }}
               />
             </div>
-            <Link
-              href="/admin/categories/new"
+            <button
+              onClick={() => setShowCreateCategory(true)}
               className="px-8 py-3 text-sm font-medium rounded-full border border-gray-300 bg-gray-900 text-white hover:bg-gray-800 transition-all duration-200 shadow-sm flex items-center gap-2"
               style={{ fontFamily: 'var(--font-blinker)' }}
             >
               <Plus className="h-4 w-4" />
               Neue Kategorie
-            </Link>
+            </button>
           </div>
         )
       }
@@ -683,6 +738,106 @@ export function AdminHeader() {
                 }}
               >
                 {createBrandMutation.isPending ? 'Wird erstellt...' : 'Erstellen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Category Dialog */}
+      {showCreateCategory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div 
+            className="absolute inset-0 backdrop-blur-sm"
+            style={{ backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
+            onClick={() => !createCategoryMutation.isPending && setShowCreateCategory(false)}
+          />
+          <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <button
+              onClick={() => !createCategoryMutation.isPending && setShowCreateCategory(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              disabled={createCategoryMutation.isPending}
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Neue Kategorie hinzufügen</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <input
+                  type="text"
+                  value={categoryName}
+                  onChange={(e) => {
+                    const value = e.target.value
+                    setCategoryName(value)
+                    if (!categorySlugTouched) setCategorySlug(generateSlug(value))
+                  }}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#F39237] focus:border-[#F39237]"
+                  placeholder="z.B. Werkzeuge"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Slug (optional)</label>
+                <input
+                  type="text"
+                  value={categorySlug}
+                  onChange={(e) => {
+                    setCategorySlug(e.target.value)
+                    setCategorySlugTouched(true)
+                  }}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#F39237] focus:border-[#F39237]"
+                  placeholder="z.B. werkzeuge"
+                />
+                <p className="text-xs text-gray-500 mt-1">Leer lassen, um automatisch aus dem Namen zu generieren.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Emoji (optional)</label>
+                <input
+                  type="text"
+                  value={categoryEmoji}
+                  onChange={(e) => setCategoryEmoji(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#F39237] focus:border-[#F39237]"
+                  placeholder="z.B. 🛠️"
+                />
+                <p className="text-xs text-gray-500 mt-1">Max. 10 Zeichen. Leer lassen für keines.</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Übergeordnete Kategorie (optional)</label>
+                <select
+                  value={categoryParentId}
+                  onChange={(e) => setCategoryParentId(e.target.value as any)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#F39237] focus:border-[#F39237] bg-white"
+                >
+                  <option value="">Keine</option>
+                  {allCategories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-100">
+              <button
+                onClick={() => setShowCreateCategory(false)}
+                disabled={createCategoryMutation.isPending}
+                className="px-4 py-2 rounded-lg border disabled:opacity-50"
+                style={{
+                  color: '#F39237',
+                  borderColor: '#F39237',
+                }}
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={() => createCategoryMutation.mutate({ name: categoryName.trim(), slug: categorySlug.trim() || undefined })}
+                disabled={!categoryName.trim() || createCategoryMutation.isPending}
+                className="px-4 py-2 rounded-lg text-white disabled:opacity-50"
+                style={{
+                  backgroundColor: '#F39237',
+                }}
+              >
+                {createCategoryMutation.isPending ? 'Wird erstellt...' : 'Erstellen'}
               </button>
             </div>
           </div>

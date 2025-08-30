@@ -8,9 +8,21 @@ import Link from 'next/link'
 
 interface CategoriesTableProps {
   onDeleteCategory?: (categoryId: string) => void
+  onEditCategory?: (category: {
+    id: string
+    name: string
+    slug: string
+    description?: string
+    emoji?: string | null
+    parent?: {
+      id: string
+      name: string
+    } | null
+    created_at: string
+  }) => void
 }
 
-export function CategoriesTable({ onDeleteCategory }: CategoriesTableProps) {
+export function CategoriesTable({ onDeleteCategory, onEditCategory }: CategoriesTableProps) {
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(8)
   const { searchQuery } = useAdminSearch()
@@ -189,13 +201,31 @@ export function CategoriesTable({ onDeleteCategory }: CategoriesTableProps) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
-                        <Link
-                          href={`/admin/categories/${category.id}`}
-                          className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
-                          title="Bearbeiten"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Link>
+                        {onEditCategory ? (
+                          <button
+                            onClick={() => onEditCategory({
+                              id: category.id,
+                              name: category.name,
+                              slug: category.slug,
+                              description: (category as any).description,
+                              emoji: (category as any).emoji ?? null,
+                              parent: category.parent ? { id: (category.parent as any).id, name: (category.parent as any).name } : null,
+                              created_at: category.created_at,
+                            })}
+                            className="text-gray-700 p-1 rounded hover:bg-gray-100"
+                            title="Bearbeiten"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                        ) : (
+                          <Link
+                            href={`/admin/categories/${category.id}`}
+                            className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
+                            title="Bearbeiten"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Link>
+                        )}
                         <button
                           onClick={() => onDeleteCategory?.(category.id)}
                           className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
