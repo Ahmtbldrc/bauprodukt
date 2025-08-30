@@ -42,15 +42,16 @@ export default function DocumentsTab({ documents, setDocuments, openDeleteDialog
     setIsDragOver(false)
     
     const files = Array.from(e.dataTransfer.files)
-    const imageFiles = files.filter(file => 
-      file.type.startsWith('image/') || 
-      file.name.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i)
+    const acceptedFiles = files.filter(file =>
+      file.type.startsWith('image/') ||
+      file.type === 'application/pdf' ||
+      file.name.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg|pdf)$/i)
     )
     
-    if (imageFiles.length > 0) {
-      imageFiles.forEach(file => handleImageUpload(file))
+    if (acceptedFiles.length > 0) {
+      acceptedFiles.forEach(file => handleImageUpload(file))
     } else {
-      alert('Bitte ziehen Sie eine gültige Bilddatei hierher')
+      alert('Bitte ziehen Sie eine gültige Bild- oder PDF-Datei hierher')
     }
   }
 
@@ -135,7 +136,7 @@ export default function DocumentsTab({ documents, setDocuments, openDeleteDialog
                 <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               </div>
             </div>
-            <h4 className="text-lg font-medium text-gray-900">Bild wird hochgeladen...</h4>
+            <h4 className="text-lg font-medium text-gray-900">Datei wird hochgeladen...</h4>
           </div>
         ) : documents.length === 0 ? (
           <div className="space-y-4">
@@ -146,10 +147,10 @@ export default function DocumentsTab({ documents, setDocuments, openDeleteDialog
             </div>
             <div>
               <h4 className="text-lg font-medium text-gray-900 mb-2">
-                Bilddateien hierher ziehen
+                Dateien hierher ziehen
               </h4>
               <p className="text-gray-600 mb-4">
-                Unterstützt JPG, PNG, GIF, BMP, WebP, SVG Formate
+                Unterstützt JPG, PNG, GIF, BMP, WebP, SVG, PDF Formate
               </p>
               <div className="flex items-center justify-center gap-4">
                 <div className="text-sm text-gray-500">
@@ -159,7 +160,7 @@ export default function DocumentsTab({ documents, setDocuments, openDeleteDialog
                   <input
                     type="file"
                     multiple
-                    accept="image/*"
+                    accept="image/*,application/pdf,.pdf"
                     onChange={(e) => {
                       const files = Array.from(e.target.files || [])
                       files.forEach(file => handleImageUpload(file))
@@ -167,7 +168,7 @@ export default function DocumentsTab({ documents, setDocuments, openDeleteDialog
                     className="hidden"
                   />
                   <span className="px-4 py-2 bg-[#F39236] text-white rounded-lg hover:bg-[#E67E22] transition-colors">
-                    Bild auswählen
+                    Datei auswählen
                   </span>
                 </label>
               </div>
@@ -180,14 +181,23 @@ export default function DocumentsTab({ documents, setDocuments, openDeleteDialog
               {documents.map((image, index) => (
                 <div key={index} className="bg-white rounded-lg border border-gray-200 hover:border-[#F39236] transition-colors overflow-hidden">
                   {/* Image Preview */}
-                  <div className="aspect-square bg-gray-100 overflow-hidden">
-                    <Image
-                      src={image.previewUrl}
-                      alt={image.name}
-                      width={200}
-                      height={200}
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="aspect-square bg-gray-100 overflow-hidden flex items-center justify-center">
+                    {((image as any).file && (image as any).file.type && (image as any).file.type.startsWith('image/')) || /\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?.*)?$/i.test(image.previewUrl) ? (
+                      <Image
+                        src={image.previewUrl}
+                        alt={image.name}
+                        width={200}
+                        height={200}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center">
+                        <FileText className="h-12 w-12 text-gray-400" />
+                        <a href={image.previewUrl} target="_blank" rel="noopener noreferrer" className="text-xs mt-2 text-[#F39236] hover:underline">
+                          PDF ansehen
+                        </a>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Image Info */}
@@ -203,7 +213,7 @@ export default function DocumentsTab({ documents, setDocuments, openDeleteDialog
                       type="button"
                       onClick={() => removeImage(index)}
                       className="mt-2 w-full px-2 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded text-xs transition-colors border border-red-200 hover:border-red-300"
-                      title="Bild löschen"
+                      title="Datei löschen"
                     >
                       <Trash2 className="w-3 h-3 inline mr-1" />
                       Löschen
@@ -213,13 +223,13 @@ export default function DocumentsTab({ documents, setDocuments, openDeleteDialog
               ))}
             </div>
             
-            {/* Weitere Bilder hinzufügen Butonu */}
+            {/* Weitere Dateien hinzufügen Butonu */}
             <div className="mt-4 flex justify-center">
               <label className="cursor-pointer">
                 <input
                   type="file"
                   multiple
-                  accept="image/*"
+                  accept="image/*,application/pdf,.pdf"
                   onChange={(e) => {
                     const files = Array.from(e.target.files || [])
                     files.forEach(file => handleImageUpload(file))
@@ -228,7 +238,7 @@ export default function DocumentsTab({ documents, setDocuments, openDeleteDialog
                 />
                 <span className="px-6 py-3 bg-[#F39236] text-white rounded-lg hover:bg-[#E67E22] transition-colors flex items-center gap-2">
                   <Upload className="h-4 w-4" />
-                  Weitere Bilder hinzufügen
+                  Weitere Dateien hinzufügen
                 </span>
               </label>
             </div>
