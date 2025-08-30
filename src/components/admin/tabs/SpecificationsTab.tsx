@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Settings, Plus, Trash2, Pencil, Check, X } from 'lucide-react'
+import { Settings, Plus, Trash2, Pencil, Check, X, GripVertical } from 'lucide-react'
 
 interface TechnicalSpec {
   id?: string
@@ -39,6 +39,9 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
     title: '',
     description: ''
   })
+
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
   const handleAddSpec = async () => {
     if (newSpec.title.trim() && newSpec.description.trim()) {
@@ -86,6 +89,21 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
     specs[targetIndex] = updated
     handleSpecificationChange('technical_specs', specs)
     cancelEdit()
+  }
+
+  const handleDrop = (targetIndex: number) => {
+    if (dragIndex === null || dragIndex === targetIndex) {
+      setDragIndex(null)
+      setDragOverIndex(null)
+      return
+    }
+    const sorted = [...specifications.technical_specs].sort((a, b) => a.sort_order - b.sort_order)
+    const moved = sorted.splice(dragIndex, 1)[0]
+    sorted.splice(targetIndex, 0, moved)
+    const reindexed = sorted.map((s, i) => ({ ...s, sort_order: i + 1 }))
+    handleSpecificationChange('technical_specs', reindexed)
+    setDragIndex(null)
+    setDragOverIndex(null)
   }
 
 
@@ -182,9 +200,26 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
                   .map((spec, index) => {
                     const isEditing = editingId ? spec.id === editingId : editingIndex === index
                     return (
-                      <tr key={spec.id || index} className="hover:bg-gray-50 transition-colors duration-150">
+                      <tr
+                        key={spec.id || index}
+                        className={`hover:bg-gray-50 transition-colors duration-150 ${dragOverIndex === index ? 'ring-2 ring-[#F39236]' : ''}`}
+                        draggable={!isAutoSaving}
+                        onDragStart={() => setDragIndex(index)}
+                        onDragOver={(e) => {
+                          e.preventDefault()
+                          setDragOverIndex(index)
+                        }}
+                        onDragLeave={() => setDragOverIndex(null)}
+                        onDrop={(e) => {
+                          e.preventDefault()
+                          handleDrop(index)
+                        }}
+                      >
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">
-                          {index + 1}
+                          <div className="flex items-center gap-2">
+                            <GripVertical className="h-4 w-4 text-gray-400" />
+                            {index + 1}
+                          </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {isEditing ? (
