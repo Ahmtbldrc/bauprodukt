@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Play, Upload, Loader2 } from 'lucide-react'
-import { validateFile } from '@/lib/upload'
+import { Play } from 'lucide-react'
 
 interface Video {
   id: string
@@ -58,16 +57,14 @@ function Toast({ message, type, isVisible, onClose }: {
 }
 
 export default function VideosTab({ videos, setVideos, openVideoDialog, openDeleteDialog, productId }: VideosTabProps) {
-  const [isDragOver, setIsDragOver] = useState(false)
-  const [uploadingVideo, setUploadingVideo] = useState(false)
-  
-  // Remove local delete dialog state since it's now managed by parent
-  
   const [toast, setToast] = useState<{
     isVisible: boolean
     message: string
     type: 'success' | 'error'
   }>({ isVisible: false, message: '', type: 'success' })
+  const [newTitle, setNewTitle] = useState('')
+  const [newUrl, setNewUrl] = useState('')
+  const [isAdding, setIsAdding] = useState(false)
 
   // Function to refresh videos from API
   const refreshVideos = async () => {
@@ -99,90 +96,72 @@ export default function VideosTab({ videos, setVideos, openVideoDialog, openDele
     console.log('Videos state changed:', videos)
   }, [videos])
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(true)
-  }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-  }
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragOver(false)
-    
-    const files = Array.from(e.dataTransfer.files)
-    const videoFiles = files.filter(file => 
-      file.type.startsWith('video/') || 
-      file.name.match(/\.(mp4|avi|mov|wmv|flv|webm|mkv)$/i)
-    )
-    
-    if (videoFiles.length > 0) {
-      videoFiles.forEach(file => handleVideoFileUpload(file))
-    } else {
-      showToast('Bitte ziehen Sie eine gültige Videodatei hierher', 'error')
+  const isYouTubeUrl = (url: string) => {
+    try {
+      const u = new URL(url)
+      return (
+        (u.hostname.includes('youtube.com') && !!u.searchParams.get('v')) ||
+        u.hostname.includes('youtu.be')
+      )
+    } catch {
+      return false
     }
   }
 
-  const handleVideoFileUpload = async (file: File) => {
-    setUploadingVideo(true)
+  const getYouTubeId = (url: string): string | null => {
     try {
-      // Validate file before upload
-      const validation = validateFile(file, 500 * 1024 * 1024, ['video/mp4', 'video/webm', 'video/avi', 'video/mov'])
-      if (!validation.valid) {
-        throw new Error(validation.error || 'File validation failed')
+      const u = new URL(url)
+      if (u.hostname.includes('youtu.be')) {
+        return u.pathname.replace('/', '') || null
       }
+      if (u.hostname.includes('youtube.com')) {
+        return u.searchParams.get('v')
+      }
+      return null
+    } catch {
+      return null
+    }
+  }
 
-      // Create FormData for upload
-      const formData = new FormData()
-      formData.append('file_0', file)
-      formData.append('title_0', file.name.replace(/\.[^/.]+$/, ''))
-      
-      // Upload to API
-      const response = await fetch(`/api/products/${window.location.pathname.split('/')[3]}/videos/bulk`, {
+  const handleAddYouTube = async () => {
+    if (!productId) {
+      showToast('Produkt-ID fehlt. Speichern nicht möglich.', 'error')
+      return
+    }
+    if (!newTitle.trim() || !newUrl.trim()) {
+      showToast('Titel und YouTube-Link erforderlich.', 'error')
+      return
+    }
+    if (!isYouTubeUrl(newUrl)) {
+      showToast('Bitte einen gültigen YouTube-Link eingeben.', 'error')
+      return
+    }
+    const videoId = getYouTubeId(newUrl)
+    if (!videoId) {
+      showToast('YouTube-Video-ID konnte nicht ermittelt werden.', 'error')
+      return
+    }
+    try {
+      const response = await fetch(`/api/products/${productId}/videos`, {
         method: 'POST',
-        body: formData
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: newTitle.trim(),
+          video_url: `https://www.youtube.com/watch?v=${videoId}`,
+          thumbnail_url: `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+        })
       })
-      
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Upload failed')
+        const errorText = await response.text()
+        throw new Error(errorText || 'Fehler beim Speichern des YouTube-Videos')
       }
-      
-      const result = await response.json()
-      
-      // Immediately add the new video to local state for instant UI feedback
-      const newVideoForState: Video = {
-        id: result.data[0].id,
-        title: result.data[0].title,
-        file: file,
-        description: '',
-        previewUrl: result.data[0].video_url || URL.createObjectURL(file),
-        video_url: result.data[0].video_url,
-        thumbnail_url: result.data[0].thumbnail_url,
-        duration: result.data[0].duration,
-        file_size: result.data[0].file_size
-      }
-      
-      console.log('Uploading video, updating state:', { 
-        originalCount: videos.length, 
-        newCount: videos.length + 1, 
-        newVideo: newVideoForState 
-      })
-      setVideos([...videos, newVideoForState])
-      showToast('Video erfolgreich hochgeladen!', 'success')
-      
-      // Optionally refresh from API to ensure consistency
-      setTimeout(() => {
-        refreshVideos()
-      }, 100)
-    } catch (error) {
-      console.error('Video upload error:', error)
-              showToast(`Fehler beim Hochladen des Videos: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`, 'error')
-    } finally {
-      setUploadingVideo(false)
+      showToast('YouTube-Video hinzugefügt!', 'success')
+      setNewTitle('')
+      setNewUrl('')
+      await refreshVideos()
+    } catch (err) {
+      console.error(err)
+      showToast('YouTube-Video konnte nicht gespeichert werden.', 'error')
     }
   }
 
@@ -210,139 +189,89 @@ export default function VideosTab({ videos, setVideos, openVideoDialog, openDele
         </div>
       </div>
 
-      {/* Drag & Drop Area */}
-      <div
-        className={`border-2 border-dashed rounded-lg p-16 text-center transition-all duration-200 min-h-[400px] flex items-center justify-center ${
-          isDragOver 
-            ? 'border-[#F39236] bg-[#FFF0E2]' 
-            : 'border-gray-300 hover:border-gray-400'
-        }`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        {uploadingVideo ? (
-          <div className="space-y-4">
-            <div className="flex justify-center">
-              <div className="w-16 h-16 rounded-full flex items-center justify-center bg-[#F39236] text-white">
-                <Loader2 className="h-8 w-8 animate-spin" />
-              </div>
-            </div>
-            <h4 className="text-lg font-medium text-gray-900">Video wird hochgeladen...</h4>
+      {/* YouTube Link Form */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Titel</label>
+            <input
+              type="text"
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200"
+              style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
+              placeholder="z.B. Produktdemo"
+            />
           </div>
-        ) : videos.length === 0 ? (
-          <div className="space-y-4">
-            <div className="flex justify-center">
-              <div className="w-16 h-16 rounded-full flex items-center justify-center bg-gray-100 text-gray-400">
-                <Play className="h-8 w-8" />
-              </div>
-            </div>
-            <div>
-                              <h4 className="text-lg font-medium text-gray-900 mb-2">
-                  Videodateien hierher ziehen
-                </h4>
-              <p className="text-gray-600 mb-4">
-                                  Unterstützt MP4, AVI, MOV, WMV, FLV, WebM, MKV Formate
-              </p>
-              <div className="flex items-center justify-center gap-4">
-                <div className="text-sm text-gray-500">
-                  veya
-                </div>
-                <label className="cursor-pointer">
-                  <input
-                    type="file"
-                    multiple
-                    accept="video/*"
-                    onChange={(e) => {
-                      const files = Array.from(e.target.files || [])
-                      files.forEach(file => handleVideoFileUpload(file))
-                    }}
-                    className="hidden"
-                  />
-                  <span className="px-4 py-2 bg-[#F39236] text-white rounded-lg hover:bg-[#E67E22] transition-colors">
-                    Datei auswählen
-                  </span>
-                </label>
-              </div>
-            </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">YouTube-Link</label>
+            <input
+              type="url"
+              value={newUrl}
+              onChange={(e) => setNewUrl(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200"
+              style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
+              placeholder="https://www.youtube.com/watch?v=... oder https://youtu.be/..."
+            />
           </div>
-        ) : (
-          <div className="w-full">
-            {/* Uploaded Videos Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-4">
-              {videos.map((video, index) => (
-                <div key={video.id} className="relative group">
-                  {/* Video Preview Card */}
-                  <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden border border-gray-200 hover:border-[#F39236] transition-colors cursor-pointer" onClick={() => openVideoDialog(video)}>
-                    {video.file || video.previewUrl ? (
-                      <div className="relative w-full h-full">
-                        <video
-                          className="w-full h-full object-cover"
-                          poster={video.previewUrl}
-                          muted
-                          onMouseEnter={(e) => (e.target as HTMLVideoElement).play()}
-                          onMouseLeave={(e) => (e.target as HTMLVideoElement).pause()}
-                        >
-                          <source src={video.previewUrl} type="video/mp4" />
-                          <source src={video.previewUrl} type="video/webm" />
-                          <source src={video.previewUrl} type="video/ogg" />
-                        </video>
-                        
-                        {/* Play Button Overlay */}
-                        <div className="absolute inset-0 bg-black bg-opacity-20 group-hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center">
-                          <div className="w-8 h-8 bg-white bg-opacity-90 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                            <Play className="h-4 w-4 text-[#F39236]" />
-                          </div>
-                        </div>
-                        
-                        {/* Video Title */}
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-2">
-                          <p className="text-xs font-medium text-white truncate">{video.title}</p>
-                        </div>
-                      </div>
+        </div>
+        <div className="flex justify-end mt-4">
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleAddYouTube() }}
+            disabled={isAdding || !productId}
+            className="px-6 py-3 bg-[#F39236] text-white rounded-md hover:bg-[#E67E22] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isAdding ? 'Wird gespeichert...' : 'YouTube-Video hinzufügen'}
+          </button>
+        </div>
+        {!productId && (
+          <p className="text-xs text-gray-500 mt-2">Hinweis: Zum Speichern wird eine gültige Produkt-ID benötigt.</p>
+        )}
+      </div>
+
+      {/* Videos Grid */}
+      <div className="w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {videos.map((video, index) => {
+            const vid = getYouTubeId(video.previewUrl || video.video_url || '')
+            const embedUrl = vid ? `https://www.youtube.com/embed/${vid}` : ''
+            return (
+              <div key={video.id} className="relative">
+                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                  <div className="aspect-video bg-gray-100">
+                    {embedUrl ? (
+                      <iframe
+                        src={embedUrl}
+                        title={video.title}
+                        className="w-full h-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <Play className="h-6 w-6 text-gray-400" />
                       </div>
                     )}
                   </div>
-                  
-                  {/* Delete Button */}
-                  <button
-                    type="button"
-                    onClick={() => removeVideo(index)}
-                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                    title="Video löschen"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+                  <div className="p-3">
+                    <p className="text-sm font-medium text-gray-900 truncate">{video.title}</p>
+                  </div>
                 </div>
-              ))}
-            </div>
-            
-            {/* Daha Fazla Video Ekle Butonu */}
-            <div className="mt-4 flex justify-center">
-              <label className="cursor-pointer">
-                <input
-                  type="file"
-                  multiple
-                  accept="video/*"
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files || [])
-                    files.forEach(file => handleVideoFileUpload(file))
-                  }}
-                  className="hidden"
-                />
-                <span className="px-6 py-3 bg-[#F39236] text-white rounded-lg hover:bg-[#E67E22] transition-colors flex items-center gap-2">
-                  <Upload className="h-4 w-4" />
-                  Weitere Videos hinzufügen
-                </span>
-              </label>
-            </div>
-          </div>
-        )}
+                <button
+                  type="button"
+                  onClick={() => removeVideo(index)}
+                  className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow"
+                  title="Video löschen"
+                >
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            )
+          })}
+        </div>
       </div>
 
       {/* Remove the local ConfirmDialog since it's now managed by parent */}

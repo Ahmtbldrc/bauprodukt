@@ -28,6 +28,33 @@ export default function VideoDialog({
 
   const currentVideo = videos[initialVideoIndex]
 
+  const isYouTubeUrl = (url: string) => {
+    try {
+      const u = new URL(url)
+      return (
+        (u.hostname.includes('youtube.com') && !!u.searchParams.get('v')) ||
+        u.hostname.includes('youtu.be')
+      )
+    } catch {
+      return false
+    }
+  }
+
+  const getYouTubeId = (url: string): string | null => {
+    try {
+      const u = new URL(url)
+      if (u.hostname.includes('youtu.be')) {
+        return u.pathname.replace('/', '') || null
+      }
+      if (u.hostname.includes('youtube.com')) {
+        return u.searchParams.get('v')
+      }
+      return null
+    } catch {
+      return null
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
@@ -62,16 +89,26 @@ export default function VideoDialog({
         {/* Video Player */}
         <div className="mb-6">
           <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden">
-            <video
-              controls
-              className="w-full h-full"
-              autoPlay
-            >
-              <source src={currentVideo.video_url} type="video/mp4" />
-              <source src={currentVideo.video_url} type="video/webm" />
-              <source src={currentVideo.video_url} type="video/ogg" />
-              Ihr Browser unterstützt keine Videowiedergabe.
-            </video>
+            {isYouTubeUrl(currentVideo.video_url) ? (
+              <iframe
+                src={`https://www.youtube.com/embed/${getYouTubeId(currentVideo.video_url) || ''}`}
+                title={currentVideo.title}
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            ) : (
+              <video
+                controls
+                className="w-full h-full"
+                autoPlay
+              >
+                <source src={currentVideo.video_url} type="video/mp4" />
+                <source src={currentVideo.video_url} type="video/webm" />
+                <source src={currentVideo.video_url} type="video/ogg" />
+                Ihr Browser unterstützt keine Videowiedergabe.
+              </video>
+            )}
           </div>
         </div>
         
