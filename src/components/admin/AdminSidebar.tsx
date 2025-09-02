@@ -23,38 +23,38 @@ export function AdminSidebar() {
   
   const menuItems = [
     { 
-      name: 'Dashboard', 
+      name: 'Übersicht', 
       href: '/admin', 
       icon: <LayoutDashboard className="w-5 h-5" strokeWidth={1.5} />,
       current: pathname === '/admin'
     },
     { 
-      name: 'Brands', 
+      name: 'Marken', 
       href: '/admin/brands', 
       icon: <Tags className="w-5 h-5" strokeWidth={1.5} />,
       current: pathname.startsWith('/admin/brands')
     },
     { 
-      name: 'Categories', 
+      name: 'Kategorien', 
       href: '/admin/categories', 
       icon: <FolderTree className="w-5 h-5" strokeWidth={1.5} />,
       current: pathname.startsWith('/admin/categories')
     },
     { 
-      name: 'Products', 
+      name: 'Produkte', 
       href: '/admin/products', 
       icon: <Package className="w-5 h-5" strokeWidth={1.5} />,
       current: pathname.startsWith('/admin/products')
     },
     { 
-      name: 'Waitlist', 
+      name: 'Warteliste', 
       href: '/admin/waitlist', 
       icon: <Clock className="w-5 h-5" strokeWidth={1.5} />,
       current: pathname.startsWith('/admin/waitlist'),
       hasNotification: true
     },
     { 
-      name: 'Orders', 
+      name: 'Bestellungen', 
       href: '/admin/orders', 
       icon: <ShoppingCart className="w-5 h-5" strokeWidth={1.5} />,
       current: pathname.startsWith('/admin/orders')
