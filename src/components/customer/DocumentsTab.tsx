@@ -431,68 +431,82 @@ export default function CustomerDocumentsTab({ documents }: CustomerDocumentsTab
         </div>
       </div>
 
-      {/* Cards: Combined images PDF and each existing PDF side by side */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {imageDocuments.length > 0 && (
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="text-center">
-              <div className="relative mb-6">
-                <div className="w-32 h-40 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 mx-auto flex items-center justify-center">
-                  <div className="text-center">
-                    <FileText className="h-16 w-16 text-gray-400 mx-auto mb-2" />
-                    <p className="text-xs text-gray-500">PDF</p>
-                  </div>
-                </div>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <button
-                    onClick={handleViewCombinedImagesPdf}
-                    className="w-12 h-12 bg-[#F39236] rounded-full flex items-center justify-center hover:bg-[#E67E22] transition-colors shadow-lg border-2 border-[#F39236]"
-                  >
-                    <Eye className="h-6 w-6 text-white" />
-                  </button>
+      {/* Combined Images to PDF (optional) */}
+      {imageDocuments.length > 0 && (
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="text-center">
+            <div className="relative mb-6">
+              <div className="w-32 h-40 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 mx-auto flex items-center justify-center">
+                <div className="text-center">
+                  <FileText className="h-16 w-16 text-gray-400 mx-auto mb-2" />
+                  <p className="text-xs text-gray-500">PDF</p>
                 </div>
               </div>
-              <p className="text-sm text-gray-600">
-                {imageDocuments.length} Bild{imageDocuments.length === 1 ? '' : 'er'} zu einem PDF zusammengefasst
-              </p>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <button
+                  onClick={handleViewCombinedImagesPdf}
+                  className="w-12 h-12 bg-[#F39236] rounded-full flex items-center justify-center hover:bg-[#E67E22] transition-colors shadow-lg border-2 border-[#F39236]"
+                >
+                  <Eye className="h-6 w-6 text-white" />
+                </button>
+              </div>
             </div>
+            <p className="text-sm text-gray-600">
+              {imageDocuments.length} Bild{imageDocuments.length === 1 ? '' : 'er'} zu einem PDF zusammengefasst
+            </p>
           </div>
-        )}
+        </div>
+      )}
 
-        {pdfDocuments.map((doc) => (
-          <div key={doc.id} className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="text-center">
-              <div className="relative mb-6">
-                <div className="w-32 h-40 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 mx-auto flex items-center justify-center">
-                  <div className="text-center">
-                    <FileText className="h-16 w-16 text-gray-400 mx-auto mb-2" />
-                    <p className="text-xs text-gray-500">PDF</p>
-                  </div>
+      {/* PDF list */}
+      {pdfDocuments.length > 0 && (
+        <div className="bg-white rounded-lg border border-gray-200">
+          <ul className="divide-y divide-gray-200">
+            {pdfDocuments.map((doc) => (
+              <li key={doc.id} className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <FileText className="h-5 w-5 text-gray-500" />
+                  <span className="text-sm text-gray-800 truncate">{doc.title}</span>
                 </div>
-                <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <button
                     onClick={() => {
                       setSelectedDocument(doc)
                       setIsPdfViewerOpen(true)
                     }}
-                    className="w-12 h-12 bg-[#F39236] rounded-full flex items-center justify-center hover:bg-[#E67E22] transition-colors shadow-lg border-2 border-[#F39236]"
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm bg-white text-gray-700 border rounded hover:bg-gray-50"
                   >
-                    <Eye className="h-6 w-6 text-white" />
+                    <Eye className="h-4 w-4" />
+                    Ansehen
+                  </button>
+                  <button
+                    onClick={() => downloadFile(doc.file_url, `${doc.title || 'dokument'}.pdf`)}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm bg-[#F39236] text-white rounded hover:bg-[#E67E22]"
+                  >
+                    <Download className="h-4 w-4" />
+                    Herunterladen
                   </button>
                 </div>
-              </div>
-              <p className="text-sm text-gray-600 truncate">{doc.title}</p>
-            </div>
-          </div>
-        ))}
-      </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* PDF Viewer Modal */}
       {isPdfViewerOpen && selectedDocument && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg w-full max-w-6xl max-h-[92vh] overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 backdrop-blur-md bg-gray-900/20 transition-all duration-300 opacity-100"
+            style={{ backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}
+            onClick={() => setIsPdfViewerOpen(false)}
+          />
+
+          {/* Dialog */}
+          <div className="relative bg-white/90 backdrop-blur-sm rounded-lg w-full max-w-6xl max-h-[92vh] overflow-hidden shadow-xl border border-white/20">
             {/* Modal Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200/70">
               <h3 className="text-lg font-semibold text-gray-900">
                 {selectedDocument.title}
               </h3>
