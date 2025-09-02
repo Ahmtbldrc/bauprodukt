@@ -92,9 +92,14 @@ export function CategoriesSection() {
                 <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group flex flex-col h-64">
                   <div className="h-32 flex items-center justify-center transition-all" style={{background: 'linear-gradient(to bottom right, #F3923620, #F3923640)'}}>
                     <div className="text-center">
-                      <span className="text-4xl" style={{color: '#F39236'}}>
-                        {category.emoji || '🔧'}
-                      </span>
+                      {category.icon_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={category.icon_url} alt={category.name} className="h-10 w-10 inline" />
+                      ) : (
+                        <span className="text-4xl" style={{color: '#F39236'}}>
+                          {category.emoji || '🔧'}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="p-4 text-center flex-1 flex flex-col justify-between">

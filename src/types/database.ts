@@ -113,6 +113,7 @@ export interface Category {
   name: string
   slug: string
   emoji: string | null
+  icon_url: string | null
   parent_id: string | null
   created_at: string
 }

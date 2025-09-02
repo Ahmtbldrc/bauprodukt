@@ -374,11 +374,13 @@ export function Header() {
                                 className={`flex items-center p-3 rounded-lg transition-all duration-200 cursor-pointer group ${selectedCategory === category.id ? 'bg-gradient-to-r from-orange-50 to-orange-100 border-l-4 border-orange-500' : 'hover:bg-gray-50'}`}
                               >
                                 <span className="text-xl mr-3">
-                                  {category.emoji
-                                    ? category.emoji
-                                    : category.image
-                                      ? <Image src={category.image} alt={category.name} width={24} height={24} className="inline rounded" />
-                                      : '📦'}
+                                  {category.icon_url
+                                    ? <Image src={category.icon_url} alt={category.name} width={24} height={24} className="inline" />
+                                    : category.emoji
+                                      ? category.emoji
+                                      : category.image
+                                        ? <Image src={category.image} alt={category.name} width={24} height={24} className="inline rounded" />
+                                        : '📦'}
                                 </span>
                                 <div className="flex-1">
                                   <span className={`text-sm font-medium transition-colors ${selectedCategory === category.id ? 'text-orange-700' : 'text-gray-700 group-hover:text-gray-800'}`}>{category.name}</span>
@@ -416,11 +418,13 @@ export function Header() {
                               className="flex items-center px-3 py-2 rounded-lg hover:bg-orange-50 transition-colors"
                             >
                               <span className="text-sm text-gray-700">
-                                {subcat.emoji
-                                  ? subcat.emoji
-                                  : subcat.image
-                                    ? <Image src={subcat.image} alt={subcat.name} width={20} height={20} className="inline rounded mr-2" />
-                                    : '📂'} {subcat.name}
+                                {subcat.icon_url
+                                  ? <Image src={subcat.icon_url} alt={subcat.name} width={20} height={20} className="inline mr-2" />
+                                  : subcat.emoji
+                                    ? subcat.emoji
+                                    : subcat.image
+                                      ? <Image src={subcat.image} alt={subcat.name} width={20} height={20} className="inline rounded mr-2" />
+                                      : '📂'} {subcat.name}
                               </span>
                             </Link>
                           ))}
@@ -540,7 +544,7 @@ export function Header() {
                         href={`/categories/${category.slug}`}
                         className="flex items-center mb-2 hover:text-orange-600 transition-colors"
                       >
-                        <span className="text-lg mr-2">{category.emoji || (category.image ? <Image src={category.image} alt={category.name} width={24} height={24} className="inline rounded" /> : '📦')}</span>
+                        <span className="text-lg mr-2">{category.icon_url ? <Image src={category.icon_url} alt={category.name} width={24} height={24} className="inline" /> : (category.emoji || (category.image ? <Image src={category.image} alt={category.name} width={24} height={24} className="inline rounded" /> : '📦'))}</span>
                         <span className="text-sm font-medium text-gray-800">{category.name}</span>
                       </Link>
                         {/* Subcategories in mobile menu */}

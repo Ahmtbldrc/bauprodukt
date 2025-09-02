@@ -14,6 +14,7 @@ export interface Category {
   image?: string
   parent_id?: string | null
   emoji?: string
+  icon_url?: string | null
 }
 
 export interface Product {

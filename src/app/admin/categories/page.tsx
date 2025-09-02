@@ -1,7 +1,7 @@
 'use client'
 
 import { CategoriesTable } from '@/components/admin/CategoriesTable'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -18,7 +18,9 @@ export default function CategoriesPage() {
   const [editName, setEditName] = useState('')
   const [editSlug, setEditSlug] = useState('')
   const [editSlugTouched, setEditSlugTouched] = useState(false)
-  const [editEmoji, setEditEmoji] = useState('')
+  const [editIconPreview, setEditIconPreview] = useState<string | undefined>(undefined)
+  const [editIconUploading, setEditIconUploading] = useState(false)
+  const editIconInputRef = useRef<HTMLInputElement>(null)
   const [editParentId, setEditParentId] = useState<string | ''>('')
 
   const { data: allCategoriesResponse } = useAllCategories()
@@ -54,7 +56,6 @@ export default function CategoriesPage() {
         body: JSON.stringify({ 
           name: payload.name, 
           slug: payload.slug,
-          emoji: payload.emoji,
           parent_id: payload.parent_id
         })
       })
@@ -62,7 +63,23 @@ export default function CategoriesPage() {
         const err = await res.json().catch(() => ({}))
         throw new Error(err?.error || 'Fehler beim Aktualisieren der Kategorie')
       }
-      return res.json()
+      const updated = await res.json()
+
+      // If new icon selected, upload it
+      const file = editIconInputRef.current?.files?.[0]
+      if (file) {
+        const formData = new FormData()
+        formData.append('file', file)
+        const iconRes = await fetch(`/api/categories/${updated.id}/icon`, { method: 'POST', body: formData })
+        if (!iconRes.ok) {
+          const errTxt = await iconRes.text()
+          let errMsg = 'Icon-Upload fehlgeschlagen'
+          try { errMsg = (JSON.parse(errTxt)?.error) || errMsg } catch {}
+          throw new Error(errMsg)
+        }
+      }
+
+      return updated
     },
     onSuccess: () => {
       toast.success('Kategorie erfolgreich aktualisiert')
@@ -82,12 +99,12 @@ export default function CategoriesPage() {
     setIsDeleteOpen(true)
   }
 
-  const handleEditCategory = (category: { id: string; name: string; slug: string } & { emoji?: string | null; parent?: { id: string; name: string } | null }) => {
+  const handleEditCategory = (category: { id: string; name: string; slug: string } & { emoji?: string | null; icon_url?: string | null; parent?: { id: string; name: string } | null }) => {
     setEditingCategory(category)
     setEditName(category.name)
     setEditSlug(category.slug)
     setEditSlugTouched(false)
-    setEditEmoji((category as any).emoji || '')
+    setEditIconPreview((category as any).icon_url || undefined)
     setEditParentId((category as any).parent?.id || '')
     setIsEditOpen(true)
   }
@@ -184,13 +201,62 @@ export default function CategoriesPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Emoji (optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Icon (SVG)</label>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 relative rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center">
+                    {editIconPreview ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={editIconPreview} alt="Icon Preview" className="w-10 h-10" />
+                    ) : (
+                      <span className="text-gray-400 text-xs">SVG</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => editIconInputRef.current?.click()}
+                      className="px-3 py-2 rounded-lg border text-sm disabled:opacity-50"
+                      disabled={editIconUploading || updateMutation.isPending}
+                      style={{ color: '#F39237', borderColor: '#F39237' }}
+                    >
+                      {editIconUploading ? 'Wird gewählt...' : (editIconPreview ? 'Icon ändern' : 'Icon hochladen')}
+                    </button>
+                    {editIconPreview && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!editingCategory) return
+                          // Remove existing icon via API
+                          const res = await fetch(`/api/categories/${editingCategory.id}/icon`, { method: 'DELETE' })
+                          if (res.ok) {
+                            setEditIconPreview(undefined)
+                            if (editIconInputRef.current) editIconInputRef.current.value = ''
+                            toast.success('Icon entfernt')
+                          } else {
+                            toast.error('Icon konnte nicht entfernt werden')
+                          }
+                        }}
+                        className="px-3 py-2 rounded-lg border text-sm text-red-600 border-red-300 disabled:opacity-50"
+                        disabled={editIconUploading || updateMutation.isPending}
+                      >
+                        Entfernen
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <input
-                  type="text"
-                  value={editEmoji}
-                  onChange={(e) => setEditEmoji(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#F39237] focus:border-[#F39237]"
-                  placeholder="z.B. 🛠️"
+                  ref={editIconInputRef}
+                  type="file"
+                  accept="image/svg+xml"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    setEditIconUploading(true)
+                    const objectUrl = URL.createObjectURL(file)
+                    setEditIconPreview(objectUrl)
+                    setEditIconUploading(false)
+                  }}
                 />
               </div>
               <div>
@@ -224,7 +290,6 @@ export default function CategoriesPage() {
                   id: editingCategory.id, 
                   name: editName.trim(), 
                   slug: editSlug.trim() || undefined,
-                  emoji: editEmoji.trim() || undefined,
                   parent_id: editParentId || null
                 })}
                 disabled={!editName.trim() || updateMutation.isPending}

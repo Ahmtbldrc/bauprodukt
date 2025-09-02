@@ -31,7 +31,7 @@ interface GeneralTabProps {
     }>
   }
   brands: Array<{ id: string; name: string }>
-  categories: Array<{ id: string; name: string; emoji?: string }>
+  categories: Array<{ id: string; name: string; emoji?: string; icon_url?: string | null }>
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void
 }
 
@@ -150,7 +150,7 @@ export default function GeneralTab({ formData, brands, categories, handleInputCh
             <option value="">Kategorie auswählen</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
-                {category.emoji} {category.name}
+                {category.name}
               </option>
             ))}
           </select>

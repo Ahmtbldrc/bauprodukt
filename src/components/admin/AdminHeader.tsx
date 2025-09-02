@@ -24,7 +24,9 @@ export function AdminHeader() {
   const [categoryName, setCategoryName] = useState('')
   const [categorySlug, setCategorySlug] = useState('')
   const [categorySlugTouched, setCategorySlugTouched] = useState(false)
-  const [categoryEmoji, setCategoryEmoji] = useState('')
+  const [categoryIconPreview, setCategoryIconPreview] = useState<string | undefined>(undefined)
+  const [categoryIconUploading, setCategoryIconUploading] = useState(false)
+  const createCategoryIconInputRef = useRef<HTMLInputElement>(null)
   const [categoryParentId, setCategoryParentId] = useState<string | ''>('')
 
   const { data: allCategoriesResponse } = useAllCategories()
@@ -96,7 +98,6 @@ export function AdminHeader() {
         body: JSON.stringify({ 
           name: payload.name, 
           slug: payload.slug, 
-          emoji: categoryEmoji.trim() || undefined,
           parent_id: categoryParentId || null
         }),
       })
@@ -104,7 +105,23 @@ export function AdminHeader() {
         const err = await response.json().catch(() => ({}))
         throw new Error(err?.error || 'Kategorie konnte nicht erstellt werden')
       }
-      return response.json()
+      const created = await response.json()
+
+      // If icon selected, upload
+      const file = createCategoryIconInputRef.current?.files?.[0]
+      if (file) {
+        const formData = new FormData()
+        formData.append('file', file)
+        const iconRes = await fetch(`/api/categories/${created.id}/icon`, { method: 'POST', body: formData })
+        if (!iconRes.ok) {
+          const errTxt = await iconRes.text()
+          let errMsg = 'Icon-Upload fehlgeschlagen'
+          try { errMsg = (JSON.parse(errTxt)?.error) || errMsg } catch {}
+          throw new Error(errMsg)
+        }
+      }
+
+      return created
     },
     onSuccess: () => {
       toast.success('Kategorie erfolgreich erstellt')
@@ -113,8 +130,9 @@ export function AdminHeader() {
       setCategoryName('')
       setCategorySlug('')
       setCategorySlugTouched(false)
-      setCategoryEmoji('')
+      setCategoryIconPreview(undefined)
       setCategoryParentId('')
+      if (createCategoryIconInputRef.current) createCategoryIconInputRef.current.value = ''
     },
     onError: (error: any) => {
       toast.error(error?.message || 'Fehler beim Erstellen der Kategorie')
@@ -839,6 +857,55 @@ export function AdminHeader() {
 
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Neue Kategorie hinzufügen</h3>
             <div className="space-y-4">
+              {/* Icon section */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Icon (SVG)</label>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 relative rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center">
+                    {categoryIconPreview ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={categoryIconPreview} alt="Icon Preview" className="w-10 h-10" />
+                    ) : (
+                      <span className="text-gray-400 text-xs">SVG</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => createCategoryIconInputRef.current?.click()}
+                      className="px-3 py-2 rounded-lg border text-sm disabled:opacity-50"
+                      disabled={categoryIconUploading || createCategoryMutation.isPending}
+                      style={{ color: '#F39237', borderColor: '#F39237' }}
+                    >
+                      {categoryIconUploading ? 'Wird gewählt...' : (categoryIconPreview ? 'Icon ändern' : 'Icon hochladen')}
+                    </button>
+                    {categoryIconPreview && (
+                      <button
+                        type="button"
+                        onClick={() => setCategoryIconPreview(undefined)}
+                        className="px-3 py-2 rounded-lg border text-sm text-red-600 border-red-300 disabled:opacity-50"
+                        disabled={categoryIconUploading || createCategoryMutation.isPending}
+                      >
+                        Entfernen
+                      </button>
+                    )}
+                    <input
+                      ref={createCategoryIconInputRef}
+                      type="file"
+                      accept="image/svg+xml"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        setCategoryIconUploading(true)
+                        const objectUrl = URL.createObjectURL(file)
+                        setCategoryIconPreview(objectUrl)
+                        setCategoryIconUploading(false)
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                 <input
@@ -867,17 +934,7 @@ export function AdminHeader() {
                 />
                 <p className="text-xs text-gray-500 mt-1">Leer lassen, um automatisch aus dem Namen zu generieren.</p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Emoji (optional)</label>
-                <input
-                  type="text"
-                  value={categoryEmoji}
-                  onChange={(e) => setCategoryEmoji(e.target.value)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#F39237] focus:border-[#F39237]"
-                  placeholder="z.B. 🛠️"
-                />
-                <p className="text-xs text-gray-500 mt-1">Max. 10 Zeichen. Leer lassen für keines.</p>
-              </div>
+              
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Übergeordnete Kategorie (optional)</label>
                 <select

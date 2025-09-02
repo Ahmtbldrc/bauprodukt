@@ -125,7 +125,7 @@ export function CategoriesTable({ onDeleteCategory, onEditCategory }: Categories
                   Übergeordnete Kategorie
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Emoji
+                  Icon
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Datum
@@ -189,11 +189,14 @@ export function CategoriesTable({ onDeleteCategory, onEditCategory }: Categories
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
-                        {category.emoji ? (
+                        {(category as any).icon_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={(category as any).icon_url} alt={category.name} className="h-6 w-6" />
+                        ) : (category.emoji ? (
                           <span className="text-2xl">{category.emoji}</span>
                         ) : (
                           <span className="text-gray-400">-</span>
-                        )}
+                        ))}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

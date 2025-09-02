@@ -8,6 +8,7 @@ interface Category {
   slug: string
   description?: string
   emoji?: string
+  icon_url?: string | null
   parent_id?: string | null
   created_at: string
   parent?: Category | null

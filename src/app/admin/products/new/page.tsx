@@ -272,7 +272,7 @@ export default function NewProductPage() {
                   <option value="">Kategori seçin</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
-                      {category.emoji ? `${category.emoji} ` : ''}{category.name}
+                      {category.name}
                     </option>
                   ))}
                 </select>
