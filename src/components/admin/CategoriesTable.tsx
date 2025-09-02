@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useCategories } from '@/hooks/useCategories'
 import { useAdminSearch } from '@/contexts/AdminSearchContext'
-import { Edit, Trash2, Search, Folder } from 'lucide-react'
+import { Edit, Trash2, Search } from 'lucide-react'
 import Link from 'next/link'
 
 interface CategoriesTableProps {
@@ -20,9 +20,10 @@ interface CategoriesTableProps {
     } | null
     created_at: string
   }) => void
+  categoryType?: 'main' | 'sub'
 }
 
-export function CategoriesTable({ onDeleteCategory, onEditCategory }: CategoriesTableProps) {
+export function CategoriesTable({ onDeleteCategory, onEditCategory, categoryType }: CategoriesTableProps) {
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(8)
   const { searchQuery } = useAdminSearch()
@@ -32,7 +33,10 @@ export function CategoriesTable({ onDeleteCategory, onEditCategory }: Categories
     page,
     limit,
     search: '', // API'de arama yapmıyoruz, client-side arama yapacağız
+    category_type: categoryType,
   })
+
+  
 
   const allCategories = useMemo(() => {
     return categoriesResponse?.data ?? []
@@ -116,17 +120,19 @@ export function CategoriesTable({ onDeleteCategory, onEditCategory }: Categories
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Icon
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Kategorie
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Slug
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Übergeordnete Kategorie
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Icon
-                </th>
+                {categoryType !== 'sub' && (
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Übergeordnete Kategorie
+                  </th>
+                )}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Datum
                 </th>
@@ -138,7 +144,7 @@ export function CategoriesTable({ onDeleteCategory, onEditCategory }: Categories
             <tbody className="bg-white divide-y divide-gray-200">
               {categories.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={categoryType === 'sub' ? 5 : 6} className="px-6 py-12 text-center text-gray-500">
                     <div className="flex flex-col items-center space-y-2">
                       <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: '#FFF0E2' }}>
                         <Search className="h-6 w-6" style={{ color: '#F39237' }} />
@@ -156,38 +162,6 @@ export function CategoriesTable({ onDeleteCategory, onEditCategory }: Categories
                 categories.map((category) => (
                   <tr key={category.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-12 w-12">
-                          <div className="h-12 w-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#FFF0E2' }}>
-                            <Folder className="h-6 w-6" style={{ color: '#F39237' }} />
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {category.name}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {category.slug}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {category.parent ? (
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full" style={{ backgroundColor: '#FFF0E2', color: '#F39237' }}>
-                            {category.parent.name}
-                          </span>
-                        ) : (
-                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                            Hauptkategorie
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {(category as any).icon_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -199,6 +173,31 @@ export function CategoriesTable({ onDeleteCategory, onEditCategory }: Categories
                         ))}
                       </div>
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900">
+                        {category.name}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {category.slug}
+                      </div>
+                    </td>
+                    {categoryType !== 'sub' && (
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {category.parent ? (
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full" style={{ backgroundColor: '#FFF0E2', color: '#F39237' }}>
+                              {category.parent.name}
+                            </span>
+                          ) : (
+                            <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
+                              Hauptkategorie
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    )}
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(category.created_at)}
                     </td>

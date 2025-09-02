@@ -1,11 +1,11 @@
 'use client'
 
 import { CategoriesTable } from '@/components/admin/CategoriesTable'
-import { useState, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { useAllCategories } from '@/hooks/useCategories'
+import { useAllCategories, useSubCategories } from '@/hooks/useCategories'
 
 export default function CategoriesPage() {
   const queryClient = useQueryClient()
@@ -22,9 +22,12 @@ export default function CategoriesPage() {
   const [editIconUploading, setEditIconUploading] = useState(false)
   const editIconInputRef = useRef<HTMLInputElement>(null)
   const [editParentId, setEditParentId] = useState<string | ''>('')
+  const [editSelectedSubIds, setEditSelectedSubIds] = useState<string[]>([])
 
   const { data: allCategoriesResponse } = useAllCategories()
   const allCategories = allCategoriesResponse?.data || []
+  const { data: subCategoriesResponse } = useSubCategories()
+  const subCategories = subCategoriesResponse?.data || []
 
   
 
@@ -49,15 +52,20 @@ export default function CategoriesPage() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: async (payload: { id: string; name?: string; slug?: string; emoji?: string; parent_id?: string | null }) => {
+    mutationFn: async (payload: { id: string; name?: string; slug?: string }) => {
+      const bodyPayload: any = {
+        name: payload.name,
+        slug: payload.slug,
+      }
+      // Only main category edit can assign subcategories
+      if (activeTab === 'main' && editSelectedSubIds.length > 0) {
+        bodyPayload.subcategory_ids = editSelectedSubIds
+      }
+
       const res = await fetch(`/api/categories/${payload.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          name: payload.name, 
-          slug: payload.slug,
-          parent_id: payload.parent_id
-        })
+        body: JSON.stringify(bodyPayload)
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
@@ -106,6 +114,7 @@ export default function CategoriesPage() {
     setEditSlugTouched(false)
     setEditIconPreview((category as any).icon_url || undefined)
     setEditParentId((category as any).parent?.id || '')
+    setEditSelectedSubIds([])
     setIsEditOpen(true)
   }
 
@@ -129,6 +138,74 @@ export default function CategoriesPage() {
         .replace(/-+/g, '-')
     })()
 
+  const [activeTab, setActiveTab] = useState<'main' | 'sub'>('main')
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
+  const [createName, setCreateName] = useState('')
+  const [createSlug, setCreateSlug] = useState('')
+  const [createSlugTouched, setCreateSlugTouched] = useState(false)
+  
+  const [selectedSubcategoryIds, setSelectedSubcategoryIds] = useState<string[]>([])
+  const [createIconPreview, setCreateIconPreview] = useState<string | undefined>(undefined)
+  const [createIconUploading, setCreateIconUploading] = useState(false)
+  const createIconInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!createSlugTouched) {
+      setCreateSlug(generateSlug(createName))
+    }
+  }, [createName, createSlugTouched])
+
+  const createMutation = useMutation({
+    mutationFn: async () => {
+      const payload: any = {
+        name: createName.trim(),
+        slug: createSlug.trim(),
+      }
+      if (activeTab === 'main') {
+        payload.parent_id = null
+        payload.subcategory_ids = selectedSubcategoryIds
+      }
+      const res = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err?.error || 'Kategori oluşturma başarısız')
+      }
+      const created = await res.json()
+
+      // If SVG selected, upload icon
+      const file = createIconInputRef.current?.files?.[0]
+      if (file) {
+        const formData = new FormData()
+        formData.append('file', file)
+        const iconRes = await fetch(`/api/categories/${created.id}/icon`, { method: 'POST', body: formData })
+        if (!iconRes.ok) {
+          const errTxt = await iconRes.text()
+          let errMsg = 'Icon-Upload başarısız'
+          try { errMsg = (JSON.parse(errTxt)?.error) || errMsg } catch {}
+          throw new Error(errMsg)
+        }
+      }
+
+      return created
+    },
+    onSuccess: () => {
+      toast.success('Kategori oluşturuldu')
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      setIsCreateOpen(false)
+      setCreateName('')
+      setCreateSlug('')
+      setCreateSlugTouched(false)
+      setSelectedSubcategoryIds([])
+      setCreateIconPreview(undefined)
+      if (createIconInputRef.current) createIconInputRef.current.value = ''
+    },
+    onError: (error: any) => toast.error(error?.message || 'Oluşturma başarısız')
+  })
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -136,12 +213,62 @@ export default function CategoriesPage() {
           <h1 className="text-3xl font-bold text-gray-900">Kategorien</h1>
           <p className="text-gray-600">Kategorieverwaltung und -verfolgung</p>
         </div>
+        <div />
       </div>
-      
-      <CategoriesTable 
-        onDeleteCategory={handleDeleteCategory}
-        onEditCategory={handleEditCategory}
-      />
+      <div className="bg-white rounded-lg shadow">
+        <div className="flex border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab('main')}
+            className={`px-4 py-3 text-sm font-medium ${activeTab === 'main' ? 'border-b-2' : 'text-gray-500'}`}
+            style={activeTab === 'main' ? { borderColor: '#F39237', color: '#111827' } : {}}
+          >
+            Ana Kategoriler
+          </button>
+          <button
+            onClick={() => setActiveTab('sub')}
+            className={`px-4 py-3 text-sm font-medium ${activeTab === 'sub' ? 'border-b-2' : 'text-gray-500'}`}
+            style={activeTab === 'sub' ? { borderColor: '#F39237', color: '#111827' } : {}}
+          >
+            Alt Kategoriler
+          </button>
+        </div>
+        <div className="p-4 space-y-4">
+          {activeTab === 'main' ? (
+            <div className="flex justify-end">
+              <button
+                onClick={() => setIsCreateOpen(true)}
+                className="px-4 py-2 rounded-lg text-white disabled:opacity-50"
+                style={{ backgroundColor: '#F39237' }}
+              >
+                Ana Kategori Ekle
+              </button>
+            </div>
+          ) : (
+            <div className="flex justify-end">
+              <button
+                onClick={() => setIsCreateOpen(true)}
+                className="px-4 py-2 rounded-lg text-white disabled:opacity-50"
+                style={{ backgroundColor: '#F39237' }}
+              >
+                Alt Kategori Ekle
+              </button>
+            </div>
+          )}
+          {activeTab === 'main' ? (
+            <CategoriesTable 
+              onDeleteCategory={handleDeleteCategory}
+              onEditCategory={handleEditCategory}
+              categoryType="main"
+            />
+          ) : (
+            <CategoriesTable 
+              onDeleteCategory={handleDeleteCategory}
+              onEditCategory={handleEditCategory}
+              categoryType="sub"
+            />
+          )}
+        </div>
+      </div>
 
       <ConfirmDialog
         isOpen={isDeleteOpen}
@@ -259,21 +386,28 @@ export default function CategoriesPage() {
                   }}
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Übergeordnete Kategorie (optional)</label>
-                <select
-                  value={editParentId}
-                  onChange={(e) => setEditParentId(e.target.value as any)}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#F39237] focus:border-[#F39237] bg-white"
-                >
-                  <option value="">Keine</option>
-                  {allCategories
-                    .filter((c) => c.id !== editingCategory?.id)
-                    .map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+              {editingCategory && !editingCategory.parent && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Alt Kategoriler (bağla)</label>
+                  <div className="max-h-40 overflow-auto border rounded">
+                    {subCategories.map((sub: any) => (
+                      <label key={sub.id} className="flex items-center gap-2 p-2 border-b last:border-b-0">
+                        <input
+                          type="checkbox"
+                          checked={editSelectedSubIds.includes(sub.id)}
+                          onChange={(e) => {
+                            setEditSelectedSubIds((prev) => {
+                              if (e.target.checked) return Array.from(new Set([...prev, sub.id]))
+                              return prev.filter((id) => id !== sub.id)
+                            })
+                          }}
+                        />
+                        <span>{sub.name}</span>
+                      </label>
                     ))}
-                </select>
-              </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-100">
@@ -286,17 +420,152 @@ export default function CategoriesPage() {
                 Abbrechen
               </button>
               <button
-                onClick={() => editingCategory && updateMutation.mutate({ 
+                onClick={async () => editingCategory && updateMutation.mutate({ 
                   id: editingCategory.id, 
                   name: editName.trim(), 
                   slug: editSlug.trim() || undefined,
-                  parent_id: editParentId || null
                 })}
                 disabled={!editName.trim() || updateMutation.isPending}
                 className="px-4 py-2 rounded-lg text-white disabled:opacity-50"
                 style={{ backgroundColor: '#F39237' }}
               >
                 {updateMutation.isPending ? 'Wird gespeichert...' : 'Speichern'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isCreateOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div 
+            className="absolute inset-0 backdrop-blur-sm"
+            style={{ backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' }}
+            onClick={() => !createMutation.isPending && setIsCreateOpen(false)}
+          />
+          <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+            <button
+              onClick={() => !createMutation.isPending && setIsCreateOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              disabled={createMutation.isPending}
+            >
+              ×
+            </button>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              {activeTab === 'main' ? 'Ana Kategori Ekle' : 'Alt Kategori Ekle'}
+            </h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ad</label>
+                <input
+                  type="text"
+                  value={createName}
+                  onChange={(e) => setCreateName(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#F39237] focus:border-[#F39237]"
+                  placeholder="Örn. El Aletleri"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
+                <input
+                  type="text"
+                  value={createSlug}
+                  onChange={(e) => { setCreateSlug(e.target.value); setCreateSlugTouched(true) }}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#F39237] focus:border-[#F39237]"
+                  placeholder="orn-el-aletleri"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Icon (SVG)</label>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 relative rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center">
+                    {createIconPreview ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={createIconPreview} alt="Icon Preview" className="w-10 h-10" />
+                    ) : (
+                      <span className="text-gray-400 text-xs">SVG</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => createIconInputRef.current?.click()}
+                      className="px-3 py-2 rounded-lg border text-sm disabled:opacity-50"
+                      disabled={createIconUploading || createMutation.isPending}
+                      style={{ color: '#F39237', borderColor: '#F39237' }}
+                    >
+                      {createIconUploading ? 'Seçiliyor...' : (createIconPreview ? 'Icon değiştir' : 'Icon yükle')}
+                    </button>
+                    {createIconPreview && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCreateIconPreview(undefined)
+                          if (createIconInputRef.current) createIconInputRef.current.value = ''
+                        }}
+                        className="px-3 py-2 rounded-lg border text-sm text-red-600 border-red-300 disabled:opacity-50"
+                        disabled={createIconUploading || createMutation.isPending}
+                      >
+                        Kaldır
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <input
+                  ref={createIconInputRef}
+                  type="file"
+                  accept="image/svg+xml"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (!file) return
+                    setCreateIconUploading(true)
+                    const objectUrl = URL.createObjectURL(file)
+                    setCreateIconPreview(objectUrl)
+                    setCreateIconUploading(false)
+                  }}
+                />
+              </div>
+              {/* No parent selection for subcategories */}
+              {activeTab === 'main' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Alt Kategoriler (opsiyonel)</label>
+                  <div className="max-h-40 overflow-auto border rounded">
+                    {subCategories.map((sub: any) => (
+                      <label key={sub.id} className="flex items-center gap-2 p-2 border-b last:border-b-0">
+                        <input
+                          type="checkbox"
+                          checked={selectedSubcategoryIds.includes(sub.id)}
+                          onChange={(e) => {
+                            setSelectedSubcategoryIds((prev) => {
+                              if (e.target.checked) return Array.from(new Set([...prev, sub.id]))
+                              return prev.filter((id) => id !== sub.id)
+                            })
+                          }}
+                        />
+                        <span>{sub.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-100">
+              <button
+                onClick={() => setIsCreateOpen(false)}
+                disabled={createMutation.isPending}
+                className="px-4 py-2 rounded-lg border disabled:opacity-50"
+                style={{ color: '#F39237', borderColor: '#F39237' }}
+              >
+                İptal
+              </button>
+              <button
+                onClick={() => createMutation.mutate()}
+                disabled={!createName.trim() || !createSlug.trim() || createMutation.isPending}
+                className="px-4 py-2 rounded-lg text-white disabled:opacity-50"
+                style={{ backgroundColor: '#F39237' }}
+              >
+                {createMutation.isPending ? 'Oluşturuluyor...' : 'Oluştur'}
               </button>
             </div>
           </div>

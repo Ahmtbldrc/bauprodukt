@@ -48,6 +48,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
     const { id } = await params
     const body = await request.json()
+    const { subcategory_ids } = body || {}
     
     const validation = updateCategorySchema.safeParse(body)
     if (!validation.success) {
@@ -120,6 +121,20 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         { error: 'Failed to update category' },
         { status: 500 }
       )
+    }
+
+    // Optional bulk assign subcategories to this category (treat this as main category)
+    if (Array.isArray(subcategory_ids) && subcategory_ids.length > 0) {
+      const ids = subcategory_ids.filter((cid: string) => cid && cid !== id)
+      if (ids.length > 0) {
+        const { error: bulkError } = await (supabase as any)
+          .from('categories')
+          .update({ parent_id: id })
+          .in('id', ids)
+        if (bulkError) {
+          console.error('Bulk assign subcategories in PUT error:', bulkError)
+        }
+      }
     }
 
     return NextResponse.json(data)

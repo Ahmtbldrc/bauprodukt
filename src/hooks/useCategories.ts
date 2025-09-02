@@ -29,13 +29,14 @@ interface UseCategoriesOptions {
   limit?: number
   search?: string
   parent_id?: string | null
+  category_type?: 'main' | 'sub'
 }
 
 export function useCategories(options: UseCategoriesOptions = {}) {
-  const { page = 1, limit = 10, search, parent_id } = options
+  const { page = 1, limit = 10, search, parent_id, category_type } = options
 
   return useQuery<CategoriesResponse>({
-    queryKey: ['categories', { page, limit, search, parent_id }],
+    queryKey: ['categories', { page, limit, search, parent_id, category_type }],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -48,6 +49,10 @@ export function useCategories(options: UseCategoriesOptions = {}) {
 
       if (parent_id !== undefined) {
         params.set('parent_id', parent_id || 'null')
+      }
+
+      if (category_type) {
+        params.set('category_type', category_type)
       }
 
       const response = await fetch(`/api/categories?${params.toString()}`)
@@ -96,6 +101,40 @@ export function useRootCategories() {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+  })
+}
+
+// Helper hook to get main categories (parent_id is null)
+export function useMainCategories() {
+  return useQuery<CategoriesResponse>({
+    queryKey: ['categories', 'main'],
+    queryFn: async () => {
+      const response = await fetch('/api/categories?category_type=main&limit=100')
+      if (!response.ok) {
+        throw new Error('Failed to fetch main categories')
+      }
+      return response.json()
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  })
+}
+
+// Helper hook to get sub categories (parent_id is not null), including unattached
+export function useSubCategories(includeUnattached: boolean = true) {
+  return useQuery<CategoriesResponse>({
+    queryKey: ['categories', 'sub', { includeUnattached }],
+    queryFn: async () => {
+      const response = await fetch('/api/categories?category_type=sub&limit=100')
+      if (!response.ok) {
+        throw new Error('Failed to fetch sub categories')
+      }
+      const json = await response.json()
+      if (!includeUnattached) return json
+      return json
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   })
 }
 

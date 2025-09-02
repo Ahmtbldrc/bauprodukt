@@ -16,12 +16,15 @@ export const createBrandSchema = z.object({
 export const updateBrandSchema = createBrandSchema.partial()
 
 // Category schemas
+export const categoryTypeSchema = z.enum(['main', 'sub'])
+
 export const categorySchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1, 'Kategori adı gerekli'),
   slug: z.string().min(1, 'Slug gerekli'),
   emoji: z.string().max(10, 'Emoji çok uzun').nullable().optional(),
   icon_url: z.string().url('Geçerli bir SVG URL giriniz').nullable().optional(),
+  category_type: categoryTypeSchema,
   parent_id: z.string().uuid().nullable(),
   created_at: z.string()
 })
@@ -31,6 +34,7 @@ export const createCategorySchema = z.object({
   slug: z.string().min(1, 'Slug gerekli').max(255, 'Slug çok uzun').regex(/^[a-z0-9-]+$/, 'Slug sadece küçük harf, rakam ve tire içerebilir'),
   emoji: z.string().max(10, 'Emoji çok uzun').nullable().optional(),
   icon_url: z.string().url('Geçerli bir SVG URL giriniz').nullable().optional(),
+  category_type: categoryTypeSchema.default('main').optional(),
   parent_id: z.string().uuid().nullable().optional()
 })
 
