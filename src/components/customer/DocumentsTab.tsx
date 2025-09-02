@@ -419,7 +419,7 @@ export default function CustomerDocumentsTab({ documents }: CustomerDocumentsTab
           {(imageDocuments.length > 0 || pdfDocuments.length > 0) && (
             <button
               onClick={handleDownloadAllPdfs}
-              className="flex items-center gap-2 px-4 py-2 bg-[#F39236] text-white rounded-lg hover:bg-[#E67E22] transition-colors"
+              className="flex items-center gap-2 px-4 py-1 bg-[#F39236] text-white rounded-md hover:bg-[#E67E22] transition-colors"
             >
               <Download className="h-4 w-4" />
               Alle als PDF herunterladen
