@@ -754,7 +754,10 @@ export default function ProductPageContent({
                 {/* Article and Manufacturer Numbers */}
                 <div className="mb-6">
                   <p className="text-xs" style={{color: '#A3A3A3'}}>
-                    Art-Nr. {product?.art_nr || '-'} | Hersteller-Nr. {product?.hersteller_nr || '-'}
+                    Art-Nr. {product?.art_nr || '-'}
+                  </p>
+                  <p className="text-xs" style={{color: '#A3A3A3'}}>
+                    Hersteller-Nr. {product?.hersteller_nr || '-'}
                   </p>
                 </div>
                 
