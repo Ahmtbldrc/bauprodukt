@@ -416,9 +416,6 @@ export default function CustomerDocumentsTab({ documents }: CustomerDocumentsTab
         </div>
         
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-600 bg-gray-100 px-3 py-2 rounded-lg">
-            {documents.length} Dokument{documents.length === 1 ? '' : 'e'}
-          </span>
           {(imageDocuments.length > 0 || pdfDocuments.length > 0) && (
             <button
               onClick={handleDownloadAllPdfs}
