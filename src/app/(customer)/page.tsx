@@ -4,7 +4,6 @@ import HeroBanner from '@/components/home/HeroBanner'
 import { RecommendedProducts } from '@/components/home/RecommendedProducts'
 import { BrandsSection } from '@/components/home/BrandsSection'
 import { BestsellerProducts } from '@/components/home/BestsellerProducts'
-import { CategoriesSection } from '@/components/home/CategoriesSection'
 import { DiscountedProducts } from '@/components/home/DiscountedProducts'
 import { Newsletter } from '@/components/home/Newsletter'
 
@@ -26,8 +25,7 @@ export default function HomePage() {
         {/* Topseller */}
         <BestsellerProducts />
         
-        {/* Kategoriler */}
-        <CategoriesSection />
+        
         
         {/* Kuponlu Ürünler */}
         <DiscountedProducts />
