@@ -55,12 +55,7 @@ interface ProductVideo {
   file_size?: number
 }
 
-interface ConversionFactors {
-  length_units: boolean
-  weight_units: boolean
-  volume_units: boolean
-  temperature_units: boolean
-}
+ 
 
 
 interface ProductPageContentProps {
@@ -92,12 +87,6 @@ export default function ProductPageContent({
   const [, setSpecifications] = useState<TechnicalSpec[]>([])
   const [documents, setDocuments] = useState<ProductDocument[]>([])
   const [videos, setVideos] = useState<ProductVideo[]>([])
-  const [conversionFactors, setConversionFactors] = useState<ConversionFactors>({
-    length_units: false,
-    weight_units: false,
-    volume_units: false,
-    temperature_units: false
-  })
 
   // Fetch brand, category and product data
   const { data: brand } = useBrandBySlug(brandSlug)
@@ -173,24 +162,11 @@ export default function ProductPageContent({
         }
       }
 
-      // Load conversion factors
-      const loadConversionFactors = async () => {
-        try {
-          const response = await fetch(`/api/products/${product.id}/conversion-factors/customer`)
-          if (response.ok) {
-            const data = await response.json()
-            setConversionFactors(data)
-          }
-        } catch (error) {
-          console.error('Error loading conversion factors:', error)
-        }
-      }
-
       loadSpecifications()
       loadVariants()
       loadDocuments()
       loadVideos()
-      loadConversionFactors()
+      
     }
   }, [product])
 
@@ -483,16 +459,7 @@ export default function ProductPageContent({
                   >
                     Dokumente
                   </button>
-                  <button 
-                    onClick={() => setActiveTab('conversion')}
-                    className={`border-b-2 py-2 px-1 text-sm font-medium transition-colors ${
-                      activeTab === 'conversion' 
-                        ? 'border-[#F39236] text-[#F39236]' 
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    Umrechnungsfaktoren
-                  </button>
+                  
                   <button 
                     onClick={() => setActiveTab('videos')}
                     className={`border-b-2 py-2 px-1 text-sm font-medium transition-colors ${
@@ -572,45 +539,7 @@ export default function ProductPageContent({
                   <CustomerDocumentsTab documents={documents} />
                 )}
                 
-                {activeTab === 'conversion' && (
-                  <div className="prose max-w-none w-full">
-                    <h3>Umrechnungsfaktoren</h3>
-                    {conversionFactors.length_units || conversionFactors.weight_units || conversionFactors.volume_units || conversionFactors.temperature_units ? (
-                      <div className="bg-white rounded-lg border border-gray-200 p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {conversionFactors.length_units && (
-                            <div className="p-4 border border-gray-200 rounded-lg">
-                              <h4 className="font-medium text-gray-900 mb-2">Längeneinheiten</h4>
-                              <p className="text-sm text-gray-600">mm ↔ cm ↔ m ↔ km</p>
-                            </div>
-                          )}
-                          {conversionFactors.weight_units && (
-                            <div className="p-4 border border-gray-200 rounded-lg">
-                              <h4 className="font-medium text-gray-900 mb-2">Gewichtseinheiten</h4>
-                              <p className="text-sm text-gray-600">g ↔ kg ↔ t</p>
-                            </div>
-                          )}
-                          {conversionFactors.volume_units && (
-                            <div className="p-4 border border-gray-200 rounded-lg">
-                              <h4 className="font-medium text-gray-900 mb-2">Volumeneinheiten</h4>
-                              <p className="text-sm text-gray-600">ml ↔ l ↔ m³</p>
-                            </div>
-                          )}
-                          {conversionFactors.temperature_units && (
-                            <div className="p-4 border border-gray-200 rounded-lg">
-                              <h4 className="font-medium text-gray-900 mb-2">Temperatureinheiten</h4>
-                              <p className="text-sm text-gray-600">°C ↔ °F ↔ K</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="bg-white rounded-lg border border-gray-200 p-6">
-                        <p className="text-gray-500">Keine Umrechnungsfaktoren verfügbar</p>
-                      </div>
-                    )}
-                  </div>
-                )}
+                
                 
                 {activeTab === 'videos' && (
                   <div className="prose max-w-none w-full">
