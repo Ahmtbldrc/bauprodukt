@@ -746,7 +746,7 @@ export default function ProductPageContent({
                 <div className="mb-0">
                   <p className="text-xs" style={{color: '#A3A3A3'}}>
                     {category?.name}
-                    {brand?.name && `, ${brand.name}`}
+                    {brand?.name}
                     {product?.category?.name && `, ${product.category.name}`}
                   </p>
                 </div>
