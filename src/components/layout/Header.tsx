@@ -327,13 +327,9 @@ export function Header() {
       </header>
 
       {/* Secondary Navigation */}
-      <div className={`bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 relative transition-all duration-300 ${
-        isScrolled ? 'max-h-0 opacity-0 border-b-0 overflow-hidden' : 'max-h-9 opacity-100'
-      }`}>
+      <div className="bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200 relative transition-all duration-300 max-h-9 opacity-100">
         <div className="max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
-          <div className={`flex items-center justify-between transition-all duration-300 ${
-            isScrolled ? 'py-0' : 'py-2'
-          }`}>
+          <div className="flex items-center justify-between transition-all duration-300 py-2">
             <div className="flex items-center space-x-6 text-sm overflow-visible" style={{ fontSize: '12px' }}>
               {/* All Categories Button - Moved here */}
               <div className="relative category-dropdown">
