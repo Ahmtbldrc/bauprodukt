@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Bell, LogOut, Search, Plus, Package, BarChart3, X } from 'lucide-react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAllCategories } from '@/hooks/useCategories'
@@ -17,6 +17,9 @@ export function AdminHeader() {
   const [showCreateBrand, setShowCreateBrand] = useState(false)
   const [brandName, setBrandName] = useState('')
   const [brandSlug, setBrandSlug] = useState('')
+  const createBrandFileInputRef = useRef<HTMLInputElement>(null)
+  const [brandLogoPreview, setBrandLogoPreview] = useState<string | undefined>(undefined)
+  const [brandLogoUploading, setBrandLogoUploading] = useState(false)
   const [showCreateCategory, setShowCreateCategory] = useState(false)
   const [categoryName, setCategoryName] = useState('')
   const [categorySlug, setCategorySlug] = useState('')
@@ -43,7 +46,8 @@ export function AdminHeader() {
   const queryClient = useQueryClient()
 
   const createBrandMutation = useMutation({
-    mutationFn: async (payload: { name: string; slug?: string }) => {
+    mutationFn: async (payload: { name: string; slug?: string; logoFile?: File | null }) => {
+      // 1) Create brand
       const response = await fetch('/api/brands', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -53,7 +57,22 @@ export function AdminHeader() {
         const err = await response.json().catch(() => ({}))
         throw new Error(err?.error || 'Marke konnte nicht erstellt werden')
       }
-      return response.json()
+      const brand = await response.json()
+
+      // 2) If logo selected, upload
+      if (payload.logoFile) {
+        const formData = new FormData()
+        formData.append('file', payload.logoFile)
+        const logoRes = await fetch(`/api/brands/${brand.id}/logo`, { method: 'POST', body: formData })
+        if (!logoRes.ok) {
+          const errTxt = await logoRes.text()
+          let errMsg = 'Logo-Upload fehlgeschlagen'
+          try { errMsg = (JSON.parse(errTxt)?.error) || errMsg } catch {}
+          throw new Error(errMsg)
+        }
+      }
+
+      return brand
     },
     onSuccess: () => {
       toast.success('Marke erfolgreich erstellt')
@@ -61,6 +80,8 @@ export function AdminHeader() {
       setShowCreateBrand(false)
       setBrandName('')
       setBrandSlug('')
+      setBrandLogoPreview(undefined)
+      if (createBrandFileInputRef.current) createBrandFileInputRef.current.value = ''
     },
     onError: (error: any) => {
       toast.error(error?.message || 'Fehler beim Erstellen der Marke')
@@ -694,6 +715,58 @@ export function AdminHeader() {
 
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Neue Marke hinzufügen</h3>
             <div className="space-y-4">
+              {/* Logo section */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Logo (optional)</label>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 relative rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center">
+                    {brandLogoPreview ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={brandLogoPreview} alt="Logo Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-gray-400 text-xs">Logo</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => createBrandFileInputRef.current?.click()}
+                      className="px-3 py-2 rounded-lg border text-sm disabled:opacity-50"
+                      disabled={brandLogoUploading || createBrandMutation.isPending}
+                      style={{ color: '#F39237', borderColor: '#F39237' }}
+                    >
+                      {brandLogoUploading ? 'Wird gewählt...' : (brandLogoPreview ? 'Logo ändern' : 'Logo hochladen')}
+                    </button>
+                    {brandLogoPreview && (
+                      <button
+                        type="button"
+                        onClick={() => setBrandLogoPreview(undefined)}
+                        className="px-3 py-2 rounded-lg border text-sm text-red-600 border-red-300 disabled:opacity-50"
+                        disabled={brandLogoUploading || createBrandMutation.isPending}
+                      >
+                        Entfernen
+                      </button>
+                    )}
+                    <input
+                      ref={createBrandFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        setBrandLogoUploading(true)
+                        const reader = new FileReader()
+                        reader.onload = () => {
+                          setBrandLogoPreview(reader.result as string)
+                          setBrandLogoUploading(false)
+                        }
+                        reader.readAsDataURL(file)
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                 <input
@@ -730,7 +803,10 @@ export function AdminHeader() {
                 Abbrechen
               </button>
               <button
-                onClick={() => createBrandMutation.mutate({ name: brandName.trim(), slug: brandSlug.trim() || undefined })}
+                onClick={() => {
+                  const file = createBrandFileInputRef.current?.files?.[0] || null
+                  createBrandMutation.mutate({ name: brandName.trim(), slug: brandSlug.trim() || undefined, logoFile: file })
+                }}
                 disabled={!brandName.trim() || createBrandMutation.isPending}
                 className="px-4 py-2 rounded-lg text-white disabled:opacity-50"
                 style={{

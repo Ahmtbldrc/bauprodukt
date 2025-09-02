@@ -718,8 +718,20 @@ export default function ProductPageContent({
                 <div className="mb-4">
                   {brand?.name && (
                     <div className="mb-3">
-                      <div className="w-16 h-12 bg-gray-100 rounded flex items-center justify-center">
-                        <span className="text-lg font-bold text-gray-700">{brand.name.substring(0, 3).toUpperCase()}</span>
+                      <div className={`w-16 h-12 relative rounded flex items-center justify-center overflow-hidden ${brand.logo ? '' : 'bg-gray-100'}`}>
+                        {brand.logo ? (
+                          <Image
+                            src={brand.logo}
+                            alt={brand.name}
+                            fill
+                            sizes="64px"
+                            className="object-contain p-1"
+                          />
+                        ) : (
+                          <span className="text-sm font-semibold text-gray-700 text-center px-1 truncate w-full">
+                            {brand.name}
+                          </span>
+                        )}
                       </div>
                     </div>
                   )}

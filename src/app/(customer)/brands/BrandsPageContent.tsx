@@ -2,6 +2,7 @@
 
 import { useAllBrands } from '@/hooks/useBrands'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function BrandsPageContent() {
   const { data: brandsResponse, isLoading, error } = useAllBrands();
@@ -24,8 +25,18 @@ export default function BrandsPageContent() {
           <Link key={brand.id} href={{ pathname: '/products', query: { brand: brand.id } }}>
             <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
               <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center">
-                  <span className="text-sm font-medium text-gray-600">{brand.name}</span>
+                <div className={`w-16 h-16 relative rounded-lg flex items-center justify-center overflow-hidden ${brand.logo ? '' : 'bg-gray-200'}`}>
+                  {brand.logo ? (
+                    <Image
+                      src={brand.logo}
+                      alt={brand.name}
+                      fill
+                      sizes="64px"
+                      className="object-contain p-1"
+                    />
+                  ) : (
+                    <span className="text-sm font-medium text-gray-600">{brand.name}</span>
+                  )}
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900 mb-2">{brand.name}</h3>

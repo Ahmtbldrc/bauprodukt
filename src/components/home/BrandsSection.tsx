@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useAllBrands } from '@/hooks/useBrands'
 
 export function BrandsSection() {
@@ -84,10 +85,20 @@ export function BrandsSection() {
           {brands.slice(0, 5).map((brand) => (
             <Link key={brand.id} href={{ pathname: '/products', query: { brand: brand.id } }}>
               <div className="bg-white rounded-lg shadow-md p-6 text-center hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 group">
-                <div className="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center mx-auto mb-4 transition-colors group-hover:bg-gray-100">
-                  <span className="text-sm font-medium text-gray-600 transition-colors group-hover:text-gray-800">
-                    {brand.name}
-                  </span>
+                <div className={`w-16 h-16 relative rounded-lg flex items-center justify-center mx-auto mb-4 transition-colors overflow-hidden ${brand.logo ? '' : 'bg-gray-200 group-hover:bg-gray-100'}`}>
+                  {brand.logo ? (
+                    <Image
+                      src={brand.logo}
+                      alt={brand.name}
+                      fill
+                      sizes="64px"
+                      className="object-contain p-1"
+                    />
+                  ) : (
+                    <span className="text-sm font-medium text-gray-600 transition-colors group-hover:text-gray-800">
+                      {brand.name}
+                    </span>
+                  )}
                 </div>
                 <h3 className="font-semibold text-gray-900 transition-colors group-hover:text-gray-800">
                   {brand.name}

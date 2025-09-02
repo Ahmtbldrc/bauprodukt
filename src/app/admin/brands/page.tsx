@@ -1,18 +1,21 @@
 'use client'
 
 import { BrandsTable } from '@/components/admin/BrandsTable'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
+import Image from 'next/image'
 
 export default function BrandsPage() {
   const [deleteBrandId, setDeleteBrandId] = useState<string | null>(null)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
-  const [editingBrand, setEditingBrand] = useState<{ id: string; name: string; slug: string } | null>(null)
+  const [editingBrand, setEditingBrand] = useState<{ id: string; name: string; slug: string; logo?: string } | null>(null)
   const [editName, setEditName] = useState('')
   const [editSlug, setEditSlug] = useState('')
+  const [logoUploading, setLogoUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const queryClient = useQueryClient()
 
   const deleteMutation = useMutation({
@@ -40,7 +43,7 @@ export default function BrandsPage() {
     setIsDeleteOpen(true)
   }
 
-  const handleEditBrand = (brand: { id: string; name: string; slug: string }) => {
+  const handleEditBrand = (brand: { id: string; name: string; slug: string; logo?: string }) => {
     setEditingBrand(brand)
     setEditName(brand.name)
     setEditSlug(brand.slug)
@@ -71,6 +74,8 @@ export default function BrandsPage() {
     }
   })
 
+  // Removed local create modal; creation handled in AdminHeader dialog
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -78,6 +83,7 @@ export default function BrandsPage() {
           <h1 className="text-3xl font-bold text-gray-900">Marken</h1>
           <p className="text-gray-600">Markenverwaltung und -verfolgung</p>
         </div>
+        {/* Create brand handled in AdminHeader */}
       </div>
       
       <BrandsTable 
@@ -115,6 +121,94 @@ export default function BrandsPage() {
 
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Marke bearbeiten</h3>
             <div className="space-y-4">
+              {/* Logo section */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Logo</label>
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 relative rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center">
+                    {editingBrand.logo ? (
+                      <Image
+                        src={editingBrand.logo}
+                        alt={editingBrand.name}
+                        fill
+                        sizes="64px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <span className="text-gray-400 text-xs">Logo</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-3 py-2 rounded-lg border text-sm disabled:opacity-50"
+                      disabled={logoUploading}
+                      style={{ color: '#F39237', borderColor: '#F39237' }}
+                    >
+                      {logoUploading ? 'Wird hochgeladen...' : (editingBrand.logo ? 'Logo ändern' : 'Logo hochladen')}
+                    </button>
+                    {editingBrand.logo && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            setLogoUploading(true)
+                            const res = await fetch(`/api/brands/${editingBrand.id}/logo`, { method: 'DELETE' })
+                            if (!res.ok) {
+                              const err = await res.json().catch(() => ({}))
+                              throw new Error(err?.error || 'Löschen fehlgeschlagen')
+                            }
+                            setEditingBrand({ ...editingBrand, logo: undefined })
+                            toast.success('Logo entfernt')
+                            queryClient.invalidateQueries({ queryKey: ['brands'] })
+                          } catch (e: any) {
+                            toast.error(e?.message || 'Logo konnte nicht entfernt werden')
+                          } finally {
+                            setLogoUploading(false)
+                          }
+                        }}
+                        className="px-3 py-2 rounded-lg border text-sm text-red-600 border-red-300 disabled:opacity-50"
+                        disabled={logoUploading}
+                      >
+                        Entfernen
+                      </button>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0]
+                        if (!file || !editingBrand) return
+                        try {
+                          setLogoUploading(true)
+                          const formData = new FormData()
+                          formData.append('file', file)
+                          const res = await fetch(`/api/brands/${editingBrand.id}/logo`, { method: 'POST', body: formData })
+                          if (!res.ok) {
+                            const errTxt = await res.text()
+                            let errMsg = 'Upload fehlgeschlagen'
+                            try { errMsg = (JSON.parse(errTxt)?.error) || errMsg } catch {}
+                            throw new Error(errMsg)
+                          }
+                          const result = await res.json()
+                          const newLogo = result?.data?.logo as string | undefined
+                          setEditingBrand({ ...editingBrand, logo: newLogo })
+                          toast.success('Logo hochgeladen')
+                          queryClient.invalidateQueries({ queryKey: ['brands'] })
+                        } catch (e: any) {
+                          toast.error(e?.message || 'Upload fehlgeschlagen')
+                        } finally {
+                          setLogoUploading(false)
+                          if (fileInputRef.current) fileInputRef.current.value = ''
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                 <input
@@ -140,7 +234,7 @@ export default function BrandsPage() {
             <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-100">
               <button
                 onClick={() => setIsEditOpen(false)}
-                disabled={updateMutation.isPending}
+                disabled={updateMutation.isPending || logoUploading}
                 className="px-4 py-2 rounded-lg border disabled:opacity-50"
                 style={{ color: '#F39237', borderColor: '#F39237' }}
               >
@@ -148,7 +242,7 @@ export default function BrandsPage() {
               </button>
               <button
                 onClick={() => editingBrand && updateMutation.mutate({ id: editingBrand.id, name: editName.trim(), slug: editSlug.trim() || undefined })}
-                disabled={!editName.trim() || updateMutation.isPending}
+                disabled={!editName.trim() || updateMutation.isPending || logoUploading}
                 className="px-4 py-2 rounded-lg text-white disabled:opacity-50"
                 style={{ backgroundColor: '#F39237' }}
               >
@@ -158,6 +252,8 @@ export default function BrandsPage() {
           </div>
         </div>
       )}
+
+      {/* Create brand modal removed; handled by AdminHeader */}
     </div>
   )
 } 
