@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { useAllCategories, useSubCategories } from '@/hooks/useCategories'
+import { useSubCategories } from '@/hooks/useCategories'
 
 export default function CategoriesPage() {
   const queryClient = useQueryClient()
@@ -14,7 +14,7 @@ export default function CategoriesPage() {
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null)
 
   const [isEditOpen, setIsEditOpen] = useState(false)
-  const [editingCategory, setEditingCategory] = useState<{ id: string; name: string; slug: string } | null>(null)
+  const [editingCategory, setEditingCategory] = useState<{ id: string; name: string; slug: string; parent?: { id: string; name: string } | null } | null>(null)
   const [editName, setEditName] = useState('')
   const [editSlug, setEditSlug] = useState('')
   const [editSlugTouched, setEditSlugTouched] = useState(false)
@@ -24,12 +24,25 @@ export default function CategoriesPage() {
   const [editParentId, setEditParentId] = useState<string | ''>('')
   const [editSelectedSubIds, setEditSelectedSubIds] = useState<string[]>([])
 
-  const { data: allCategoriesResponse } = useAllCategories()
-  const allCategories = allCategoriesResponse?.data || []
   const { data: subCategoriesResponse } = useSubCategories()
   const subCategories = subCategoriesResponse?.data || []
 
   
+
+  // Ensure main categories table refreshes when any category/subcategory updates occur elsewhere
+  useEffect(() => {
+    const handler = () => {
+      queryClient.invalidateQueries({ queryKey: ['categories'] })
+    }
+    if (typeof window !== 'undefined') {
+      window.addEventListener('categories-updated', handler as EventListener)
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('categories-updated', handler as EventListener)
+      }
+    }
+  }, [queryClient])
 
   const deleteMutation = useMutation({
     mutationFn: async (categoryId: string) => {
@@ -45,6 +58,9 @@ export default function CategoriesPage() {
       queryClient.invalidateQueries({ queryKey: ['categories'] })
       setIsDeleteOpen(false)
       setDeleteCategoryId(null)
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('categories-updated'))
+      }
     },
     onError: (error: any) => {
       toast.error(error?.message || 'Löschen fehlgeschlagen')
@@ -57,8 +73,8 @@ export default function CategoriesPage() {
         name: payload.name,
         slug: payload.slug,
       }
-      // Only main category edit can assign subcategories
-      if (activeTab === 'main' && editSelectedSubIds.length > 0) {
+      // Only when editing a main category (no parent) we send subcategory_ids
+      if (editingCategory && !(editingCategory as any).parent) {
         bodyPayload.subcategory_ids = editSelectedSubIds
       }
 
@@ -89,9 +105,13 @@ export default function CategoriesPage() {
 
       return updated
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast.success('Kategorie erfolgreich aktualisiert')
-      queryClient.invalidateQueries({ queryKey: ['categories'] })
+      await queryClient.invalidateQueries({ queryKey: ['categories'] })
+      await queryClient.refetchQueries({ queryKey: ['categories'] })
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('categories-updated'))
+      }
       setIsEditOpen(false)
       setEditingCategory(null)
     },
@@ -117,6 +137,23 @@ export default function CategoriesPage() {
     setEditSelectedSubIds([])
     setIsEditOpen(true)
   }
+
+  // Prefill existing subcategories for main category on edit open
+  useEffect(() => {
+    const prefill = async () => {
+      if (isEditOpen && editingCategory && !(editingCategory as any).parent) {
+        try {
+          const res = await fetch(`/api/categories/${editingCategory.id}/children`)
+          if (res.ok) {
+            const json = await res.json()
+            const ids = Array.isArray(json?.data) ? json.data.map((d: any) => d.category_id) : []
+            setEditSelectedSubIds(ids)
+          }
+        } catch {}
+      }
+    }
+    prefill()
+  }, [isEditOpen, editingCategory])
 
   const generateSlug = (text: string) =>
     (() => {
@@ -149,21 +186,33 @@ export default function CategoriesPage() {
   const [createIconUploading, setCreateIconUploading] = useState(false)
   const createIconInputRef = useRef<HTMLInputElement>(null)
 
+
   useEffect(() => {
     if (!createSlugTouched) {
       setCreateSlug(generateSlug(createName))
     }
   }, [createName, createSlugTouched])
 
+  // When creating a subcategory, keep slug auto-generated and non-editable
+  useEffect(() => {
+    if (isCreateOpen && activeTab === 'sub') {
+      setCreateSlugTouched(false)
+      setCreateSlug(generateSlug(createName))
+    }
+  }, [isCreateOpen, activeTab])
+
   const createMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (vars: { activeTab: 'main' | 'sub'; name: string; slug: string; subIds: string[] }) => {
       const payload: any = {
-        name: createName.trim(),
-        slug: createSlug.trim(),
+        name: vars.name,
+        slug: vars.slug,
       }
-      if (activeTab === 'main') {
+      if (vars.activeTab === 'main') {
         payload.parent_id = null
-        payload.subcategory_ids = selectedSubcategoryIds
+        payload.subcategory_ids = vars.subIds
+      } else {
+        payload.parent_id = null
+        payload.category_type = 'sub'
       }
       const res = await fetch('/api/categories', {
         method: 'POST',
@@ -172,7 +221,7 @@ export default function CategoriesPage() {
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        throw new Error(err?.error || 'Kategori oluşturma başarısız')
+        throw new Error(err?.error || 'Erstellen der Kategorie fehlgeschlagen')
       }
       const created = await res.json()
 
@@ -184,7 +233,7 @@ export default function CategoriesPage() {
         const iconRes = await fetch(`/api/categories/${created.id}/icon`, { method: 'POST', body: formData })
         if (!iconRes.ok) {
           const errTxt = await iconRes.text()
-          let errMsg = 'Icon-Upload başarısız'
+          let errMsg = 'Icon-Upload fehlgeschlagen'
           try { errMsg = (JSON.parse(errTxt)?.error) || errMsg } catch {}
           throw new Error(errMsg)
         }
@@ -192,9 +241,13 @@ export default function CategoriesPage() {
 
       return created
     },
-    onSuccess: () => {
-      toast.success('Kategori oluşturuldu')
-      queryClient.invalidateQueries({ queryKey: ['categories'] })
+    onSuccess: async () => {
+      toast.success('Kategorie erstellt')
+      await queryClient.invalidateQueries({ queryKey: ['categories'] })
+      await queryClient.refetchQueries({ queryKey: ['categories'] })
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('categories-updated'))
+      }
       setIsCreateOpen(false)
       setCreateName('')
       setCreateSlug('')
@@ -203,7 +256,7 @@ export default function CategoriesPage() {
       setCreateIconPreview(undefined)
       if (createIconInputRef.current) createIconInputRef.current.value = ''
     },
-    onError: (error: any) => toast.error(error?.message || 'Oluşturma başarısız')
+    onError: (error: any) => toast.error(error?.message || 'Erstellen fehlgeschlagen')
   })
 
   return (
@@ -222,14 +275,14 @@ export default function CategoriesPage() {
             className={`px-4 py-3 text-sm font-medium ${activeTab === 'main' ? 'border-b-2' : 'text-gray-500'}`}
             style={activeTab === 'main' ? { borderColor: '#F39237', color: '#111827' } : {}}
           >
-            Ana Kategoriler
+            Hauptkategorien
           </button>
           <button
             onClick={() => setActiveTab('sub')}
             className={`px-4 py-3 text-sm font-medium ${activeTab === 'sub' ? 'border-b-2' : 'text-gray-500'}`}
             style={activeTab === 'sub' ? { borderColor: '#F39237', color: '#111827' } : {}}
           >
-            Alt Kategoriler
+            Unterkategorien
           </button>
         </div>
         <div className="p-4 space-y-4">
@@ -240,7 +293,7 @@ export default function CategoriesPage() {
                 className="px-4 py-2 rounded-lg text-white disabled:opacity-50"
                 style={{ backgroundColor: '#F39237' }}
               >
-                Ana Kategori Ekle
+                Hauptkategorie hinzufügen
               </button>
             </div>
           ) : (
@@ -250,7 +303,7 @@ export default function CategoriesPage() {
                 className="px-4 py-2 rounded-lg text-white disabled:opacity-50"
                 style={{ backgroundColor: '#F39237' }}
               >
-                Alt Kategori Ekle
+                Unterkategorie hinzufügen
               </button>
             </div>
           )}
@@ -311,7 +364,7 @@ export default function CategoriesPage() {
                     if (!editSlugTouched) setEditSlug(generateSlug(value))
                   }}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#F39237] focus:border-[#F39237]"
-                  placeholder="z.B. Werkzeuge"
+                  placeholder="z. B. Werkzeuge"
                 />
               </div>
               <div>
@@ -324,7 +377,7 @@ export default function CategoriesPage() {
                     setEditSlugTouched(true)
                   }}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#F39237] focus:border-[#F39237]"
-                  placeholder="z.B. werkzeuge"
+                  placeholder="z. B. werkzeuge"
                 />
               </div>
               <div>
@@ -346,7 +399,7 @@ export default function CategoriesPage() {
                       disabled={editIconUploading || updateMutation.isPending}
                       style={{ color: '#F39237', borderColor: '#F39237' }}
                     >
-                      {editIconUploading ? 'Wird gewählt...' : (editIconPreview ? 'Icon ändern' : 'Icon hochladen')}
+                      {editIconUploading ? 'Wird ausgewählt...' : (editIconPreview ? 'Icon ändern' : 'Icon hochladen')}
                     </button>
                     {editIconPreview && (
                       <button
@@ -388,7 +441,7 @@ export default function CategoriesPage() {
               </div>
               {editingCategory && !editingCategory.parent && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Alt Kategoriler (bağla)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Unterkategorien (zuweisen)</label>
                   <div className="max-h-40 overflow-auto border rounded">
                     {subCategories.map((sub: any) => (
                       <label key={sub.id} className="flex items-center gap-2 p-2 border-b last:border-b-0">
@@ -452,29 +505,31 @@ export default function CategoriesPage() {
               ×
             </button>
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              {activeTab === 'main' ? 'Ana Kategori Ekle' : 'Alt Kategori Ekle'}
+              {activeTab === 'main' ? 'Hauptkategorie hinzufügen' : 'Unterkategorie hinzufügen'}
             </h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ad</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
                 <input
                   type="text"
                   value={createName}
                   onChange={(e) => setCreateName(e.target.value)}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#F39237] focus:border-[#F39237]"
-                  placeholder="Örn. El Aletleri"
+                  placeholder="z. B. Werkzeuge"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
-                <input
-                  type="text"
-                  value={createSlug}
-                  onChange={(e) => { setCreateSlug(e.target.value); setCreateSlugTouched(true) }}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#F39237] focus:border-[#F39237]"
-                  placeholder="orn-el-aletleri"
-                />
-              </div>
+              {activeTab === 'main' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
+                  <input
+                    type="text"
+                    value={createSlug}
+                    onChange={(e) => { setCreateSlug(e.target.value); setCreateSlugTouched(true) }}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-[#F39237] focus:border-[#F39237]"
+                    placeholder="z-b-werkzeuge"
+                  />
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Icon (SVG)</label>
                 <div className="flex items-center gap-4">
@@ -494,7 +549,7 @@ export default function CategoriesPage() {
                       disabled={createIconUploading || createMutation.isPending}
                       style={{ color: '#F39237', borderColor: '#F39237' }}
                     >
-                      {createIconUploading ? 'Seçiliyor...' : (createIconPreview ? 'Icon değiştir' : 'Icon yükle')}
+                      {createIconUploading ? 'Wird ausgewählt...' : (createIconPreview ? 'Icon ändern' : 'Icon hochladen')}
                     </button>
                     {createIconPreview && (
                       <button
@@ -506,7 +561,7 @@ export default function CategoriesPage() {
                         className="px-3 py-2 rounded-lg border text-sm text-red-600 border-red-300 disabled:opacity-50"
                         disabled={createIconUploading || createMutation.isPending}
                       >
-                        Kaldır
+                        Entfernen
                       </button>
                     )}
                   </div>
@@ -526,10 +581,9 @@ export default function CategoriesPage() {
                   }}
                 />
               </div>
-              {/* No parent selection for subcategories */}
               {activeTab === 'main' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Alt Kategoriler (opsiyonel)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Unterkategorien (optional)</label>
                   <div className="max-h-40 overflow-auto border rounded">
                     {subCategories.map((sub: any) => (
                       <label key={sub.id} className="flex items-center gap-2 p-2 border-b last:border-b-0">
@@ -549,6 +603,7 @@ export default function CategoriesPage() {
                   </div>
                 </div>
               )}
+              {activeTab === 'sub' && null}
             </div>
             <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-100">
               <button
@@ -557,20 +612,21 @@ export default function CategoriesPage() {
                 className="px-4 py-2 rounded-lg border disabled:opacity-50"
                 style={{ color: '#F39237', borderColor: '#F39237' }}
               >
-                İptal
+                Abbrechen
               </button>
               <button
-                onClick={() => createMutation.mutate()}
+                onClick={() => createMutation.mutate({ activeTab, name: createName.trim(), slug: createSlug.trim(), subIds: selectedSubcategoryIds })}
                 disabled={!createName.trim() || !createSlug.trim() || createMutation.isPending}
                 className="px-4 py-2 rounded-lg text-white disabled:opacity-50"
                 style={{ backgroundColor: '#F39237' }}
               >
-                {createMutation.isPending ? 'Oluşturuluyor...' : 'Oluştur'}
+                {createMutation.isPending ? 'Wird erstellt...' : 'Erstellen'}
               </button>
             </div>
           </div>
         </div>
       )}
+      {/* Reorder modal removed; drag-and-drop is now inside the table */}
       
     </div>
   )

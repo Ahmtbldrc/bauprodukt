@@ -123,16 +123,71 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Optional bulk assign subcategories to this category (treat this as main category)
-    if (Array.isArray(subcategory_ids) && subcategory_ids.length > 0) {
-      const ids = subcategory_ids.filter((cid: string) => cid && cid !== id)
+    // Optional bulk assign subcategories to this category (as relations in category_parents)
+    if (Array.isArray(subcategory_ids)) {
+      const ids: string[] = subcategory_ids.filter((cid: string) => cid && cid !== id)
+
+      // Fetch existing relations for this parent
+      const { data: existingRels, error: existingErr } = await (supabase as any)
+        .from('category_parents')
+        .select('category_id, order_index')
+        .eq('parent_id', id)
+
+      if (existingErr) {
+        console.error('Fetch existing subcategory relations error:', existingErr)
+      }
+
+      const existingIds = new Set((existingRels || []).map((r: any) => r.category_id))
+      const newIds = ids.filter(cid => !existingIds.has(cid))
+
+      // Determine next order_index start
+      const currentMax = existingRels && existingRels.length > 0
+        ? Math.max(...existingRels.map((r: any) => r.order_index || 0))
+        : -1
+
+      // Insert only new relations at the end
+      if (newIds.length > 0) {
+        const toInsert = newIds.map((cid, idx) => ({ parent_id: id, category_id: cid, order_index: currentMax + 1 + idx }))
+        const { error: insertErr } = await (supabase as any)
+          .from('category_parents')
+          .insert(toInsert)
+        if (insertErr) {
+          console.error('Insert new subcategory relations error:', insertErr)
+        }
+      }
+
+      // Synchronize primary parent_id for included subcategories
       if (ids.length > 0) {
-        const { error: bulkError } = await (supabase as any)
+        const { error: setPrimaryErr } = await (supabase as any)
           .from('categories')
           .update({ parent_id: id })
           .in('id', ids)
-        if (bulkError) {
-          console.error('Bulk assign subcategories in PUT error:', bulkError)
+        if (setPrimaryErr) {
+          console.error('Update subcategories primary parent_id error:', setPrimaryErr)
+        }
+      }
+
+      // Remove relations not in payload (replace behavior)
+      const inList = ids.length > 0 ? `(${ids.map((i: string) => `'${i}'`).join(',')})` : '(NULL)'
+      const { error: delError } = await (supabase as any)
+        .from('category_parents')
+        .delete()
+        .eq('parent_id', id)
+        .not('category_id', 'in', inList)
+      if (delError) {
+        console.error('Remove missing subcategory relations error:', delError)
+      }
+
+      // Unset primary parent_id for removed subcategories that pointed to this parent
+      const removedIds = [...existingIds].filter((cid) => !ids.includes(cid))
+      if (removedIds.length > 0) {
+        const { error: unsetPrimaryErr } = await (supabase as any)
+          .from('categories')
+          .update({ parent_id: null })
+          .in('id', removedIds)
+          .eq('parent_id', id)
+        if (unsetPrimaryErr) {
+          console.error('Unset removed subcategories primary parent_id error:', unsetPrimaryErr)
         }
       }
     }
@@ -173,26 +228,23 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // Check if there are subcategories
-    const { data: subcategories, error: subcategoriesError } = await supabase
-      .from('categories')
-      .select('id')
+    // Detach any subcategory relations before deletion
+    const { error: relDeleteError } = await (supabase as any)
+      .from('category_parents')
+      .delete()
       .eq('parent_id', id)
-      .limit(1)
-
-    if (subcategoriesError) {
-      console.error('Subcategories check error:', subcategoriesError)
-      return NextResponse.json(
-        { error: 'Failed to check subcategories' },
-        { status: 500 }
-      )
+    if (relDeleteError) {
+      console.error('Failed to delete subcategory relations:', relDeleteError)
+      // Continue anyway; we'll also unset legacy parent_id links
     }
 
-    if (subcategories && subcategories.length > 0) {
-      return NextResponse.json(
-        { error: 'Cannot delete category: it has subcategories' },
-        { status: 409 }
-      )
+    const { error: unsetSubsError } = await (supabase as any)
+      .from('categories')
+      .update({ parent_id: null })
+      .eq('parent_id', id)
+    if (unsetSubsError) {
+      console.error('Failed to unset legacy parent_id for subcategories:', unsetSubsError)
+      // Non-fatal; proceed to delete parent to avoid blocking
     }
 
     // Check if category exists before deletion
