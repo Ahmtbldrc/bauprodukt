@@ -246,6 +246,8 @@ export default function GeneralTab({ formData, brands, mainCategories, handleInp
             onChange={handleInputChange}
             step="0.01"
             min="0"
+            required={false}
+            placeholder="Optional"
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200"
             style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
           />
