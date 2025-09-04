@@ -7,7 +7,7 @@ import { useCart } from '@/contexts/CartContext'
 import { useFavorites } from '@/contexts/FavoritesContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { useAllBrands } from '@/hooks/useBrands'
-import { useAllCategories } from '@/hooks/useCategories'
+import { useMainCategories } from '@/hooks/useCategories'
 import type { Category } from '@/types/product'
 
 import { 
@@ -26,20 +26,7 @@ import {
   Zap
 } from 'lucide-react'
 
-// Helper: Build category tree from flat array
-function buildCategoryTree(categories: Category[]): (Category & { children: Category[] })[] {
-  const map = new Map<string, Category & { children: Category[] }>();
-  categories.forEach((cat) => map.set(cat.id, { ...cat, children: [] }));
-  const tree: (Category & { children: Category[] })[] = [];
-  categories.forEach((cat) => {
-    if (cat.parent_id) {
-      map.get(cat.parent_id)?.children.push(map.get(cat.id)!);
-    } else {
-      tree.push(map.get(cat.id)!);
-    }
-  });
-  return tree;
-}
+// Subcategory cache for selected main categories
 
 export function Header() {
   const { getTotalItems } = useCart()
@@ -57,6 +44,8 @@ export function Header() {
   const [categoryButtonPosition, setCategoryButtonPosition] = useState({ top: 0, left: 0 })
   const [brandButtonPosition, setBrandButtonPosition] = useState({ top: 0, left: 0 })
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+  const [childrenMap, setChildrenMap] = useState<Record<string, Category[]>>({})
+  const [childrenLoading, setChildrenLoading] = useState<Record<string, boolean>>({})
   
   const categoryButtonRef = useRef<HTMLButtonElement>(null)
   const brandButtonRef = useRef<HTMLButtonElement>(null)
@@ -103,9 +92,64 @@ export function Header() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isCategoryMenuOpen, isBrandMenuOpen, isUserMenuOpen])
 
-  const { data: categoriesResponse, isLoading: categoriesLoading } = useAllCategories();
-  const liveCategories = categoriesResponse?.data || [];
-  const categoryTree = buildCategoryTree(liveCategories);
+  const { data: mainCatsResponse, isLoading: categoriesLoading } = useMainCategories();
+  const mainCategories = mainCatsResponse?.data || [];
+  // Fetch children when a main category is selected (desktop hover)
+  useEffect(() => {
+    const fetchChildren = async (parentId: string) => {
+      try {
+        setChildrenLoading(prev => ({ ...prev, [parentId]: true }))
+        const res = await fetch(`/api/categories/${parentId}/children`)
+        if (res.ok) {
+          const json = await res.json()
+          const children = (json.data || []).map((r: any) => ({
+            id: r.category?.id,
+            name: r.category?.name,
+            slug: r.category?.slug,
+            emoji: r.category?.emoji,
+            icon_url: r.category?.icon_url
+          })) as Category[]
+          setChildrenMap(prev => ({ ...prev, [parentId]: children }))
+        }
+      } finally {
+        setChildrenLoading(prev => ({ ...prev, [parentId]: false }))
+      }
+    }
+
+    if (selectedCategory && !childrenMap[selectedCategory] && !childrenLoading[selectedCategory]) {
+      fetchChildren(selectedCategory)
+    }
+  }, [selectedCategory, childrenMap, childrenLoading])
+
+  // Prefetch children for first few main categories for mobile menu
+  useEffect(() => {
+    const prefetch = async (parentId: string) => {
+      try {
+        setChildrenLoading(prev => ({ ...prev, [parentId]: true }))
+        const res = await fetch(`/api/categories/${parentId}/children`)
+        if (res.ok) {
+          const json = await res.json()
+          const children = (json.data || []).map((r: any) => ({
+            id: r.category?.id,
+            name: r.category?.name,
+            slug: r.category?.slug,
+            emoji: r.category?.emoji,
+            icon_url: r.category?.icon_url
+          })) as Category[]
+          setChildrenMap(prev => ({ ...prev, [parentId]: children }))
+        }
+      } finally {
+        setChildrenLoading(prev => ({ ...prev, [parentId]: false }))
+      }
+    }
+    if (mainCategories && mainCategories.length > 0) {
+      mainCategories.slice(0, 6).forEach(cat => {
+        if (cat?.id && !childrenMap[cat.id] && !childrenLoading[cat.id]) {
+          prefetch(cat.id)
+        }
+      })
+    }
+  }, [mainCategories, childrenMap, childrenLoading])
 
   const { data: brandsResponse, isLoading: brandsLoading } = useAllBrands();
   const brands = brandsResponse?.data || [];
@@ -367,7 +411,7 @@ export function Header() {
                           {categoriesLoading ? (
                             <div className="text-center py-4 text-gray-400">Kategorien werden geladen...</div>
                           ) : (
-                            categoryTree.map((category) => (
+                            mainCategories.map((category: any) => (
                               <div
                                 key={category.id}
                                 onMouseEnter={() => setSelectedCategory(category.id)}
@@ -395,11 +439,11 @@ export function Header() {
                       <div className="w-2/3 p-4">
                         <div className="flex items-center justify-between mb-4">
                           <h3 className="text-lg font-semibold text-gray-800">
-                            {categoryTree.find(cat => cat.id === selectedCategory)?.name || 'Kategorie wählen'}
+                            {mainCategories.find((cat: any) => cat.id === selectedCategory)?.name || 'Kategorie wählen'}
                           </h3>
                           {selectedCategory && (
                             <Link 
-                              href={`/categories/${categoryTree.find(cat => cat.id === selectedCategory)?.slug}`}
+                              href={`/categories/${mainCategories.find((cat: any) => cat.id === selectedCategory)?.slug}`}
                               onClick={() => setIsCategoryMenuOpen(false)}
                               className="text-sm text-orange-600 hover:text-orange-700 font-medium transition-colors"
                             >
@@ -410,7 +454,7 @@ export function Header() {
                         
                         {/* Subcategories (children) if any */}
                         <div className="space-y-2 max-h-80 overflow-y-auto">
-                          {categoryTree.find(cat => cat.id === selectedCategory)?.children?.map((subcat: Category) => (
+                          {(childrenMap[selectedCategory || ''] || []).map((subcat: Category) => (
                             <Link
                               key={subcat.id}
                               href={`/categories/${subcat.slug}`}
@@ -422,9 +466,7 @@ export function Header() {
                                   ? <Image src={subcat.icon_url} alt={subcat.name} width={20} height={20} className="inline mr-2" />
                                   : subcat.emoji
                                     ? subcat.emoji
-                                    : subcat.image
-                                      ? <Image src={subcat.image} alt={subcat.name} width={20} height={20} className="inline rounded mr-2" />
-                                      : '📂'} {subcat.name}
+                                    : '📂'} {subcat.name}
                               </span>
                             </Link>
                           ))}
@@ -538,7 +580,7 @@ export function Header() {
                 <div className="text-center py-4 text-gray-400">Kategorien werden geladen...</div>
               ) : (
                 <div className="grid grid-cols-1 gap-3">
-                  {categoryTree.slice(0, 6).map((category) => (
+                  {mainCategories.slice(0, 6).map((category: any) => (
                     <div key={category.id} className="bg-gray-50 rounded-lg p-3">
                       <Link
                         href={`/categories/${category.slug}`}
@@ -548,9 +590,9 @@ export function Header() {
                         <span className="text-sm font-medium text-gray-800">{category.name}</span>
                       </Link>
                         {/* Subcategories in mobile menu */}
-                        {category.children && category.children.length > 0 && (
+                        {(childrenMap[category.id] && childrenMap[category.id].length > 0) && (
                           <div className="ml-6 mt-1 space-y-1">
-                            {category.children.slice(0, 3).map((subcat: Category) => (
+                            {childrenMap[category.id].slice(0, 3).map((subcat: Category) => (
                               <Link
                                 key={subcat.id}
                                 href={`/categories/${subcat.slug}`}
