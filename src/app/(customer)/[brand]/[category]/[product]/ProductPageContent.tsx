@@ -198,9 +198,9 @@ export default function ProductPageContent({
     isLoading: relatedProductsLoading 
   } = useProductsByBrand(brand?.id || '', { limit: 20 })
 
-  // Product images
+  // Product images (sorted by order_index)
   const productImages = product?.product_images?.length 
-    ? product.product_images 
+    ? [...product.product_images].sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0))
     : product?.image_url 
       ? [{ id: '1', image_url: product.image_url, order_index: 0, is_cover: true }]
       : []
