@@ -54,11 +54,12 @@ interface UseProductsOptions {
   search?: string
   brand?: string
   category?: string
+  categories?: string[]
   stock_code?: string
 }
 
 export function useProducts(options: UseProductsOptions = {}) {
-  const { page = 1, limit = 10, search, brand, category, stock_code } = options
+  const { page = 1, limit = 10, search, brand, category, categories, stock_code } = options
 
   return useQuery<ProductsResponse>({
     queryKey: ['products', { page, limit, search, brand, category, stock_code }],
@@ -76,7 +77,9 @@ export function useProducts(options: UseProductsOptions = {}) {
         params.set('brand', brand)
       }
 
-      if (category) {
+      if (categories && categories.length > 0) {
+        params.set('categories', categories.join(','))
+      } else if (category) {
         params.set('category', category)
       }
 

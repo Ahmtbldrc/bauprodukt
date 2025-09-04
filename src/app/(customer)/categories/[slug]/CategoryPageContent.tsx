@@ -2,7 +2,9 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useCategoryBySlug, useProductsByCategory } from '@/hooks'
+import { useEffect, useMemo, useState } from 'react'
+import { useCategoryBySlug } from '@/hooks'
+import { useProducts } from '@/hooks/useProducts'
 import { formatPrice } from '@/lib/url-utils'
 import { notFound } from 'next/navigation'
 
@@ -12,14 +14,50 @@ interface CategoryPageContentProps {
 
 export function CategoryPageContent({ slug }: CategoryPageContentProps) {
   const { data: category, isLoading: categoryLoading, error: categoryError, isFound } = useCategoryBySlug(slug)
+  const [subCategories, setSubCategories] = useState<Array<{ id: string; name: string; slug: string }>>([])
+  const [selectedSubId, setSelectedSubId] = useState<string>('')
+
+  // Load subcategories of the current category (if it's a main category)
+  useEffect(() => {
+    const loadChildren = async () => {
+      if (!category?.id) return
+      try {
+        const res = await fetch(`/api/categories/${category.id}/children`)
+        if (res.ok) {
+          const json = await res.json()
+          const children = (json.data || []).map((r: any) => ({
+            id: r.category?.id,
+            name: r.category?.name,
+            slug: r.category?.slug
+          })).filter((c: any) => c.id && c.name)
+          setSubCategories(children)
+        } else {
+          setSubCategories([])
+        }
+      } catch {
+        setSubCategories([])
+      }
+    }
+    loadChildren()
+  }, [category?.id])
   
+  // Compute category ids for product query
+  const categoryIds = useMemo(() => {
+    if (!category?.id) return [] as string[]
+    if (selectedSubId) return [selectedSubId]
+    if (subCategories.length > 0) return subCategories.map((s) => s.id)
+    return [category.id]
+  }, [category?.id, selectedSubId, subCategories])
+  // Note: subcategories loaded server-side via category_parents children endpoint would be better;
+  // here we fetch products for the selected category only, relying on product.category_id being subcategory in most cases.
   const { 
     data: productsResponse, 
     isLoading: productsLoading, 
     error: productsError 
-  } = useProductsByCategory(category?.id || '', {
+  } = useProducts({
     page: 1,
-    limit: 100
+    limit: 100,
+    categories: categoryIds
   })
 
   const products = productsResponse?.data || []
@@ -103,7 +141,19 @@ export function CategoryPageContent({ slug }: CategoryPageContentProps) {
       </div>
       
       {/* Filters */}
-      <div className="mb-6 flex flex-wrap gap-4">
+      <div className="mb-6 flex flex-wrap gap-4 items-center">
+        {subCategories.length > 0 && (
+          <select
+            value={selectedSubId}
+            onChange={(e) => setSelectedSubId(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          >
+            <option value="">Alle Unterkategorien</option>
+            {subCategories.map((sub) => (
+              <option key={sub.id} value={sub.id}>{sub.name}</option>
+            ))}
+          </select>
+        )}
         <select className="px-4 py-2 border border-gray-300 rounded-lg">
           <option>Alle Marken</option>
           <option>Bosch</option>

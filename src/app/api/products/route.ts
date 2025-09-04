@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')
     const brand = searchParams.get('brand')
     const category = searchParams.get('category')
+    const categoriesParam = searchParams.get('categories') // comma-separated category ids
     const stock_code = searchParams.get('stock_code')
     const variant = searchParams.get('variant')
     const status = searchParams.get('status') // Admin filter for status
@@ -57,7 +58,12 @@ export async function GET(request: NextRequest) {
       query = query.eq('brand_id', brand)
     }
 
-    if (category) {
+    if (categoriesParam) {
+      const ids = categoriesParam.split(',').map((s) => s.trim()).filter(Boolean)
+      if (ids.length > 0) {
+        query = (query as any).in('category_id', ids)
+      }
+    } else if (category) {
       query = query.eq('category_id', category)
     }
 

@@ -3,12 +3,11 @@
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import Link from 'next/link'
-import { useAllCategories } from '@/hooks/useCategories'
+import { useMainCategories } from '@/hooks/useCategories'
 import { generateCategoryURL } from '@/lib/url-utils'
 
 export default function CategoriesPage() {
-  const { data: categoriesResponse, isLoading, error } = useAllCategories()
-
+  const { data: categoriesResponse, isLoading, error } = useMainCategories()
   const categories = categoriesResponse?.data || []
 
   return (
