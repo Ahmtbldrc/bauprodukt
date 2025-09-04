@@ -3,17 +3,17 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAllBrands } from '@/hooks/useBrands'
-import { useAllCategories } from '@/hooks/useCategories'
+import { useMainCategories } from '@/hooks/useCategories'
 import { ArrowLeft, Save, X, Info } from 'lucide-react'
 import Link from 'next/link'
 
 export default function NewProductPage() {
   const router = useRouter()
   const { data: brandsResponse } = useAllBrands()
-  const { data: categoriesResponse } = useAllCategories()
+  const { data: mainCatsResponse } = useMainCategories()
   
   const brands = brandsResponse?.data || []
-  const categories = categoriesResponse?.data || []
+  const mainCategories = mainCatsResponse?.data || []
 
   const [formData, setFormData] = useState({
     name: '',
@@ -27,6 +27,11 @@ export default function NewProductPage() {
     brand_id: '',
     category_id: ''
   })
+
+  // Main/Sub category dependent selection state
+  const [mainCategoryId, setMainCategoryId] = useState<string>('')
+  const [subOptions, setSubOptions] = useState<Array<{ id: string; name: string; slug: string }>>([])
+  const [loadingSubs, setLoadingSubs] = useState(false)
 
   const [isLoading, setIsLoading] = useState(false)
 
@@ -256,24 +261,63 @@ export default function NewProductPage() {
                 </select>
               </div>
 
-              {/* Kategori */}
+              {/* Hauptkategorie */}
+              <div className="space-y-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  Hauptkategorie
+                </label>
+                <select
+                  value={mainCategoryId}
+                  onChange={async (e) => {
+                    const mainId = e.target.value
+                    // Clear selected category until sub is chosen
+                    setFormData(prev => ({ ...prev, category_id: '' }))
+                    setMainCategoryId(mainId)
+                    if (!mainId) {
+                      setSubOptions([])
+                      return
+                    }
+                    try {
+                      setLoadingSubs(true)
+                      const res = await fetch(`/api/categories/${mainId}/children`)
+                      const json = await res.json()
+                      const children = (json.data || []).map((r: any) => r.category)
+                      setSubOptions(children)
+                      if (children.length === 0) {
+                        // No subs: assign main category
+                        setFormData(prev => ({ ...prev, category_id: mainId }))
+                      }
+                    } finally {
+                      setLoadingSubs(false)
+                    }
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
+                  style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
+                >
+                  <option value="">Hauptkategorie wählen</option>
+                  {mainCategories.map((m: any) => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Unterkategorie */}
               <div className="space-y-1">
                 <label htmlFor="category_id" className="block text-sm font-medium text-gray-700">
-                  Kategori
+                  Unterkategorie
                 </label>
                 <select
                   id="category_id"
                   name="category_id"
                   value={formData.category_id}
                   onChange={handleInputChange}
+                  disabled={!mainCategoryId || loadingSubs || subOptions.length === 0}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200 bg-white hover:border-gray-400"
                   style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
                 >
-                  <option value="">Kategori seçin</option>
-                  {categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
+                  <option value="">{loadingSubs ? 'Yükleniyor...' : subOptions.length === 0 ? 'Alt kategori yok' : 'Alt kategori seçin'}</option>
+                  {subOptions.map((s: any) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
                   ))}
                 </select>
               </div>

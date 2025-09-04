@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import { useProductById, useProductVariants, useProductImages } from '@/hooks/useProducts'
 import { useDocuments } from '@/hooks/useDocuments'
 import { useAllBrands } from '@/hooks/useBrands'
-import { useAllCategories } from '@/hooks/useCategories'
+import { useMainCategories } from '@/hooks/useCategories'
 import { Info, Settings, Package, ImageIcon, FileText, Calculator, Play } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
@@ -79,10 +79,10 @@ export default function EditProductPage() {
   const { data: imagesResponse, isLoading: isImagesLoading, refetch: refetchImages } = useProductImages(productId)
   const { data: documentsResponse, refetch: refetchDocuments } = useDocuments(productId)
   const { data: brandsResponse } = useAllBrands()
-  const { data: categoriesResponse } = useAllCategories()
+  const { data: mainCatsResponse } = useMainCategories()
   
   const brands = brandsResponse?.data || []
-  const categories = categoriesResponse?.data || []
+  const mainCategories = mainCatsResponse?.data || []
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -861,7 +861,7 @@ export default function EditProductPage() {
             <GeneralTab
               formData={formData}
               brands={brands}
-              categories={categories}
+              mainCategories={mainCategories}
               handleInputChange={handleInputChange}
             />
           )}

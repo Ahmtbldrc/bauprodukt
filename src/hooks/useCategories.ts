@@ -12,6 +12,7 @@ interface Category {
   parent_id?: string | null
   created_at: string
   parent?: Category | null
+  category_type?: 'main' | 'sub'
 }
 
 interface CategoriesResponse {
@@ -150,3 +151,21 @@ export function useCategoryBySlug(slug: string) {
     isFound: !!category && !rest.isLoading
   }
 } 
+
+// Fetch children (subcategories) of a given main category using the category_parents relation
+export function useCategoryChildren(parentId?: string) {
+  return useQuery<Array<{ category_id: string; order_index: number; category: Category }>>({
+    queryKey: ['categories', 'children', parentId],
+    enabled: !!parentId,
+    queryFn: async () => {
+      const response = await fetch(`/api/categories/${parentId}/children`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch children')
+      }
+      const json = await response.json()
+      return json.data || []
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  })
+}

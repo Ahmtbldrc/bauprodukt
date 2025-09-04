@@ -20,7 +20,7 @@ import {
   ProductDocument
 } from '@/types/admin/product-edit'
 import { useAllBrands } from '@/hooks/useBrands'
-import { useAllCategories } from '@/hooks/useCategories'
+import { useMainCategories } from '@/hooks/useCategories'
 import PageHeader from '@/components/admin/PageHeader'
 import TabNavigation from '@/components/admin/TabNavigation'
 import LoadingState from '@/components/admin/LoadingState'
@@ -106,10 +106,10 @@ export default function WaitlistProductDetailPage() {
   const [error, setError] = useState<string | null>(null)
   
   const { data: brandsResponse } = useAllBrands()
-  const { data: categoriesResponse } = useAllCategories()
+  const { data: mainCatsResponse } = useMainCategories()
   
   const brands = brandsResponse?.data || []
-  const categories = categoriesResponse?.data || []
+  const mainCategories = mainCatsResponse?.data || []
 
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -630,7 +630,7 @@ export default function WaitlistProductDetailPage() {
             <GeneralTab
               formData={formData}
               brands={brands}
-              categories={categories}
+              mainCategories={mainCategories}
               handleInputChange={handleInputChange}
             />
           )}
