@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { useCategoryBySlug } from '@/hooks'
 import { useProducts } from '@/hooks/useProducts'
 import { formatPrice } from '@/lib/url-utils'
@@ -16,6 +17,7 @@ export function CategoryPageContent({ slug }: CategoryPageContentProps) {
   const { data: category, isLoading: categoryLoading, error: categoryError, isFound } = useCategoryBySlug(slug)
   const [subCategories, setSubCategories] = useState<Array<{ id: string; name: string; slug: string }>>([])
   const [selectedSubId, setSelectedSubId] = useState<string>('')
+  const searchParams = useSearchParams()
 
   // Load subcategories of the current category (if it's a main category)
   useEffect(() => {
@@ -40,6 +42,14 @@ export function CategoryPageContent({ slug }: CategoryPageContentProps) {
     }
     loadChildren()
   }, [category?.id])
+
+  // Initialize selected subcategory from query param (?sub=<id>)
+  useEffect(() => {
+    const subParam = searchParams?.get('sub') || ''
+    if (subParam) {
+      setSelectedSubId(subParam)
+    }
+  }, [searchParams])
   
   // Compute category ids for product query
   const categoryIds = useMemo(() => {

@@ -315,6 +315,12 @@ export default function ProductPageContent({
     }
   }, [variants, generateVariantOptions])
 
+  // Fallback-safe category link/label
+  const mainCategorySlug = category?.slug || categorySlug || product?.category?.slug || ''
+  const mainCategoryName = category?.name || product?.category?.name || 'Kategorie'
+  const subCategoryId = product?.category?.id
+  const categoryHref = mainCategorySlug ? `${generateCategoryURL(mainCategorySlug)}${subCategoryId ? `?sub=${subCategoryId}` : ''}` : '#'
+
   return (
     <main className="flex-1 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -322,13 +328,25 @@ export default function ProductPageContent({
         <nav className="mb-6 text-sm">
           <Link href="/" className="text-gray-500 hover:text-gray-700">Startseite</Link>
           <span className="mx-2 text-gray-400">/</span>
-          <Link href={generateBrandURL(brand?.slug || '')} className="text-gray-500 hover:text-gray-700">
+          <Link href={brand?.id ? `/products?brand=${brand.id}` : generateBrandURL(brand?.slug || '')} className="text-gray-500 hover:text-gray-700">
             {brand?.name}
           </Link>
           <span className="mx-2 text-gray-400">/</span>
-          <Link href={generateCategoryURL(category?.slug || '')} className="text-gray-500 hover:text-gray-700">
-            {category?.name}
-          </Link>
+          {mainCategorySlug ? (
+            <Link href={categoryHref} className="text-gray-500 hover:text-gray-700">
+              {mainCategoryName}
+            </Link>
+          ) : (
+            <span className="text-gray-500">{mainCategoryName}</span>
+          )}
+          {product?.category?.name && (
+            <>
+              <span className="mx-2 text-gray-400">/</span>
+              <Link href={categoryHref} className="text-gray-500 hover:text-gray-700">
+                {product.category.name}
+              </Link>
+            </>
+          )}
           <span className="mx-2 text-gray-400">/</span>
           <span className="text-gray-900">{product?.name || ''}</span>
         </nav>
@@ -745,9 +763,25 @@ export default function ProductPageContent({
                 {/* Categories */}
                 <div className="mb-0">
                   <p className="text-xs" style={{color: '#A3A3A3'}}>
-                    {category?.name}
-                    {brand?.name}
-                    {product?.category?.name && `, ${product.category.name}`}
+                    {mainCategorySlug ? (
+                      <Link href={categoryHref} className="hover:text-orange-600">
+                        {mainCategoryName}
+                      </Link>
+                    ) : (
+                      <span>{mainCategoryName}</span>
+                    )}
+                    {product?.category?.name && (
+                      <>
+                        {' / '}
+                        {mainCategorySlug && subCategoryId ? (
+                          <Link href={`${generateCategoryURL(mainCategorySlug)}?sub=${subCategoryId}`} className="hover:text-orange-600">
+                            {product.category.name}
+                          </Link>
+                        ) : (
+                          <span>{product.category.name}</span>
+                        )}
+                      </>
+                    )}
                   </p>
                 </div>
                 
