@@ -61,7 +61,7 @@ export const productSchema = z.object({
 const baseProductSchema = z.object({
   name: z.string().min(1, 'Ürün adı gerekli').max(255, 'Ürün adı çok uzun'),
   slug: z.string().min(1, 'Slug gerekli').max(255, 'Slug çok uzun').regex(/^[a-z0-9-]+$/, 'Slug sadece küçük harf, rakam ve tire içerebilir'),
-  description: z.string().max(2000, 'Açıklama çok uzun').optional(),
+  description: z.string().max(20000, 'Açıklama çok uzun').optional(),
   price: z.number().min(0, 'Fiyat negatif olamaz'),
   discount_price: z.number().min(0, 'İndirimli fiyat negatif olamaz').optional(),
   stock: z.number().int().min(0, 'Stok negatif olamaz'),
