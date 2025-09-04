@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { formatPriceAdmin } from '@/lib/url-utils'
 import { Search, Filter, Eye, Edit, Package, Clock, CheckCircle, Truck, XCircle } from 'lucide-react'
 
 interface OrderItem {
@@ -158,9 +159,7 @@ export default function AdminOrdersPage() {
     })
   }
 
-  const formatPrice = (price: number) => {
-    return `CHF ${price.toFixed(2)}`
-  }
+  const formatPrice = (price: number) => formatPriceAdmin(price)
 
   const getStatusConfig = (status: Order['status']) => {
     return statusConfig[status]

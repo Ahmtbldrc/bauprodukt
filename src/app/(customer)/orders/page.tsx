@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Search, Package, Clock, CheckCircle, Truck, XCircle } from 'lucide-react'
 import { OrderTracking } from '@/components/order'
+import { formatPrice } from '@/lib/url-utils'
 
 interface OrderItem {
   id: string
@@ -132,9 +133,7 @@ export default function OrdersPage() {
     })
   }
 
-  const formatPrice = (price: number) => {
-    return `CHF ${price.toFixed(2)}`
-  }
+  
 
   const getStatusConfig = (status: Order['status']) => {
     return statusConfig[status]

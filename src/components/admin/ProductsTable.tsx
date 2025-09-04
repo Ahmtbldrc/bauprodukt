@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import { formatPriceAdmin } from '@/lib/url-utils'
 import { useProducts } from '@/hooks/useProducts'
 import { useAdminSearch } from '@/contexts/AdminSearchContext'
 import { Edit, Trash2, Eye, Search } from 'lucide-react'
@@ -100,12 +101,7 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
     setPage(1)
   }
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('de-CH', {
-      style: 'currency',
-      currency: 'CHF'
-    }).format(price)
-  }
+  const formatPrice = (price: number) => formatPriceAdmin(price)
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('de-CH')
