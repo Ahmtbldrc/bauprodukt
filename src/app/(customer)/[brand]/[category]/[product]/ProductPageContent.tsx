@@ -3,6 +3,7 @@
 import { AddToCartButton } from '@/components/cart'
 import Link from 'next/link'
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { ChevronUp, ChevronDown, Download, ShoppingCart, Play } from 'lucide-react'
 import { 
   useBrandBySlug, 
@@ -69,6 +70,8 @@ export default function ProductPageContent({
   categorySlug, 
   productSlug 
 }: ProductPageContentProps) {
+  const searchParams = useSearchParams()
+  const subParamId = searchParams.get('sub') || undefined
   const [activeTab, setActiveTab] = useState('details')
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [thumbnailStartIndex, setThumbnailStartIndex] = useState(0)
@@ -87,6 +90,7 @@ export default function ProductPageContent({
   const [, setSpecifications] = useState<TechnicalSpec[]>([])
   const [documents, setDocuments] = useState<ProductDocument[]>([])
   const [videos, setVideos] = useState<ProductVideo[]>([])
+  const [urlSubCategory, setUrlSubCategory] = useState<any | undefined>(undefined)
 
   // Fetch brand, category and product data
   const { data: brand } = useBrandBySlug(brandSlug)
@@ -169,6 +173,24 @@ export default function ProductPageContent({
       
     }
   }, [product])
+
+  // If a subcategory id is provided in URL, fetch it to resolve name/slug
+  useEffect(() => {
+    const fetchSub = async () => {
+      if (!subParamId) {
+        setUrlSubCategory(undefined)
+        return
+      }
+      try {
+        const res = await fetch(`/api/categories/${subParamId}`)
+        if (res.ok) {
+          const data = await res.json()
+          setUrlSubCategory(data)
+        }
+      } catch {}
+    }
+    fetchSub()
+  }, [subParamId])
 
   // Fetch related products from same brand
   const { 
@@ -315,11 +337,39 @@ export default function ProductPageContent({
     }
   }, [variants, generateVariantOptions])
 
-  // Fallback-safe category link/label
-  const mainCategorySlug = category?.slug || categorySlug || product?.category?.slug || ''
-  const mainCategoryName = category?.name || product?.category?.name || 'Kategorie'
-  const subCategoryId = product?.category?.id
-  const categoryHref = mainCategorySlug ? `${generateCategoryURL(mainCategorySlug)}${subCategoryId ? `?sub=${subCategoryId}` : ''}` : '#'
+  // Compute main and sub category consistent with URL approach
+  let mainCategory = undefined as any | undefined
+  let subCategory = undefined as any | undefined
+
+  if (subParamId) {
+    // URL carries main category slug and sub as id param
+    mainCategory = category
+    subCategory = urlSubCategory || product?.category || undefined
+  } else {
+    // Derive from loaded category relations or product fallback
+    mainCategory = category?.parent 
+      ? category.parent 
+      : (category && !category.parent_id ? category : (product as any)?.main_category)
+    subCategory = category?.parent ? category : product?.category
+
+    if (!subCategory && mainCategory && product?.category && product.category.id !== mainCategory.id) {
+      subCategory = product.category as any
+    }
+
+    if (!mainCategory && product?.category) {
+      if (!product.category.parent_id) {
+        mainCategory = product.category as any
+      } else {
+        subCategory = subCategory || (product.category as any)
+      }
+    }
+  }
+
+  const mainCategorySlug = mainCategory?.slug || ''
+  const mainCategoryName = mainCategory?.name || 'Kategorie'
+  const subCategoryId = subCategory?.id
+  const mainCategoryHref = mainCategorySlug ? generateCategoryURL(mainCategorySlug) : '#'
+  const subCategoryHref = mainCategorySlug && subCategoryId ? `${generateCategoryURL(mainCategorySlug)}?sub=${subCategoryId}` : '#'
 
   return (
     <main className="flex-1 py-8">
@@ -332,18 +382,18 @@ export default function ProductPageContent({
             {brand?.name}
           </Link>
           <span className="mx-2 text-gray-400">/</span>
-          {mainCategorySlug ? (
-            <Link href={categoryHref} className="text-gray-500 hover:text-gray-700">
+          {mainCategory ? (
+            <Link href={mainCategoryHref} className="text-gray-500 hover:text-gray-700">
               {mainCategoryName}
             </Link>
           ) : (
             <span className="text-gray-500">{mainCategoryName}</span>
           )}
-          {product?.category?.name && (
+          {subCategory && (
             <>
               <span className="mx-2 text-gray-400">/</span>
-              <Link href={categoryHref} className="text-gray-500 hover:text-gray-700">
-                {product.category.name}
+              <Link href={subCategoryHref} className="text-gray-500 hover:text-gray-700">
+                {subCategory.name}
               </Link>
             </>
           )}
@@ -763,22 +813,22 @@ export default function ProductPageContent({
                 {/* Categories */}
                 <div className="mb-0">
                   <p className="text-xs" style={{color: '#A3A3A3'}}>
-                    {mainCategorySlug ? (
-                      <Link href={categoryHref} className="hover:text-orange-600">
+                    {mainCategory ? (
+                      <Link href={mainCategoryHref} className="hover:text-orange-600">
                         {mainCategoryName}
                       </Link>
                     ) : (
                       <span>{mainCategoryName}</span>
                     )}
-                    {product?.category?.name && (
+                    {subCategory && (
                       <>
                         {' / '}
-                        {mainCategorySlug && subCategoryId ? (
-                          <Link href={`${generateCategoryURL(mainCategorySlug)}?sub=${subCategoryId}`} className="hover:text-orange-600">
-                            {product.category.name}
+                        {subCategoryHref !== '#' ? (
+                          <Link href={subCategoryHref} className="hover:text-orange-600">
+                            {subCategory.name}
                           </Link>
                         ) : (
-                          <span>{product.category.name}</span>
+                          <span>{subCategory.name}</span>
                         )}
                       </>
                     )}

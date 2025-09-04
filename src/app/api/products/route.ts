@@ -110,7 +110,31 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Process products with variant information
+    // Preload parent categories (main categories) for all products to enrich response
+    const parentIds = Array.from(
+      new Set(
+        ((data || []) as Array<any>)
+          .map((p) => p.category_parent_id)
+          .filter(Boolean)
+      )
+    )
+
+    let parentsById: Record<string, { id: string; name: string; slug: string }> = {}
+    if (parentIds.length > 0) {
+      const { data: parentsData } = await (supabase as any)
+        .from('categories')
+        .select('id,name,slug')
+        .in('id', parentIds)
+
+      if (Array.isArray(parentsData)) {
+        parentsById = parentsData.reduce((acc: any, cur: any) => {
+          acc[cur.id] = { id: cur.id, name: cur.name, slug: cur.slug }
+          return acc
+        }, {})
+      }
+    }
+
+    // Process products with variant and category information
     const processedProducts = await Promise.all(
       (filteredData || []).map(async (product: ProductWithDefaultVariant & { product_images?: Array<{ id: string; image_url: string; order_index: number; is_cover: boolean }> }) => {
         // If specific variant requested, get that variant's details
@@ -165,6 +189,11 @@ export async function GET(request: NextRequest) {
             parent_id: product.category_parent_id,
             created_at: ''
           } : null
+          ,
+          // Main category (parent) details for breadcrumb/navigation convenience
+          main_category: product.category_parent_id && parentsById[product.category_parent_id]
+            ? parentsById[product.category_parent_id]
+            : null
         }
       })
     )
