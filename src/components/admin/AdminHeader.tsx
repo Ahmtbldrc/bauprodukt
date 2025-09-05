@@ -330,14 +330,6 @@ export function AdminHeader() {
                 style={{ fontFamily: 'var(--font-blinker)' }}
               />
             </div>
-            <button
-              onClick={() => setShowCreateCategory(true)}
-              className="px-8 py-3 text-sm font-medium rounded-full border border-gray-300 bg-gray-900 text-white hover:bg-gray-800 transition-all duration-200 shadow-sm flex items-center gap-2"
-              style={{ fontFamily: 'var(--font-blinker)' }}
-            >
-              <Plus className="h-4 w-4" />
-              Neue Kategorie
-            </button>
           </div>
         )
       }
