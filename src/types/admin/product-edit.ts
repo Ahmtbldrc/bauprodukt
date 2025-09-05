@@ -61,6 +61,7 @@ export interface FormData {
   image_url: string
   brand_id: string
   category_id: string
+  main_category_id?: string
   allow_manual_stock_edit?: boolean
   technical_specs: Array<{
     id?: string

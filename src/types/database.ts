@@ -140,6 +140,7 @@ export interface Product {
   raw_variant_data: Record<string, unknown> | null
   brand_id: string | null
   category_id: string | null
+  main_category_id: string | null
   category_slug: string | null
   attribute_data: Record<string, unknown> | null
   specifications_data: Record<string, unknown> | null

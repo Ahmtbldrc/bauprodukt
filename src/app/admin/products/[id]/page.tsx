@@ -97,6 +97,7 @@ export default function EditProductPage() {
     image_url: '',
     brand_id: '',
     category_id: '',
+    main_category_id: '',
     allow_manual_stock_edit: false,
     technical_specs: [],
     general_technical_specs: []
@@ -399,6 +400,7 @@ export default function EditProductPage() {
           image_url: product.image_url || '',
           brand_id: product.brand_id || '',
           category_id: product.category_id || '',
+          main_category_id: (product as any).main_category_id || '',
           technical_specs: [],
           general_technical_specs: Array.isArray(product.general_technical_specs) ? product.general_technical_specs : []
         })
@@ -693,6 +695,7 @@ export default function EditProductPage() {
         image_url: formData.image_url || undefined,
         brand_id: formData.brand_id || undefined,
         category_id: formData.category_id || undefined,
+        main_category_id: (mainCategoryState.mainId || formData.main_category_id) || undefined,
         general_technical_specs: formData.general_technical_specs || undefined,
         allow_manual_stock_edit: formData.allow_manual_stock_edit ?? false,
       }
@@ -764,6 +767,7 @@ export default function EditProductPage() {
           image_url: updatedProduct.image_url || prev.image_url,
           brand_id: updatedProduct.brand_id || prev.brand_id,
           category_id: updatedProduct.category_id || prev.category_id,
+          main_category_id: (updatedProduct as any).main_category_id || prev.main_category_id,
           allow_manual_stock_edit: (updatedProduct as any).allow_manual_stock_edit ?? prev.allow_manual_stock_edit
         }
         console.log('New form data:', newFormData)

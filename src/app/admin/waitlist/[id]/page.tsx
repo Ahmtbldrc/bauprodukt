@@ -124,6 +124,7 @@ export default function WaitlistProductDetailPage() {
     image_url: '',
     brand_id: '',
     category_id: '',
+    main_category_id: '',
     allow_manual_stock_edit: false,
     technical_specs: [],
     general_technical_specs: []
@@ -223,6 +224,7 @@ export default function WaitlistProductDetailPage() {
           image_url: productData.image_url || '',
           brand_id: productData.brand_id || '',
           category_id: productData.category_id || '',
+          main_category_id: (productData as any).main_category_id || '',
           allow_manual_stock_edit: (productData as any).allow_manual_stock_edit ?? false,
           technical_specs: [],
           general_technical_specs: Array.isArray(productData.general_technical_specs) ? productData.general_technical_specs : []
@@ -445,6 +447,7 @@ export default function WaitlistProductDetailPage() {
         image_url: formData.image_url || null,
         brand_id: formData.brand_id || null,
         category_id: formData.category_id || null,
+        main_category_id: (mainCategoryState.mainId || formData.main_category_id) || null,
         general_technical_specs: formData.general_technical_specs || null,
         allow_manual_stock_edit: formData.allow_manual_stock_edit ?? false,
       }

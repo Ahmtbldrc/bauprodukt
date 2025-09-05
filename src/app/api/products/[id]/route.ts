@@ -126,15 +126,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Fetch manual stock toggle directly from products table (not included in view)
+    // Fetch manual stock toggle and main category directly from products table (not included in view)
     let allowManualStockEdit = false
+    let mainCategoryId: string | null = null
     try {
       const { data: flagRow } = await (supabase as any)
         .from('products')
-        .select('allow_manual_stock_edit')
+        .select('allow_manual_stock_edit, main_category_id')
         .eq('id', id)
         .single()
       allowManualStockEdit = !!flagRow?.allow_manual_stock_edit
+      mainCategoryId = flagRow?.main_category_id ?? null
     } catch {
       allowManualStockEdit = false
     }
@@ -183,7 +185,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         created_at: ''
       } : null,
       // Expose manual stock edit flag directly
-      allow_manual_stock_edit: allowManualStockEdit
+      allow_manual_stock_edit: allowManualStockEdit,
+      // Expose main category id directly
+      main_category_id: mainCategoryId
     }
 
     return NextResponse.json(productWithVariants)

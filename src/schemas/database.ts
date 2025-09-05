@@ -55,6 +55,7 @@ export const productSchema = z.object({
   image_url: z.string().url().nullable(),
   brand_id: z.string().uuid().nullable(),
   category_id: z.string().uuid().nullable(),
+  main_category_id: z.string().uuid().nullable(),
   created_at: z.string()
 })
 
@@ -71,6 +72,7 @@ const baseProductSchema = z.object({
   image_url: z.string().url('Geçerli bir URL giriniz').optional(),
   brand_id: z.string().uuid('Geçerli bir marka seçiniz').optional(),
   category_id: z.string().uuid('Geçerli bir kategori seçiniz').optional(),
+  main_category_id: z.string().uuid('Geçerli bir ana kategori seçiniz').optional(),
   allow_manual_stock_edit: z.boolean().optional(),
   specifications_data: z.record(z.unknown()).optional(),
   general_technical_specs: z.array(z.object({

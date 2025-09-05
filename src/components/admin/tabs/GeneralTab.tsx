@@ -17,6 +17,7 @@ interface GeneralTabProps {
     image_url: string
     brand_id: string
     category_id: string
+    main_category_id?: string
     allow_manual_stock_edit?: boolean
     technical_specs: Array<{
       id?: string
@@ -45,6 +46,24 @@ export default function GeneralTab({ formData, brands, mainCategories, handleInp
   // Initialize from existing category_id: detect parent main category and load its subs
   useEffect(() => {
     const initFromExisting = async () => {
+      // Prefer explicit main_category_id if present
+      if (!mainId && formData.main_category_id) {
+        try {
+          setLoadingSubs(true)
+          setMainId(formData.main_category_id)
+          const kidsRes = await fetch(`/api/categories/${formData.main_category_id}/children`)
+          if (kidsRes.ok) {
+            const json = await kidsRes.json()
+            const children = (json.data || []).map((r: any) => r.category)
+            setSubOptions(children)
+            onMainCategoryStateChange?.({ mainId: formData.main_category_id, hasSubcategories: children.length > 0 })
+          }
+        } finally {
+          setLoadingSubs(false)
+        }
+        return
+      }
+
       if (!formData.category_id || mainId) return
       try {
         const res = await fetch(`/api/categories/${formData.category_id}`)

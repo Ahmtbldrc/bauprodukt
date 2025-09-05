@@ -111,13 +111,26 @@ export async function GET(request: NextRequest) {
     }
 
     // Preload parent categories (main categories) for all products to enrich response
-    const parentIds = Array.from(
-      new Set(
-        ((data || []) as Array<any>)
-          .map((p) => p.category_parent_id)
-          .filter(Boolean)
-      )
-    )
+    // Prefer main_category_id from products table if present, otherwise fall back to category_parent_id from the view
+    // Fetch main_category_id in a single extra query for all product ids
+    const productIds = ((data || []) as Array<any>).map((p) => p.id)
+    let productIdToMainId: Record<string, string | null> = {}
+    if (productIds.length > 0) {
+      const { data: mainMap } = await (supabase as any)
+        .from('products')
+        .select('id, main_category_id')
+        .in('id', productIds)
+      if (Array.isArray(mainMap)) {
+        productIdToMainId = mainMap.reduce((acc: any, cur: any) => {
+          acc[cur.id] = cur.main_category_id || null
+          return acc
+        }, {})
+      }
+    }
+
+    const parentIds = Array.from(new Set(((data || []) as Array<any>)
+      .map((p) => productIdToMainId[p.id] || p.category_parent_id)
+      .filter(Boolean)))
 
     let parentsById: Record<string, { id: string; name: string; slug: string }> = {}
     if (parentIds.length > 0) {
@@ -191,8 +204,8 @@ export async function GET(request: NextRequest) {
           } : null
           ,
           // Main category (parent) details for breadcrumb/navigation convenience
-          main_category: product.category_parent_id && parentsById[product.category_parent_id]
-            ? parentsById[product.category_parent_id]
+          main_category: (productIdToMainId[product.id] || product.category_parent_id) && parentsById[(productIdToMainId[product.id] || product.category_parent_id) as string]
+            ? parentsById[(productIdToMainId[product.id] || product.category_parent_id) as string]
             : null
         }
       })
