@@ -149,8 +149,8 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id: productId } = await params
-    const url = new URL(request.url)
-    const documentId = url.searchParams.get('id')
+    // Prefer Next.js provided URL parser for reliability across runtimes
+    const documentId = request.nextUrl.searchParams.get('id') || request.nextUrl.searchParams.get('documentId')
     
     if (!documentId) {
       return NextResponse.json(
