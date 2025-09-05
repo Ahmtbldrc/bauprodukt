@@ -1,7 +1,7 @@
 'use client'
 
 import { CategoriesTable } from '@/components/admin/CategoriesTable'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
@@ -21,7 +21,6 @@ export default function CategoriesPage() {
   const [editIconPreview, setEditIconPreview] = useState<string | undefined>(undefined)
   const [editIconUploading, setEditIconUploading] = useState(false)
   const editIconInputRef = useRef<HTMLInputElement>(null)
-  const [editParentId, setEditParentId] = useState<string | ''>('')
   const [editSelectedSubIds, setEditSelectedSubIds] = useState<string[]>([])
 
   const { data: subCategoriesResponse } = useSubCategories()
@@ -133,7 +132,7 @@ export default function CategoriesPage() {
     setEditSlug(category.slug)
     setEditSlugTouched(false)
     setEditIconPreview((category as any).icon_url || undefined)
-    setEditParentId((category as any).parent?.id || '')
+    
     setEditSelectedSubIds([])
     setIsEditOpen(true)
   }
@@ -199,7 +198,7 @@ export default function CategoriesPage() {
       setCreateSlugTouched(false)
       setCreateSlug(generateSlug(createName))
     }
-  }, [isCreateOpen, activeTab])
+  }, [isCreateOpen, activeTab, createName])
 
   const createMutation = useMutation({
     mutationFn: async (vars: { activeTab: 'main' | 'sub'; name: string; slug: string; subIds: string[] }) => {

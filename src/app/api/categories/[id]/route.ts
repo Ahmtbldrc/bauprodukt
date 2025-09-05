@@ -137,7 +137,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         console.error('Fetch existing subcategory relations error:', existingErr)
       }
 
-      const existingIds = new Set((existingRels || []).map((r: any) => r.category_id))
+      const existingIds = new Set<string>((existingRels || []).map((r: any) => String(r.category_id)))
       const newIds = ids.filter(cid => !existingIds.has(cid))
 
       // Determine next order_index start
@@ -179,7 +179,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       }
 
       // Unset primary parent_id for removed subcategories that pointed to this parent
-      const removedIds = [...existingIds].filter((cid) => !ids.includes(cid))
+      const removedIds: string[] = [...existingIds].filter((cid: string) => !ids.includes(cid))
       if (removedIds.length > 0) {
         const { error: unsetPrimaryErr } = await (supabase as any)
           .from('categories')

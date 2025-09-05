@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to validate categories' }, { status: 500 })
     }
 
-    const nonMain = (cats || []).filter(c => c.parent_id !== null)
+    const nonMain = (cats as Array<{ id: string; parent_id: string | null }> | null || []).filter(c => c.parent_id !== null)
     if (nonMain.length > 0) {
       return NextResponse.json({ error: 'Only main categories can be reordered' }, { status: 400 })
     }

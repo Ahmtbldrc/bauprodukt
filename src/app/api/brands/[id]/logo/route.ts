@@ -31,7 +31,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const logoUrl = publicData.publicUrl
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('brands')
       .update({ logo: logoUrl })
       .eq('id', id)
@@ -78,7 +78,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       }
     }
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('brands')
       .update({ logo: null })
       .eq('id', id)

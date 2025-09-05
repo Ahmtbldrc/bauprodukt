@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
 
     // Validate parent category exists if provided
     if (validation.data.parent_id) {
-      const { data: parentCat, error: parentError } = await supabase
+      const { error: parentError } = await supabase
         .from('categories')
         .select('id')
         .eq('id', validation.data.parent_id)

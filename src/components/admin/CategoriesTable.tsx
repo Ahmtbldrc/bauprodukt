@@ -98,7 +98,7 @@ export function CategoriesTable({ onDeleteCategory, onEditCategory, categoryType
       if (!res.ok) throw new Error('Unterkategorien konnten nicht geladen werden')
       const json = await res.json()
       setChildrenMap((prev) => ({ ...prev, [parentId]: json.data || [] }))
-    } catch (e) {
+    } catch {
       toast.error('Unterkategorien konnten nicht geladen werden')
     } finally {
       setLoadingChildren((prev) => ({ ...prev, [parentId]: false }))

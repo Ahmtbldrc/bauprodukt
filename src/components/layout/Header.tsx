@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useCart } from '@/contexts/CartContext'
 import { useFavorites } from '@/contexts/FavoritesContext'
 import { useAuth } from '@/contexts/AuthContext'
@@ -93,7 +93,7 @@ export function Header() {
   }, [isCategoryMenuOpen, isBrandMenuOpen, isUserMenuOpen])
 
   const { data: mainCatsResponse, isLoading: categoriesLoading } = useMainCategories();
-  const mainCategories = mainCatsResponse?.data || [];
+  const mainCategories = useMemo(() => (mainCatsResponse?.data || []), [mainCatsResponse?.data]);
   // Fetch children when a main category is selected (desktop hover)
   useEffect(() => {
     const fetchChildren = async (parentId: string) => {

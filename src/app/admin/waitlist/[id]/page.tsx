@@ -546,11 +546,12 @@ export default function WaitlistProductDetailPage() {
     if (documentsDeleteDialog.index === null) return
     
     try {
-      const documentToDelete = documents[documentsDeleteDialog.index]
+      const documentToDelete = documents[documentsDeleteDialog.index] as DocumentImage | undefined
+      const productId = entry?.product_id
       // Persist delete if this waitlist entry is linked to an existing product
-      if (entry.product_id && documentToDelete.id) {
+      if (productId && documentToDelete?.id) {
         try {
-          const url = `/api/products/${entry.product_id}/documents?id=${documentToDelete.id}`
+          const url = `/api/products/${productId}/documents?id=${documentToDelete.id}`
           const response = await fetch(url, { method: 'DELETE' })
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({}))
@@ -558,7 +559,7 @@ export default function WaitlistProductDetailPage() {
           }
           // Optionally refetch current list to be 100% in sync
           try {
-            const refresh = await fetch(`/api/products/${entry.product_id}/documents`)
+            const refresh = await fetch(`/api/products/${productId}/documents`)
             if (refresh.ok) {
               const refreshed = await refresh.json()
               const refreshedDocs = (refreshed.data || []).map((doc: ProductDocument) => ({

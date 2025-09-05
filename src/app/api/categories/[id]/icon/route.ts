@@ -36,7 +36,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     const iconUrl = publicData.publicUrl
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('categories')
       .update({ icon_url: iconUrl })
       .eq('id', id)
@@ -83,7 +83,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       }
     }
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await (supabase as any)
       .from('categories')
       .update({ icon_url: null })
       .eq('id', id)
