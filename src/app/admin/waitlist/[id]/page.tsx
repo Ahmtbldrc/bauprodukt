@@ -154,6 +154,7 @@ export default function WaitlistProductDetailPage() {
   const [videos, setVideos] = useState<ProductVideo[]>([])
   const [showVideoDialog, setShowVideoDialog] = useState(false)
   const [selectedVideo] = useState<Video | null>(null)
+  const [mainCategoryState, setMainCategoryState] = useState<{ mainId: string; hasSubcategories: boolean}>({ mainId: '', hasSubcategories: false })
 
   // Dialog states
   const [specificationsDeleteDialog, setSpecificationsDeleteDialog] = useState<{
@@ -416,6 +417,17 @@ export default function WaitlistProductDetailPage() {
 
   const handleSaveGeneral = async (e: React.FormEvent) => {
     e.preventDefault()
+    // Validate: if a main category with subcategories is selected, a subcategory must be chosen
+    const hasMain = !!mainCategoryState.mainId
+    const hasSubs = mainCategoryState.hasSubcategories
+    if (hasMain && hasSubs && !formData.category_id) {
+      toast.error('Bitte wählen Sie eine Unterkategorie aus')
+      return
+    }
+    if (hasMain && !hasSubs) {
+      toast.error('Bitte fügen Sie auf der Kategorien-Seite eine Unterkategorie für diese Hauptkategorie hinzu')
+      return
+    }
     setIsSavingGeneral(true)
 
     try {
@@ -674,6 +686,7 @@ export default function WaitlistProductDetailPage() {
               brands={brands}
               mainCategories={mainCategories}
               handleInputChange={handleInputChange}
+              onMainCategoryStateChange={setMainCategoryState}
             />
           )}
 

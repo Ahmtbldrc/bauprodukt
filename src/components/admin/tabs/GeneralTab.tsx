@@ -34,9 +34,10 @@ interface GeneralTabProps {
   brands: Array<{ id: string; name: string }>
   mainCategories: Array<{ id: string; name: string; slug: string }>
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void
+  onMainCategoryStateChange?: (state: { mainId: string; hasSubcategories: boolean }) => void
 }
 
-export default function GeneralTab({ formData, brands, mainCategories, handleInputChange }: GeneralTabProps) {
+export default function GeneralTab({ formData, brands, mainCategories, handleInputChange, onMainCategoryStateChange }: GeneralTabProps) {
   const [mainId, setMainId] = useState<string>('')
   const [subOptions, setSubOptions] = useState<Array<{ id: string; name: string; slug: string }>>([])
   const [loadingSubs, setLoadingSubs] = useState(false)
@@ -58,6 +59,7 @@ export default function GeneralTab({ formData, brands, mainCategories, handleInp
               const json = await kidsRes.json()
               const children = (json.data || []).map((r: any) => r.category)
               setSubOptions(children)
+              onMainCategoryStateChange?.({ mainId: detectedMainId, hasSubcategories: children.length > 0 })
             }
           } catch {}
         }
@@ -129,19 +131,18 @@ export default function GeneralTab({ formData, brands, mainCategories, handleInp
               handleInputChange({
                 target: { name: 'category_id', value: '' }
               } as any)
-              if (!val) { setSubOptions([]); return }
+              if (!val) { 
+                setSubOptions([])
+                onMainCategoryStateChange?.({ mainId: '', hasSubcategories: false })
+                return 
+              }
               try {
                 setLoadingSubs(true)
                 const res = await fetch(`/api/categories/${val}/children`)
                 const json = await res.json()
                 const children = (json.data || []).map((r: any) => r.category)
                 setSubOptions(children)
-                if (children.length === 0) {
-                  // No subs: assign main category as product category
-                  handleInputChange({
-                    target: { name: 'category_id', value: val }
-                  } as any)
-                }
+                onMainCategoryStateChange?.({ mainId: val, hasSubcategories: children.length > 0 })
               } finally {
                 setLoadingSubs(false)
               }
@@ -165,6 +166,9 @@ export default function GeneralTab({ formData, brands, mainCategories, handleInp
             name="category_id"
             value={formData.category_id}
             onChange={handleInputChange}
+            required={!!mainId && !loadingSubs && subOptions.length > 0}
+            onInvalid={(e) => e.currentTarget.setCustomValidity('Bitte wählen Sie eine Unterkategorie aus')}
+            onInput={(e) => e.currentTarget.setCustomValidity('')}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200"
             style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
             disabled={!mainId || loadingSubs || subOptions.length === 0}
