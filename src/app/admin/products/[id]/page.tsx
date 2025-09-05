@@ -307,9 +307,9 @@ export default function EditProductPage() {
       
       // Make API call to delete the document from database
       if (documentToDelete.id) {
-        console.log('Making DELETE request to:', `/api/products/${productId}/documents?id=${documentToDelete.id}`)
+        console.log('Making DELETE request to:', `/api/products/${productId}/documents?documentId=${documentToDelete.id}`)
         
-        const response = await fetch(`/api/products/${productId}/documents?id=${documentToDelete.id}`, {
+        const response = await fetch(`/api/products/${productId}/documents?documentId=${documentToDelete.id}`, {
           method: 'DELETE',
         })
         

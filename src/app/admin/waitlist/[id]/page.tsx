@@ -551,7 +551,7 @@ export default function WaitlistProductDetailPage() {
       // Persist delete if this waitlist entry is linked to an existing product
       if (productId && documentToDelete?.id) {
         try {
-          const url = `/api/products/${productId}/documents?id=${documentToDelete.id}`
+          const url = `/api/products/${productId}/documents?documentId=${documentToDelete.id}`
           const response = await fetch(url, { method: 'DELETE' })
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({}))

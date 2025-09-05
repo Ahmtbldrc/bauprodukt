@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+export const runtime = 'nodejs'
+
 interface RouteParams {
   params: Promise<{ id: string }>
 }
@@ -149,8 +151,34 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
     const { id: productId } = await params
-    // Prefer Next.js provided URL parser for reliability across runtimes
-    const documentId = request.nextUrl.searchParams.get('id') || request.nextUrl.searchParams.get('documentId')
+    // Robust extraction: support multiple sources to avoid platform/runtime quirks
+    let documentId: string | null = null
+    try {
+      documentId = request.nextUrl?.searchParams.get('documentId') || request.nextUrl?.searchParams.get('id') || null
+    } catch {}
+    if (!documentId) {
+      try {
+        const url = new URL(request.url)
+        documentId = url.searchParams.get('documentId') || url.searchParams.get('id')
+      } catch {}
+    }
+    if (!documentId) {
+      const headerId = request.headers.get('x-document-id')
+      if (headerId) documentId = headerId
+    }
+    if (!documentId) {
+      try {
+        const contentType = request.headers.get('content-type') || ''
+        if (contentType.includes('application/json')) {
+          const body = await request.json().catch(() => null as unknown)
+          const candidate = (body as any)?.documentId || (body as any)?.id
+          if (candidate) documentId = candidate
+        }
+      } catch {}
+    }
+    if (!documentId) {
+      console.warn('DELETE /products/[id]/documents -> missing documentId. URL:', request.url)
+    }
     
     if (!documentId) {
       return NextResponse.json(
