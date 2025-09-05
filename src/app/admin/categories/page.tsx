@@ -286,6 +286,27 @@ export default function CategoriesPage() {
         </div>
         <div className="p-4 space-y-4">
           {activeTab === 'main' ? (
+            <div className="flex justify-end">
+              <button
+                onClick={() => setIsCreateOpen(true)}
+                className="px-4 py-2 rounded-lg text-white disabled:opacity-50"
+                style={{ backgroundColor: '#F39237' }}
+              >
+                Hauptkategorie hinzufügen
+              </button>
+            </div>
+          ) : (
+            <div className="flex justify-end">
+              <button
+                onClick={() => setIsCreateOpen(true)}
+                className="px-4 py-2 rounded-lg text-white disabled:opacity-50"
+                style={{ backgroundColor: '#F39237' }}
+              >
+                Unterkategorie hinzufügen
+              </button>
+            </div>
+          )}
+          {activeTab === 'main' ? (
             <CategoriesTable 
               onDeleteCategory={handleDeleteCategory}
               onEditCategory={handleEditCategory}
