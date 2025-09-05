@@ -14,7 +14,7 @@ export default function CategoriesPage() {
   const [deleteCategoryId, setDeleteCategoryId] = useState<string | null>(null)
 
   const [isEditOpen, setIsEditOpen] = useState(false)
-  const [editingCategory, setEditingCategory] = useState<{ id: string; name: string; slug: string; parent?: { id: string; name: string } | null } | null>(null)
+  const [editingCategory, setEditingCategory] = useState<{ id: string; name: string; slug: string; category_type?: 'main' | 'sub'; parent?: { id: string; name: string } | null } | null>(null)
   const [editName, setEditName] = useState('')
   const [editSlug, setEditSlug] = useState('')
   const [editSlugTouched, setEditSlugTouched] = useState(false)
@@ -72,8 +72,8 @@ export default function CategoriesPage() {
         name: payload.name,
         slug: payload.slug,
       }
-      // Only when editing a main category (no parent) we send subcategory_ids
-      if (editingCategory && !(editingCategory as any).parent) {
+      // Only when editing a main category we send subcategory_ids
+      if (editingCategory && (editingCategory as any).category_type === 'main') {
         bodyPayload.subcategory_ids = editSelectedSubIds
       }
 
@@ -126,7 +126,7 @@ export default function CategoriesPage() {
     setIsDeleteOpen(true)
   }
 
-  const handleEditCategory = (category: { id: string; name: string; slug: string } & { emoji?: string | null; icon_url?: string | null; parent?: { id: string; name: string } | null }) => {
+  const handleEditCategory = (category: { id: string; name: string; slug: string } & { emoji?: string | null; icon_url?: string | null; category_type?: 'main' | 'sub'; parent?: { id: string; name: string } | null }) => {
     setEditingCategory(category)
     setEditName(category.name)
     setEditSlug(category.slug)
@@ -140,7 +140,7 @@ export default function CategoriesPage() {
   // Prefill existing subcategories for main category on edit open
   useEffect(() => {
     const prefill = async () => {
-      if (isEditOpen && editingCategory && !(editingCategory as any).parent) {
+      if (isEditOpen && editingCategory && (editingCategory as any).category_type === 'main') {
         try {
           const res = await fetch(`/api/categories/${editingCategory.id}/children`)
           if (res.ok) {
@@ -438,7 +438,7 @@ export default function CategoriesPage() {
                   }}
                 />
               </div>
-              {editingCategory && !editingCategory.parent && (
+              {editingCategory && (editingCategory as any).category_type === 'main' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Unterkategorien (zuweisen)</label>
                   <div className="max-h-40 overflow-auto border rounded">
@@ -477,7 +477,7 @@ export default function CategoriesPage() {
                   name: editName.trim(), 
                   slug: editSlug.trim() || undefined,
                 })}
-                disabled={!editName.trim() || updateMutation.isPending || (editingCategory && !editingCategory.parent && editSelectedSubIds.length === 0)}
+                disabled={!editName.trim() || updateMutation.isPending || (editingCategory && (editingCategory as any).category_type === 'main' && editSelectedSubIds.length === 0)}
                 className="px-4 py-2 rounded-lg text-white disabled:opacity-50"
                 style={{ backgroundColor: '#F39237' }}
               >

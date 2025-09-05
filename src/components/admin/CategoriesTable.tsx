@@ -17,6 +17,7 @@ interface CategoriesTableProps {
     slug: string
     description?: string
     emoji?: string | null
+    category_type?: 'main' | 'sub'
     parent?: {
       id: string
       name: string
@@ -353,6 +354,7 @@ export function CategoriesTable({ onDeleteCategory, onEditCategory, categoryType
                               slug: category.slug,
                               description: (category as any).description,
                               emoji: (category as any).emoji ?? null,
+                              category_type: (category as any).category_type,
                               parent: category.parent ? { id: (category.parent as any).id, name: (category.parent as any).name } : null,
                               created_at: category.created_at,
                             })}
