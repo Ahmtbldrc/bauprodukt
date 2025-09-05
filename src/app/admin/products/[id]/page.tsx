@@ -935,6 +935,7 @@ export default function EditProductPage() {
               documents={documents}
               setDocuments={setDocuments}
               openDeleteDialog={openDocumentsDeleteDialog}
+              productId={productId}
             />
           )}
 

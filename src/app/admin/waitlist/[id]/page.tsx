@@ -546,8 +546,49 @@ export default function WaitlistProductDetailPage() {
     if (documentsDeleteDialog.index === null) return
     
     try {
-      const newDocuments = documents.filter((_, i) => i !== documentsDeleteDialog.index)
-      setDocuments(newDocuments)
+      const documentToDelete = documents[documentsDeleteDialog.index]
+      // Persist delete if this waitlist entry is linked to an existing product
+      if (entry.product_id && documentToDelete.id) {
+        try {
+          const url = `/api/products/${entry.product_id}/documents?id=${documentToDelete.id}`
+          const response = await fetch(url, { method: 'DELETE' })
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}))
+            throw new Error(errorData.error || 'Failed to delete document')
+          }
+          // Optionally refetch current list to be 100% in sync
+          try {
+            const refresh = await fetch(`/api/products/${entry.product_id}/documents`)
+            if (refresh.ok) {
+              const refreshed = await refresh.json()
+              const refreshedDocs = (refreshed.data || []).map((doc: ProductDocument) => ({
+                id: doc.id,
+                file: new File([], doc.title),
+                previewUrl: doc.file_url,
+                name: doc.title,
+                file_url: doc.file_url,
+                file_type: doc.file_type,
+                file_size: doc.file_size
+              }))
+              setDocuments(refreshedDocs)
+            } else {
+              // Fallback to local removal
+              const newDocuments = documents.filter((_, i) => i !== documentsDeleteDialog.index)
+              setDocuments(newDocuments)
+            }
+          } catch {
+            const newDocuments = documents.filter((_, i) => i !== documentsDeleteDialog.index)
+            setDocuments(newDocuments)
+          }
+        } catch (apiErr) {
+          console.error('Error deleting document via API:', apiErr)
+          throw apiErr
+        }
+      } else {
+        // Not linked to product or missing id: just update local state
+        const newDocuments = documents.filter((_, i) => i !== documentsDeleteDialog.index)
+        setDocuments(newDocuments)
+      }
       
       closeDocumentsDeleteDialog()
       toast.success('Dokument erfolgreich gelöscht!')
@@ -706,6 +747,7 @@ export default function WaitlistProductDetailPage() {
               documents={documents}
               setDocuments={setDocuments}
               openDeleteDialog={openDocumentsDeleteDialog}
+              productId={entry.product_id || ''}
             />
           )}
 

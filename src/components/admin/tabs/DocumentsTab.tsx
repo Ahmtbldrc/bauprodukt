@@ -21,11 +21,13 @@ interface DocumentsTabProps {
   documents: DocumentImage[]
   setDocuments: (documents: DocumentImage[]) => void
   openDeleteDialog: (index: number) => void
+  productId: string
 }
 
-export default function DocumentsTab({ documents, setDocuments, openDeleteDialog }: DocumentsTabProps) {
+export default function DocumentsTab({ documents, setDocuments, openDeleteDialog, productId }: DocumentsTabProps) {
   const [isDragOver, setIsDragOver] = useState(false)
   const [uploadingImage, setUploadingImage] = useState(false)
+  const canUpload = Boolean(productId)
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -40,6 +42,10 @@ export default function DocumentsTab({ documents, setDocuments, openDeleteDialog
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragOver(false)
+    if (!canUpload) {
+      alert('Önce ürünü oluşturun veya mevcut ürünü açın. Ürün ID olmadan doküman yüklenemez.')
+      return
+    }
     
     const files = Array.from(e.dataTransfer.files)
     const acceptedFiles = files.filter(file =>
@@ -56,6 +62,10 @@ export default function DocumentsTab({ documents, setDocuments, openDeleteDialog
   }
 
   const handleImageUpload = async (file: File) => {
+    if (!canUpload) {
+      alert('Önce ürünü oluşturun veya mevcut ürünü açın. Ürün ID olmadan doküman yüklenemez.')
+      return
+    }
     setUploadingImage(true)
     try {
       // Validate file before upload
@@ -70,7 +80,7 @@ export default function DocumentsTab({ documents, setDocuments, openDeleteDialog
       formData.append('title_0', file.name.replace(/\.[^/.]+$/, ''))
       
       // Upload to API
-      const response = await fetch(`/api/products/${window.location.pathname.split('/')[3]}/documents/bulk`, {
+      const response = await fetch(`/api/products/${productId}/documents/bulk`, {
         method: 'POST',
         body: formData
       })
@@ -129,7 +139,23 @@ export default function DocumentsTab({ documents, setDocuments, openDeleteDialog
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
-        {uploadingImage ? (
+        {!canUpload ? (
+          <div className="space-y-4">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center bg-gray-100 text-gray-400">
+                <FileText className="h-8 w-8" />
+              </div>
+            </div>
+            <div>
+              <h4 className="text-lg font-medium text-gray-900 mb-2">
+                Ürün oluşturulmadan doküman yüklenemez
+              </h4>
+              <p className="text-gray-600">
+                Lütfen önce ürünü oluşturun veya mevcut ürünü açın.
+              </p>
+            </div>
+          </div>
+        ) : uploadingImage ? (
           <div className="space-y-4">
             <div className="flex justify-center">
               <div className="w-16 h-16 rounded-full flex items-center justify-center bg-[#F39236] text-white">
@@ -166,6 +192,7 @@ export default function DocumentsTab({ documents, setDocuments, openDeleteDialog
                       files.forEach(file => handleImageUpload(file))
                     }}
                     className="hidden"
+                    disabled={!canUpload}
                   />
                   <span className="px-4 py-2 bg-[#F39236] text-white rounded-lg hover:bg-[#E67E22] transition-colors">
                     Datei auswählen
@@ -235,6 +262,7 @@ export default function DocumentsTab({ documents, setDocuments, openDeleteDialog
                     files.forEach(file => handleImageUpload(file))
                   }}
                   className="hidden"
+                  disabled={!canUpload}
                 />
                 <span className="px-6 py-3 bg-[#F39236] text-white rounded-lg hover:bg-[#E67E22] transition-colors flex items-center gap-2">
                   <Upload className="h-4 w-4" />

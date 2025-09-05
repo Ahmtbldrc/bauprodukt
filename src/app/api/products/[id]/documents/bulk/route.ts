@@ -62,7 +62,23 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // 2. BULK UPLOAD: Tüm dosyaları paralel yükle
+    // 2. Ürünün varlığını kontrol et (FK hatalarını erkenden önlemek için)
+    const supabase = createClient()
+    const { error: productCheckError } = await (supabase as any)
+      .from('products')
+      .select('id')
+      .eq('id', productId)
+      .single()
+
+    if (productCheckError) {
+      console.error('Product not found for documents upload:', productCheckError)
+      return NextResponse.json(
+        { error: 'Product not found' },
+        { status: 404 }
+      )
+    }
+
+    // 3. BULK UPLOAD: Tüm dosyaları paralel yükle
     console.log('Starting bulk upload...')
     const uploadPromises = files.map(async (file, index) => {
       console.log(`Uploading file ${index}: ${file.name}`)
@@ -85,9 +101,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const uploadResults = await Promise.all(uploadPromises)
     console.log('All uploads completed:', uploadResults)
 
-    // 3. BULK INSERT: Tüm kayıtları tek seferde ekle
+    // 4. BULK INSERT: Tüm kayıtları tek seferde ekle
     console.log('Inserting documents to database:', uploadResults)
-    const supabase = createClient()
     const { data, error } = await (supabase as any)
       .from('product_documents')
       .insert(uploadResults)
