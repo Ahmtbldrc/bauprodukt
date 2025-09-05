@@ -477,7 +477,7 @@ export default function CategoriesPage() {
                   name: editName.trim(), 
                   slug: editSlug.trim() || undefined,
                 })}
-                disabled={!editName.trim() || updateMutation.isPending}
+                disabled={!editName.trim() || updateMutation.isPending || (editingCategory && !editingCategory.parent && editSelectedSubIds.length === 0)}
                 className="px-4 py-2 rounded-lg text-white disabled:opacity-50"
                 style={{ backgroundColor: '#F39237' }}
               >
@@ -615,7 +615,7 @@ export default function CategoriesPage() {
               </button>
               <button
                 onClick={() => createMutation.mutate({ activeTab, name: createName.trim(), slug: createSlug.trim(), subIds: selectedSubcategoryIds })}
-                disabled={!createName.trim() || !createSlug.trim() || createMutation.isPending}
+                disabled={!createName.trim() || !createSlug.trim() || createMutation.isPending || (activeTab === 'main' && selectedSubcategoryIds.length === 0)}
                 className="px-4 py-2 rounded-lg text-white disabled:opacity-50"
                 style={{ backgroundColor: '#F39237' }}
               >
