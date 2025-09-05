@@ -63,7 +63,7 @@ const baseProductSchema = z.object({
   slug: z.string().min(1, 'Slug gerekli').max(255, 'Slug çok uzun').regex(/^[a-z0-9-]+$/, 'Slug sadece küçük harf, rakam ve tire içerebilir'),
   description: z.string().max(20000, 'Açıklama çok uzun').optional(),
   price: z.number().min(0, 'Fiyat negatif olamaz'),
-  discount_price: z.number().min(0, 'İndirimli fiyat negatif olamaz').optional(),
+  discount_price: z.number().min(0, 'İndirimli fiyat negatif olamaz').nullable().optional(),
   stock: z.number().int().min(0, 'Stok negatif olamaz'),
   stock_code: z.string().max(100, 'Stok kodu çok uzun').optional(),
   art_nr: z.string().max(100, 'Art-Nr çok uzun').optional(),
@@ -83,11 +83,11 @@ const baseProductSchema = z.object({
 
 export const createProductSchema = baseProductSchema.refine((data) => {
   // İndirimli fiyat varsa, normal fiyattan küçük ve sıfırdan büyük olmalı
-  if (data.discount_price) {
+  if (data.discount_price != null) {
     if (data.discount_price <= 0) {
       return false
     }
-    if (data.discount_price >= data.price) {
+    if (typeof data.price === 'number' && data.discount_price >= data.price) {
       return false
     }
   }
@@ -106,7 +106,7 @@ export const updateProductSchema = baseProductSchema.partial().refine((data) => 
         return false
       }
       // Eğer price da güncelleniyor veya mevcutsa kontrol et
-      if (data.price && data.discount_price >= data.price) {
+      if (typeof data.price === 'number' && data.discount_price >= data.price) {
         return false
       }
     }
