@@ -250,11 +250,11 @@ export default function ProductPageContent({
     }
   }, [selectedImageIndex, thumbnailStartIndex, maxVisibleThumbnails])
 
-  // Calculate discount information
-  const hasDiscount = product?.discount_price !== undefined && product?.discount_price < product?.price;
-  const displayPrice = hasDiscount && product?.discount_price !== undefined
-    ? product.discount_price
-    : product?.price;
+  // Calculate discount information (only if discount_price is a valid number less than price)
+  const basePrice = typeof product?.price === 'number' ? product?.price : undefined
+  const discountPrice = typeof product?.discount_price === 'number' ? product?.discount_price : undefined
+  const hasDiscount = typeof basePrice === 'number' && typeof discountPrice === 'number' && discountPrice > 0 && discountPrice < basePrice
+  const displayPrice = hasDiscount ? discountPrice : basePrice
 
   // Get related products (excluding current product)
   const relatedProducts = relatedProductsResponse?.data?.filter(p => p.id !== product?.id)?.slice(0, 4) || []
@@ -461,23 +461,25 @@ export default function ProductPageContent({
               
               {/* Main Image */}
               <div className="flex-1">
-                <div className="aspect-square bg-white rounded-lg overflow-hidden relative border border-gray-200">
+                <div className="aspect-square bg-white rounded-lg overflow-hidden relative border border-gray-200 flex items-center justify-center">
                   {hasDiscount && (
                     <div className="absolute top-4 left-4 text-white px-4 py-1.5 rounded-sm text-lg font-light z-10" style={{backgroundColor: '#F39236'}}>
                       Sale
                     </div>
                   )}
                   {productImages.length > 0 && productImages[selectedImageIndex]?.image_url ? (
-                    <Lens zoomFactor={2} lensSize={200} ariaLabel="Zoom Area">
-                      <Image
-                        src={productImages[selectedImageIndex]?.image_url}
-                        alt={product?.name || ''}
-                        width={800}
-                        height={800}
-                        className="w-full h-full object-contain select-none pointer-events-none"
-                        priority
-                      />
-                    </Lens>
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Lens zoomFactor={2} lensSize={200} ariaLabel="Zoom Area">
+                        <Image
+                          src={productImages[selectedImageIndex]?.image_url}
+                          alt={product?.name || ''}
+                          width={800}
+                          height={800}
+                          className="w-full h-full object-contain object-center select-none pointer-events-none"
+                          priority
+                        />
+                      </Lens>
+                    </div>
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <span className="text-gray-500 text-xl">Kein Produktbild</span>
@@ -985,7 +987,7 @@ export default function ProductPageContent({
                         slug: product.category?.slug ?? '',
                       },
                       inStock: product.stock > 0,
-                      onSale: !!product.discount_price,
+                      onSale: hasDiscount,
                       discountPercentage: undefined,
                       addedAt: '', // Set as needed
                     } : undefined}
