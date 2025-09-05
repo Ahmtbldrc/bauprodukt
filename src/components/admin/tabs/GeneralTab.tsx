@@ -170,7 +170,7 @@ export default function GeneralTab({ formData, brands, mainCategories, handleInp
             disabled={!mainId || loadingSubs || subOptions.length === 0}
           >
             <option value="">
-              {loadingSubs ? 'Wird geladen...' : subOptions.length === 0 ? 'Alt kategori yok' : 'Unterkategorie auswählen'}
+              {loadingSubs ? 'Wird geladen...' : subOptions.length === 0 ? 'Keine Unterkategorien' : 'Unterkategorie auswählen'}
             </option>
             {subOptions.map((sub) => (
               <option key={sub.id} value={sub.id}>{sub.name}</option>
