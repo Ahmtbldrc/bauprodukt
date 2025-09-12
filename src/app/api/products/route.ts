@@ -18,6 +18,8 @@ export async function GET(request: NextRequest) {
     const variant = searchParams.get('variant')
     const status = searchParams.get('status') // Admin filter for status
     const is_changeable = searchParams.get('is_changeable') // Admin filter for changeability
+    const sortBy = (searchParams.get('sortBy') as 'name' | 'brand' | 'category' | 'price' | 'stock' | 'date' | null)
+    const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc' | null) || 'desc'
     
     // Check if user is admin from middleware headers
     const userRole = request.headers.get('x-user-role')
@@ -39,7 +41,6 @@ export async function GET(request: NextRequest) {
         )
       `, { count: 'exact' })
       .range(from, to)
-      .order('created_at', { ascending: false })
 
     // Only filter by status for non-admin users (customers see only active products)
     if (!isAdmin) {
@@ -80,6 +81,25 @@ export async function GET(request: NextRequest) {
     if (variant) {
       // This will require a more complex query to check if product has the specified variant
       // For now, we'll handle this after the initial query
+    }
+
+    // Global sorting based on sortBy/sortOrder
+    const ascending = sortOrder === 'asc'
+    if (sortBy === 'name') {
+      query = query.order('name', { ascending })
+    } else if (sortBy === 'brand') {
+      query = query.order('brand_name', { ascending })
+    } else if (sortBy === 'category') {
+      query = query.order('category_name', { ascending })
+    } else if (sortBy === 'price') {
+      query = query.order('price', { ascending })
+    } else if (sortBy === 'stock') {
+      query = query.order('stock', { ascending })
+    } else if (sortBy === 'date') {
+      query = query.order('created_at', { ascending })
+    } else {
+      // default newest first
+      query = query.order('created_at', { ascending: false })
     }
 
     const { data, error, count } = await (query as any)

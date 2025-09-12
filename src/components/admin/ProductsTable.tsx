@@ -26,9 +26,11 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
   const { data: productsResponse, isLoading, error } = useProducts({
     page,
     limit,
-    search: '', // API'de arama yapmıyoruz, client-side arama yapacağız
+    search: debouncedSearch || undefined,
     brand: productFilters.brandId || undefined,
     category: productFilters.categoryId || undefined,
+    sortBy: sortKey || undefined,
+    sortOrder
   })
 
   const allProducts = useMemo(() => {
@@ -55,15 +57,6 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
   useEffect(() => {
     setPage(1)
   }, [productFilters.brandId, productFilters.categoryId])
-
-  // Client-side arama
-  const filteredProducts = useMemo(() => {
-    return allProducts.filter(product => 
-      product.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-      (product.stock_code && product.stock_code.toLowerCase().includes(debouncedSearch.toLowerCase())) ||
-      (product.description && product.description.toLowerCase().includes(debouncedSearch.toLowerCase()))
-    )
-  }, [allProducts, debouncedSearch])
 
   const getEffectivePrice = (product: any) => {
     if (typeof product?.discount_price === 'number' && !Number.isNaN(product.discount_price)) return product.discount_price
@@ -102,32 +95,16 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
     })
   }
 
-  const sortedFilteredProducts = useMemo(() => sortArray(filteredProducts), [filteredProducts, sortKey, sortOrder])
   const sortedAllProducts = useMemo(() => sortArray(allProducts), [allProducts, sortKey, sortOrder])
 
   // API'den gelen tüm ürün sayısına göre pagination
   const totalProducts = pagination?.total || 0
   const totalPages = Math.ceil(totalProducts / limit)
   
-  // Eğer arama yapılıyorsa client-side filtreleme, yoksa API pagination
-  let products
-  let totalFiltered
-  
-  if (debouncedSearch) {
-    // Arama yapılıyorsa client-side filtreleme ve pagination
-    const startIndex = (page - 1) * limit
-    const endIndex = startIndex + limit
-    products = sortedFilteredProducts.slice(startIndex, endIndex)
-    totalFiltered = sortedFilteredProducts.length
-  } else {
-    // Arama yapılmıyorsa API'den gelen veriyi kullan
-    products = sortedAllProducts
-    totalFiltered = totalProducts
-  }
-
-  const displayTotalPages = debouncedSearch || productFilters.brandId || productFilters.categoryId
-    ? Math.ceil((totalFiltered || 0) / limit)
-    : totalPages
+  // API pagination ve filtre toplamları server-side hesaplanır
+  const products = sortedAllProducts
+  const totalFiltered = totalProducts
+  const displayTotalPages = totalPages
 
   // Debug için log ekleyelim
   console.log('=== DEBUG INFO ===')
@@ -136,7 +113,6 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
   console.log('API Total Products:', pagination?.total)
   console.log('API Total Pages:', pagination?.totalPages)
   console.log('All Products Length:', allProducts.length)
-  console.log('Filtered Products:', filteredProducts)
   console.log('Total Filtered:', totalFiltered)
   console.log('Total Products for Pagination:', totalProducts)
   console.log('Calculated Total Pages:', totalPages)

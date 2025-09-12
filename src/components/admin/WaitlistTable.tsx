@@ -6,7 +6,7 @@ import { useWaitlist } from '@/hooks/useWaitlist'
 import { WaitlistEntry } from '@/types/waitlist'
 import { useAdminSearch } from '@/contexts/AdminSearchContext'
 import { useRouter } from 'next/navigation'
-import { Clock, AlertTriangle, CheckCircle, XCircle, Check, X, Package, Edit } from 'lucide-react'
+import { Clock, AlertTriangle, CheckCircle, XCircle, Check, X, Package, Edit, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 
 export function WaitlistTable() {
   const { waitlistFilters } = useAdminSearch()
@@ -15,6 +15,10 @@ export function WaitlistTable() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const [currentLimit, setCurrentLimit] = useState(7)
+
+  type SortKey = 'name' | 'date'
+  const [sortKey, setSortKey] = useState<SortKey | null>(null)
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
   const {
     data: entries,
@@ -30,7 +34,9 @@ export function WaitlistTable() {
     type: waitlistFilters.type,
     requiresReview: waitlistFilters.requiresReview,
     hasInvalidDiscount: waitlistFilters.hasInvalidDiscount,
-    reason: waitlistFilters.reason
+    reason: waitlistFilters.reason,
+    sortBy: sortKey || undefined,
+    sortOrder
   })
 
   // Pagination state'ini hook'tan gelen değerlerle senkronize et
@@ -55,7 +61,7 @@ export function WaitlistTable() {
     if (selectedEntries.length === (entries || []).length) {
       setSelectedEntries([])
     } else {
-      setSelectedEntries((entries || []).map(entry => entry.id))
+      setSelectedEntries((entries || []).map((entry: WaitlistEntry) => entry.id))
     }
   }
 
@@ -127,6 +133,26 @@ export function WaitlistTable() {
     return 'Ausstehend'
   }
 
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortOrder('asc')
+    }
+  }
+
+  const HeaderButton = ({ label, active, order }: { label: string; active: boolean; order: 'asc' | 'desc' }) => (
+    <div className="inline-flex items-center gap-1 select-none">
+      <span>{label}</span>
+      {active ? (
+        order === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+      ) : (
+        <ArrowUpDown className="h-3 w-3 text-gray-400" />
+      )}
+    </div>
+  )
+
 
 
   if (isLoading) {
@@ -186,8 +212,11 @@ export function WaitlistTable() {
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Produkt
+                <th
+                  onClick={() => handleSort('name')}
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                >
+                  <HeaderButton label="Produkt" active={sortKey === 'name'} order={sortOrder} />
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Typ
@@ -198,8 +227,11 @@ export function WaitlistTable() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Datum
+                <th
+                  onClick={() => handleSort('date')}
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                >
+                  <HeaderButton label="Datum" active={sortKey === 'date'} order={sortOrder} />
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Aktionen

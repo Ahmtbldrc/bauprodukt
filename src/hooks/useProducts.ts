@@ -56,13 +56,15 @@ interface UseProductsOptions {
   category?: string
   categories?: string[]
   stock_code?: string
+  sortBy?: 'name' | 'brand' | 'category' | 'price' | 'stock' | 'date'
+  sortOrder?: 'asc' | 'desc'
 }
 
 export function useProducts(options: UseProductsOptions = {}) {
-  const { page = 1, limit = 10, search, brand, category, categories, stock_code } = options
+  const { page = 1, limit = 10, search, brand, category, categories, stock_code, sortBy, sortOrder } = options
 
   return useQuery<ProductsResponse>({
-    queryKey: ['products', { page, limit, search, brand, category, stock_code }],
+    queryKey: ['products', { page, limit, search, brand, category, stock_code, sortBy, sortOrder }],
     queryFn: async () => {
       const params = new URLSearchParams({
         page: page.toString(),
@@ -85,6 +87,14 @@ export function useProducts(options: UseProductsOptions = {}) {
 
       if (stock_code) {
         params.set('stock_code', stock_code)
+      }
+
+      if (sortBy) {
+        params.set('sortBy', sortBy)
+      }
+
+      if (sortOrder) {
+        params.set('sortOrder', sortOrder)
       }
 
       const response = await fetch(`/api/products?${params.toString()}`)

@@ -9,6 +9,8 @@ export function useWaitlist(options: {
   requiresReview?: boolean
   hasInvalidDiscount?: boolean
   reason?: string
+  sortBy?: 'name' | 'date'
+  sortOrder?: 'asc' | 'desc'
 } = {}) {
   const [data, setData] = useState<WaitlistEntry[]>([])
   const [stats, setStats] = useState<WaitlistStats | null>(null)
@@ -59,7 +61,21 @@ export function useWaitlist(options: {
       // Pagination
       const from = (pagination.page - 1) * pagination.limit
       const to = from + pagination.limit - 1
-      query = query.range(from, to).order('created_at', { ascending: false })
+      query = query.range(from, to)
+
+      // Global sorting across all records
+      const ascending = options.sortOrder === 'asc'
+      if (options.sortBy === 'name') {
+        // Order by related products.name; fallback to product_slug for entries without product
+        query = (query as any)
+          .order('name', { foreignTable: 'products', ascending, nullsFirst: !ascending })
+          .order('product_slug', { ascending })
+      } else if (options.sortBy === 'date') {
+        query = query.order('created_at', { ascending })
+      } else {
+        // Default: newest first
+        query = query.order('created_at', { ascending: false })
+      }
       
       const { data, error, count } = await query
       
@@ -84,7 +100,7 @@ export function useWaitlist(options: {
     } finally {
       setIsLoading(false)
     }
-  }, [pagination.page, pagination.limit, options.type, options.requiresReview, options.hasInvalidDiscount, options.reason])
+  }, [pagination.page, pagination.limit, options.type, options.requiresReview, options.hasInvalidDiscount, options.reason, options.sortBy, options.sortOrder])
 
   const fetchStats = useCallback(async () => {
     try {
@@ -266,7 +282,7 @@ export function useWaitlist(options: {
   // Options değiştiğinde pagination'ı sıfırla
   useEffect(() => {
     setPagination(prev => ({ ...prev, page: 1 }))
-  }, [options.type, options.requiresReview, options.hasInvalidDiscount, options.reason])
+  }, [options.type, options.requiresReview, options.hasInvalidDiscount, options.reason, options.sortBy, options.sortOrder])
 
   return {
     data,
