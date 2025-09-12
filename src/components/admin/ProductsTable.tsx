@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { formatPriceAdmin } from '@/lib/url-utils'
 import { useProducts } from '@/hooks/useProducts'
 import { useAdminSearch } from '@/contexts/AdminSearchContext'
-import { Edit, Trash2, Eye, Search } from 'lucide-react'
+import { Edit, Trash2, Eye, Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -15,14 +15,20 @@ interface ProductsTableProps {
 export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(8)
-  const { searchQuery } = useAdminSearch()
+  const { searchQuery, productFilters } = useAdminSearch()
   const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  type SortKey = 'name' | 'brand' | 'category' | 'price' | 'stock' | 'date'
+  const [sortKey, setSortKey] = useState<SortKey | null>(null)
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
 
   const { data: productsResponse, isLoading, error } = useProducts({
     page,
     limit,
     search: '', // API'de arama yapmıyoruz, client-side arama yapacağız
+    brand: productFilters.brandId || undefined,
+    category: productFilters.categoryId || undefined,
   })
 
   const allProducts = useMemo(() => {
@@ -45,6 +51,11 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
     return () => clearTimeout(timer)
   }, [searchQuery])
 
+  // Reset pagination on brand/category filter change
+  useEffect(() => {
+    setPage(1)
+  }, [productFilters.brandId, productFilters.categoryId])
+
   // Client-side arama
   const filteredProducts = useMemo(() => {
     return allProducts.filter(product => 
@@ -53,6 +64,46 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
       (product.description && product.description.toLowerCase().includes(debouncedSearch.toLowerCase()))
     )
   }, [allProducts, debouncedSearch])
+
+  const getEffectivePrice = (product: any) => {
+    if (typeof product?.discount_price === 'number' && !Number.isNaN(product.discount_price)) return product.discount_price
+    return typeof product?.price === 'number' ? product.price : 0
+  }
+
+  const getComparableValue = (product: any, key: SortKey): string | number => {
+    switch (key) {
+      case 'name':
+        return (product?.name ?? '').toString().toLowerCase()
+      case 'brand':
+        return (product?.brand?.name ?? '').toString().toLowerCase()
+      case 'category':
+        return (product?.category?.name ?? '').toString().toLowerCase()
+      case 'price':
+        return getEffectivePrice(product)
+      case 'stock':
+        return typeof product?.stock === 'number' ? product.stock : 0
+      case 'date': {
+        const ts = new Date(product?.created_at ?? 0).getTime()
+        return Number.isFinite(ts) ? ts : 0
+      }
+    }
+  }
+
+  const sortArray = (list: any[]) => {
+    if (!sortKey) return list
+    const direction = sortOrder === 'asc' ? 1 : -1
+    return [...list].sort((a, b) => {
+      const va = getComparableValue(a, sortKey)
+      const vb = getComparableValue(b, sortKey)
+      if (typeof va === 'number' && typeof vb === 'number') {
+        return (va - vb) * direction
+      }
+      return va.toString().localeCompare(vb.toString()) * direction
+    })
+  }
+
+  const sortedFilteredProducts = useMemo(() => sortArray(filteredProducts), [filteredProducts, sortKey, sortOrder])
+  const sortedAllProducts = useMemo(() => sortArray(allProducts), [allProducts, sortKey, sortOrder])
 
   // API'den gelen tüm ürün sayısına göre pagination
   const totalProducts = pagination?.total || 0
@@ -66,13 +117,17 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
     // Arama yapılıyorsa client-side filtreleme ve pagination
     const startIndex = (page - 1) * limit
     const endIndex = startIndex + limit
-    products = filteredProducts.slice(startIndex, endIndex)
-    totalFiltered = filteredProducts.length
+    products = sortedFilteredProducts.slice(startIndex, endIndex)
+    totalFiltered = sortedFilteredProducts.length
   } else {
     // Arama yapılmıyorsa API'den gelen veriyi kullan
-    products = allProducts
+    products = sortedAllProducts
     totalFiltered = totalProducts
   }
+
+  const displayTotalPages = debouncedSearch || productFilters.brandId || productFilters.categoryId
+    ? Math.ceil((totalFiltered || 0) / limit)
+    : totalPages
 
   // Debug için log ekleyelim
   console.log('=== DEBUG INFO ===')
@@ -88,6 +143,11 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
   console.log('Current Page:', page)
   console.log('Current Limit:', limit)
   console.log('Is Search Active:', !!debouncedSearch)
+  console.log('Filter Brand:', productFilters.brandId)
+  console.log('Filter Category:', productFilters.categoryId)
+  console.log('Sort Key:', sortKey)
+  console.log('Sort Order:', sortOrder)
+  console.log('Display Total Pages:', displayTotalPages)
   console.log('==================')
 
 
@@ -106,6 +166,27 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('de-CH')
   }
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortKey(key)
+      setSortOrder('asc')
+    }
+    setPage(1)
+  }
+
+  const HeaderButton = ({ label, active, order }: { label: string; active: boolean; order: 'asc' | 'desc' }) => (
+    <div className="inline-flex items-center gap-1 select-none">
+      <span>{label}</span>
+      {active ? (
+        order === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
+      ) : (
+        <ArrowUpDown className="h-3 w-3 text-gray-400" />
+      )}
+    </div>
+  )
 
   if (isLoading) {
     return (
@@ -135,23 +216,41 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Produkt
+                <th
+                  onClick={() => handleSort('name')}
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                >
+                  <HeaderButton label="Produkt" active={sortKey === 'name'} order={sortOrder} />
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Marke
+                <th
+                  onClick={() => handleSort('brand')}
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                >
+                  <HeaderButton label="Marke" active={sortKey === 'brand'} order={sortOrder} />
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Kategorie
+                <th
+                  onClick={() => handleSort('category')}
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                >
+                  <HeaderButton label="Kategorie" active={sortKey === 'category'} order={sortOrder} />
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Preis
+                <th
+                  onClick={() => handleSort('price')}
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                >
+                  <HeaderButton label="Preis" active={sortKey === 'price'} order={sortOrder} />
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Lagerbestand
+                <th
+                  onClick={() => handleSort('stock')}
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                >
+                  <HeaderButton label="Lagerbestand" active={sortKey === 'stock'} order={sortOrder} />
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Datum
+                <th
+                  onClick={() => handleSort('date')}
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                >
+                  <HeaderButton label="Datum" active={sortKey === 'date'} order={sortOrder} />
                 </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Aktionen

@@ -5,6 +5,14 @@ import { createContext, useContext, useState, ReactNode } from 'react'
 interface AdminSearchContextType {
   searchQuery: string
   setSearchQuery: (query: string) => void
+  productFilters: {
+    brandId: string
+    categoryId: string
+  }
+  setProductFilters: React.Dispatch<React.SetStateAction<{
+    brandId: string
+    categoryId: string
+  }>>
   waitlistFilters: {
     type: 'new' | 'update' | 'all'
     requiresReview: boolean
@@ -23,6 +31,7 @@ const AdminSearchContext = createContext<AdminSearchContextType | undefined>(und
 
 export function AdminSearchProvider({ children }: { children: ReactNode }) {
   const [searchQuery, setSearchQuery] = useState('')
+  const [productFilters, setProductFilters] = useState<{ brandId: string; categoryId: string }>({ brandId: '', categoryId: '' })
   const [waitlistFilters, setWaitlistFilters] = useState<{
     type: 'new' | 'update' | 'all'
     requiresReview: boolean
@@ -39,6 +48,8 @@ export function AdminSearchProvider({ children }: { children: ReactNode }) {
     <AdminSearchContext.Provider value={{ 
       searchQuery, 
       setSearchQuery, 
+      productFilters,
+      setProductFilters,
       waitlistFilters, 
       setWaitlistFilters 
     }}>

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useState, useEffect, useRef } from 'react'
 import { Bell, LogOut, Search, Plus, Package, BarChart3, X } from 'lucide-react'
+import { useAllBrands } from '@/hooks/useBrands'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useAllCategories } from '@/hooks/useCategories'
 import toast from 'react-hot-toast'
@@ -31,6 +32,8 @@ export function AdminHeader() {
 
   const { data: allCategoriesResponse } = useAllCategories()
   const allCategories = allCategoriesResponse?.data || []
+  const { data: allBrandsResponse } = useAllBrands()
+  const allBrands = allBrandsResponse?.data || []
   const [notifications, setNotifications] = useState<Array<{
     id: string
     type: 'waitlist' | 'order' | 'system'
@@ -42,7 +45,7 @@ export function AdminHeader() {
   }>>([])
 
   const { user, logout } = useAdminAuth()
-  const { searchQuery, setSearchQuery, waitlistFilters, setWaitlistFilters } = useAdminSearch()
+  const { searchQuery, setSearchQuery, productFilters, setProductFilters, waitlistFilters, setWaitlistFilters } = useAdminSearch()
   const router = useRouter()
   const pathname = usePathname()
   const queryClient = useQueryClient()
@@ -206,7 +209,7 @@ export function AdminHeader() {
         }
       }
       
-      // Sadece ana products sayfasında search ve yeni ürün butonu göster
+      // Sadece ana products sayfasında search ve (buton yorum satırında) filtreleri göster
       return {
         showTimeFilters: false,
         centerContent: (
@@ -222,14 +225,38 @@ export function AdminHeader() {
                 style={{ fontFamily: 'var(--font-blinker)' }}
               />
             </div>
-            <Link
+            {/* Brand Filter */}
+            <select
+              value={productFilters.brandId}
+              onChange={(e) => setProductFilters(prev => ({ ...prev, brandId: e.target.value }))}
+              className="px-4 py-3 border border-gray-300 rounded-full text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white min-w-[180px]"
+              style={{ fontFamily: 'var(--font-blinker)' }}
+            >
+              <option value="">Alle Marken</option>
+              {allBrands.map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+            {/* Category Filter */}
+            <select
+              value={productFilters.categoryId}
+              onChange={(e) => setProductFilters(prev => ({ ...prev, categoryId: e.target.value }))}
+              className="px-4 py-3 border border-gray-300 rounded-full text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white min-w-[180px]"
+              style={{ fontFamily: 'var(--font-blinker)' }}
+            >
+              <option value="">Alle Kategorien</option>
+              {allCategories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+            {/* <Link
               href="/admin/products/new"
               className="px-8 py-3 text-sm font-medium rounded-full border border-gray-300 bg-gray-900 text-white hover:bg-gray-800 transition-all duration-200 shadow-sm flex items-center gap-2"
               style={{ fontFamily: 'var(--font-blinker)' }}
             >
               <Plus className="h-4 w-4" />
               Neues Produkt
-            </Link>
+            </Link> */}
           </div>
         )
       }
