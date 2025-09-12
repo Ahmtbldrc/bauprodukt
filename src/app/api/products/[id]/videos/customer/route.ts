@@ -16,6 +16,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .select('*')
       .eq('product_id', id)
       .eq('is_active', true)
+      .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false })
 
     if (error) {

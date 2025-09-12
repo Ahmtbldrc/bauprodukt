@@ -67,9 +67,22 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const uploadResults = await Promise.all(uploadPromises)
 
     // 3. BULK INSERT: Tüm kayıtları tek seferde ekle
+    // Determine current max sort_order to append sequentially for bulk
+    const { data: maxRow } = await (supabase as any)
+      .from('product_videos')
+      .select('sort_order')
+      .eq('product_id', productId)
+      .eq('is_active', true)
+      .order('sort_order', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    let nextOrder = (maxRow?.sort_order ?? 0) + 1
+    const payloadWithOrder = uploadResults.map((r) => ({ ...r, sort_order: nextOrder++ }))
+
     const { data, error } = await (supabase as any)
       .from('product_videos')
-      .insert(uploadResults)
+      .insert(payloadWithOrder)
       .select('*')
 
     if (error) {

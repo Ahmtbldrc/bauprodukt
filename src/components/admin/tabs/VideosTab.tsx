@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { Play } from 'lucide-react'
+import { DndContext, PointerSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
+import { SortableContext, rectSortingStrategy, arrayMove, useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 interface Video {
   id: string
@@ -64,6 +67,9 @@ export default function VideosTab({ videos, setVideos, openDeleteDialog, product
   const [newTitle, setNewTitle] = useState('')
   const [newUrl, setNewUrl] = useState('')
   const [isAdding, setIsAdding] = useState(false)
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  )
 
   // Function to refresh videos from API
   const refreshVideos = async () => {
@@ -183,6 +189,79 @@ export default function VideosTab({ videos, setVideos, openDeleteDialog, product
     openDeleteDialog(index)
   }
 
+  const handleDragEnd = async (event: any) => {
+    try {
+      const { active, over } = event
+      if (!over || active.id === over.id) return
+      const oldIndex = videos.findIndex(v => v.id === active.id)
+      const newIndex = videos.findIndex(v => v.id === over.id)
+      if (oldIndex === -1 || newIndex === -1) return
+      const prev = videos
+      const reordered = arrayMove(videos, oldIndex, newIndex)
+      setVideos(reordered)
+
+      if (!productId) return
+      const response = await fetch(`/api/products/${productId}/videos/reorder`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: reordered.map(v => v.id) })
+      })
+      if (!response.ok) {
+        setVideos(prev)
+        showToast('Sıralama kaydedilemedi.', 'error')
+      } else {
+        showToast('Sortierung aktualisiert.', 'success')
+      }
+    } catch (e) {
+      console.error(e)
+      showToast('Sıralama sırasında bir hata oluştu.', 'error')
+    }
+  }
+
+  function SortableVideoCard({ video, index }: { video: Video; index: number }) {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: video.id })
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition
+    } as React.CSSProperties
+    const vid = getYouTubeId(video.previewUrl || video.video_url || '')
+    const embedUrl = vid ? `https://www.youtube.com/embed/${vid}` : ''
+    return (
+      <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative">
+        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+          <div className="aspect-video bg-gray-100 cursor-move">
+            {embedUrl ? (
+              <iframe
+                src={embedUrl}
+                title={video.title}
+                className="w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <Play className="h-6 w-6 text-gray-400" />
+              </div>
+            )}
+          </div>
+          <div className="p-3">
+            <p className="text-sm font-medium text-gray-900 truncate">{video.title}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => removeVideo(index)}
+          className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow"
+          title="Video löschen"
+        >
+          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3 mb-6">
@@ -234,48 +313,17 @@ export default function VideosTab({ videos, setVideos, openDeleteDialog, product
         )}
       </div>
 
-      {/* Videos Grid */}
+      {/* Videos Grid with Drag-and-Drop */}
       <div className="w-full">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {videos.map((video, index) => {
-            const vid = getYouTubeId(video.previewUrl || video.video_url || '')
-            const embedUrl = vid ? `https://www.youtube.com/embed/${vid}` : ''
-            return (
-              <div key={video.id} className="relative">
-                <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-                  <div className="aspect-video bg-gray-100">
-                    {embedUrl ? (
-                      <iframe
-                        src={embedUrl}
-                        title={video.title}
-                        className="w-full h-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Play className="h-6 w-6 text-gray-400" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3">
-                    <p className="text-sm font-medium text-gray-900 truncate">{video.title}</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeVideo(index)}
-                  className="absolute -top-2 -right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow"
-                  title="Video löschen"
-                >
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            )
-          })}
-        </div>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={videos.map(v => v.id)} strategy={rectSortingStrategy}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {videos.map((video, index) => (
+                <SortableVideoCard key={video.id} video={video} index={index} />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       </div>
 
       {/* Remove the local ConfirmDialog since it's now managed by parent */}

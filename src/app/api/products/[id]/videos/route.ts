@@ -16,6 +16,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       .select('*')
       .eq('product_id', id)
       .eq('is_active', true)
+      // Primary order by sort_order if column exists/populated, fallback by created_at desc
+      .order('sort_order', { ascending: true })
       .order('created_at', { ascending: false })
 
     if (error) {
@@ -52,6 +54,22 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       )
     }
 
+    // Determine next sort_order for this product (append to end)
+    const { data: maxOrderRow, error: maxOrderError } = await (supabase as any)
+      .from('product_videos')
+      .select('sort_order')
+      .eq('product_id', id)
+      .eq('is_active', true)
+      .order('sort_order', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (maxOrderError) {
+      console.error('Fetch max sort_order error:', maxOrderError)
+    }
+
+    const nextSortOrder = (maxOrderRow?.sort_order ?? 0) + 1
+
     const { data, error } = await (supabase as any)
       .from('product_videos')
       .insert({
@@ -60,7 +78,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         video_url,
         thumbnail_url: thumbnail_url || null,
         duration: duration || null,
-        file_size: file_size || null
+        file_size: file_size || null,
+        sort_order: nextSortOrder
       })
       .select('*')
       .single()
