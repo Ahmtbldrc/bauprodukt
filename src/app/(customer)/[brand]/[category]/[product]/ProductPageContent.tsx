@@ -463,7 +463,7 @@ export default function ProductPageContent({
               <div className="flex-1">
                 <div className="aspect-square bg-white rounded-lg overflow-hidden relative border border-gray-200 flex items-center justify-center">
                   {hasDiscount && (
-                    <div className="absolute top-4 left-4 text-white px-4 py-1.5 rounded-sm text-lg font-light z-10" style={{backgroundColor: '#F39236'}}>
+                    <div className="absolute top-4 left-4 text-white px-4 py-1.5 rounded-sm text-lg font-light z-50" style={{backgroundColor: '#F39236'}}>
                       Sale
                     </div>
                   )}
@@ -546,7 +546,7 @@ export default function ProductPageContent({
               <div className="py-6 w-full">
                 {activeTab === 'details' && (
                   <div className="prose max-w-none w-full">
-                    <h3>Produktbeschreibung</h3>
+                    <h3>{product?.name || 'Produkt'}</h3>
                     {product?.description ? (
                       <div className="text-sm text-gray-700 whitespace-pre-line">
                         {product.description}
