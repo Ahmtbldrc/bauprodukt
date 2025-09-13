@@ -14,9 +14,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const { searchParams } = new URL(request.url)
     const variant = searchParams.get('variant') // Get variant ID parameter
     
-    // Check if user is admin from middleware headers
+    // Check if user is admin from middleware headers or Referer to admin
     const userRole = request.headers.get('x-user-role')
-    const isAdmin = userRole === 'admin'
+    const referer = request.headers.get('referer') || ''
+    const isAdmin = userRole === 'admin' || referer.includes('/admin')
 
     // Use products_with_default_variants view for variant support
     let query = (supabase as any)
@@ -126,17 +127,19 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Fetch manual stock toggle and main category directly from products table (not included in view)
+    // Fetch manual stock toggle, main category and status directly from products table (not included in view)
     let allowManualStockEdit = false
     let mainCategoryId: string | null = null
+    let productStatus: string | null = null
     try {
       const { data: flagRow } = await (supabase as any)
         .from('products')
-        .select('allow_manual_stock_edit, main_category_id')
+        .select('allow_manual_stock_edit, main_category_id, status')
         .eq('id', id)
         .single()
       allowManualStockEdit = !!flagRow?.allow_manual_stock_edit
       mainCategoryId = flagRow?.main_category_id ?? null
+      productStatus = flagRow?.status ?? null
     } catch {
       allowManualStockEdit = false
     }
@@ -187,7 +190,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       // Expose manual stock edit flag directly
       allow_manual_stock_edit: allowManualStockEdit,
       // Expose main category id directly
-      main_category_id: mainCategoryId
+      main_category_id: mainCategoryId,
+      // Expose status
+      status: productStatus
     }
 
     return NextResponse.json(productWithVariants)

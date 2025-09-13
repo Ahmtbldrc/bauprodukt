@@ -23,7 +23,7 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc')
 
 
-  const { data: productsResponse, isLoading, error } = useProducts({
+  const { data: productsResponse, isLoading, error, refetch } = useProducts({
     page,
     limit,
     search: debouncedSearch || undefined,
@@ -52,6 +52,22 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
 
     return () => clearTimeout(timer)
   }, [searchQuery])
+
+  // Ensure fresh data on mount and when window regains focus (e.g., navigating back)
+  useEffect(() => {
+    refetch()
+    const onFocus = () => refetch()
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        refetch()
+      }
+    }
+    const onPageShow = () => refetch()
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisible)
+    window.addEventListener('pageshow', onPageShow)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [refetch])
 
   // Reset pagination on brand/category filter change
   useEffect(() => {
@@ -228,6 +244,11 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
                 >
                   <HeaderButton label="Datum" active={sortKey === 'date'} order={sortOrder} />
                 </th>
+                <th
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
+                  Status
+                </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Aktionen
                 </th>
@@ -327,6 +348,23 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatDate(product.created_at)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {(() => {
+                        const status = (product as any).status || 'active'
+                        const isActive = status === 'active'
+                        const bg = isActive ? '#E6F6EA' : '#FDE2E1'
+                        const fg = isActive ? '#15803D' : '#B91C1C'
+                        const label = isActive ? 'Aktiv' : 'Passiv'
+                        return (
+                          <span
+                            className="inline-flex px-2.5 py-1 text-xs font-semibold rounded-full"
+                            style={{ backgroundColor: bg, color: fg }}
+                          >
+                            {label}
+                          </span>
+                        )
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">

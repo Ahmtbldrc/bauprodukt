@@ -21,9 +21,10 @@ export async function GET(request: NextRequest) {
     const sortBy = (searchParams.get('sortBy') as 'name' | 'brand' | 'category' | 'price' | 'stock' | 'date' | null)
     const sortOrder = (searchParams.get('sortOrder') as 'asc' | 'desc' | null) || 'desc'
     
-    // Check if user is admin from middleware headers
+    // Check if user is admin from middleware headers or Referer to admin
     const userRole = request.headers.get('x-user-role')
-    const isAdmin = userRole === 'admin'
+    const referer = request.headers.get('referer') || ''
+    const isAdmin = userRole === 'admin' || referer.includes('/admin')
 
     const from = (page - 1) * limit
     const to = from + limit - 1

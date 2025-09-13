@@ -99,6 +99,7 @@ export default function EditProductPage() {
     category_id: '',
     main_category_id: '',
     allow_manual_stock_edit: false,
+    status: 'active',
     technical_specs: [],
     general_technical_specs: []
   })
@@ -401,6 +402,7 @@ export default function EditProductPage() {
           brand_id: product.brand_id || '',
           category_id: product.category_id || '',
           main_category_id: (product as any).main_category_id || '',
+          status: ((product as any).status === 'passive' ? 'passive' : 'active'),
           technical_specs: [],
           general_technical_specs: Array.isArray(product.general_technical_specs) ? product.general_technical_specs : []
         })
@@ -698,6 +700,7 @@ export default function EditProductPage() {
         main_category_id: (mainCategoryState.mainId || formData.main_category_id) || undefined,
         general_technical_specs: formData.general_technical_specs || undefined,
         allow_manual_stock_edit: formData.allow_manual_stock_edit ?? false,
+        status: formData.status || 'active',
       }
       
       console.log('Request Body:', requestBody)
@@ -768,7 +771,8 @@ export default function EditProductPage() {
           brand_id: updatedProduct.brand_id || prev.brand_id,
           category_id: updatedProduct.category_id || prev.category_id,
           main_category_id: (updatedProduct as any).main_category_id || prev.main_category_id,
-          allow_manual_stock_edit: (updatedProduct as any).allow_manual_stock_edit ?? prev.allow_manual_stock_edit
+          allow_manual_stock_edit: (updatedProduct as any).allow_manual_stock_edit ?? prev.allow_manual_stock_edit,
+          status: (updatedProduct as any).status || prev.status
         }
         console.log('New form data:', newFormData)
         console.log('art_nr in new form:', newFormData.art_nr)
@@ -880,6 +884,30 @@ export default function EditProductPage() {
               mainCategories={mainCategories}
               handleInputChange={handleInputChange}
               onMainCategoryStateChange={setMainCategoryState}
+              onStatusChange={async (nextStatus) => {
+                const previousStatus = (formData as any).status || 'active'
+                // Optimistic update
+                setFormData(prev => ({ ...prev, status: nextStatus as any }))
+                try {
+                  const response = await fetch(`/api/products/${productId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: nextStatus })
+                  })
+                  if (!response.ok) {
+                    const errText = await response.text()
+                    throw new Error(errText || 'Status konnte nicht gespeichert werden')
+                  }
+                  const updated = await response.json()
+                  setFormData(prev => ({ ...prev, status: (updated as any).status || nextStatus as any }))
+                  toast.success('Status gespeichert')
+                } catch (err) {
+                  // Revert on failure
+                  setFormData(prev => ({ ...prev, status: previousStatus as any }))
+                  console.error(err)
+                  toast.error('Status konnte nicht gespeichert werden')
+                }
+              }}
             />
           )}
 

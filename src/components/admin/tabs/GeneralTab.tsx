@@ -19,6 +19,7 @@ interface GeneralTabProps {
     category_id: string
     main_category_id?: string
     allow_manual_stock_edit?: boolean
+    status?: 'active' | 'passive'
     technical_specs: Array<{
       id?: string
       title: string
@@ -36,9 +37,10 @@ interface GeneralTabProps {
   mainCategories: Array<{ id: string; name: string; slug: string }>
   handleInputChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void
   onMainCategoryStateChange?: (state: { mainId: string; hasSubcategories: boolean }) => void
+  onStatusChange?: (status: 'active' | 'passive') => void
 }
 
-export default function GeneralTab({ formData, brands, mainCategories, handleInputChange, onMainCategoryStateChange }: GeneralTabProps) {
+export default function GeneralTab({ formData, brands, mainCategories, handleInputChange, onMainCategoryStateChange, onStatusChange }: GeneralTabProps) {
   const [mainId, setMainId] = useState<string>('')
   const [subOptions, setSubOptions] = useState<Array<{ id: string; name: string; slug: string }>>([])
   const [loadingSubs, setLoadingSubs] = useState(false)
@@ -92,6 +94,39 @@ export default function GeneralTab({ formData, brands, mainCategories, handleInp
       <div className="flex items-center gap-3 mb-6">
         <Info className="h-6 w-6 text-[#F39236]" />
         <h3 className="text-xl font-semibold text-gray-900">Allgemeine Informationen</h3>
+        <div className="ml-auto">
+          <button
+            type="button"
+            aria-checked={formData.status !== 'passive'}
+            role="switch"
+            onClick={() => {
+              const next = formData.status === 'active' ? 'passive' : 'active'
+              if (onStatusChange) {
+                onStatusChange(next)
+              } else {
+                handleInputChange({
+                  target: {
+                    name: 'status',
+                    value: next
+                  }
+                } as unknown as React.ChangeEvent<HTMLInputElement>)
+              }
+            }}
+            className="inline-flex items-center gap-2 cursor-pointer select-none"
+            title={formData.status === 'active' ? 'Aktiv' : 'Passiv'}
+          >
+            <div
+              className={`w-12 h-7 rounded-full relative transition-colors duration-200 ${formData.status === 'active' ? 'bg-green-500' : 'bg-red-300'}`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 h-6 w-6 bg-white rounded-full shadow transition-transform duration-200 ${formData.status === 'active' ? 'translate-x-5' : ''}`}
+              />
+            </div>
+            <span className={`text-sm font-medium ${formData.status === 'active' ? 'text-green-700' : 'text-red-600'}`}>
+              {formData.status === 'active' ? 'Aktiv' : 'Passiv'}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Produktname ve Marke - yan yana */}

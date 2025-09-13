@@ -41,6 +41,7 @@ export const createCategorySchema = z.object({
 export const updateCategorySchema = createCategorySchema.partial()
 
 // Product schemas
+export const productStatusSchema = z.enum(['active', 'passive', 'waiting_approval', 'rejected', 'pending_update'])
 export const productSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1, 'Ürün adı gerekli'),
@@ -74,6 +75,7 @@ const baseProductSchema = z.object({
   category_id: z.string().uuid('Geçerli bir kategori seçiniz').optional(),
   main_category_id: z.string().uuid('Geçerli bir ana kategori seçiniz').optional(),
   allow_manual_stock_edit: z.boolean().optional(),
+  status: productStatusSchema.optional(),
   specifications_data: z.record(z.unknown()).optional(),
   general_technical_specs: z.array(z.object({
     id: z.string().optional(),

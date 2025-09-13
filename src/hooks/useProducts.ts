@@ -134,6 +134,8 @@ export function useProductById(productId: string) {
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
     enabled: !!productId, // Only run query if productId is provided
   })
 }
@@ -241,6 +243,8 @@ export function useProductVariants(productId: string) {
     enabled: !!productId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   })
 }
 
@@ -262,5 +266,7 @@ export function useProductImages(productId: string) {
     enabled: !!productId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   })
 } 

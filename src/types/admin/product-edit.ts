@@ -63,6 +63,7 @@ export interface FormData {
   category_id: string
   main_category_id?: string
   allow_manual_stock_edit?: boolean
+  status?: 'active' | 'passive'
   technical_specs: Array<{
     id?: string
     title: string
