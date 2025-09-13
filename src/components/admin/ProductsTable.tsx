@@ -4,12 +4,13 @@ import { useState, useEffect, useMemo } from 'react'
 import { formatPriceAdmin } from '@/lib/url-utils'
 import { useProducts } from '@/hooks/useProducts'
 import { useAdminSearch } from '@/contexts/AdminSearchContext'
-import { Edit, Trash2, Eye, Search, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
+import { Edit, Trash2, Eye, Search, ArrowUpDown, ArrowUp, ArrowDown, Copy } from 'lucide-react'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import Image from 'next/image'
 import Link from 'next/link'
 
 interface ProductsTableProps {
-  onDeleteProduct?: (productId: string) => void
+  onDeleteProduct?: (productId: string) => Promise<void> | void
 }
 
 export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
@@ -17,6 +18,12 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
   const [limit, setLimit] = useState(8)
   const { searchQuery, productFilters } = useAdminSearch()
   const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [selectedDeleteId, setSelectedDeleteId] = useState<string | null>(null)
+  const [selectedDeleteName, setSelectedDeleteName] = useState<string | null>(null)
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false)
 
   type SortKey = 'name' | 'brand' | 'category' | 'price' | 'stock' | 'date'
   const [sortKey, setSortKey] = useState<SortKey | null>(null)
@@ -179,6 +186,49 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
       )}
     </div>
   )
+
+  const handleDuplicate = async (productId: string) => {
+    try {
+      setDuplicatingId(productId)
+      const res = await fetch(`/api/products/${productId}/duplicate`, { method: 'POST' })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err?.error || 'Kopyalama başarısız')
+      }
+      await refetch()
+    } catch (e: any) {
+      alert(e?.message || 'Ürün kopyalanırken bir hata oluştu')
+    } finally {
+      setDuplicatingId(null)
+    }
+  }
+
+  const openDeleteModal = (productId: string, productName: string) => {
+    setSelectedDeleteId(productId)
+    setSelectedDeleteName(productName)
+    setDeleteModalOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!selectedDeleteId) return
+    try {
+      setIsDeleteLoading(true)
+      setDeletingId(selectedDeleteId)
+      const result = onDeleteProduct?.(selectedDeleteId)
+      if (result && typeof (result as any).then === 'function') {
+        await (result as Promise<void>)
+      }
+      setDeleteModalOpen(false)
+      setSelectedDeleteId(null)
+      setSelectedDeleteName(null)
+      await refetch()
+    } catch (e: any) {
+      alert(e?.message || 'Ürün silinirken bir hata oluştu')
+    } finally {
+      setIsDeleteLoading(false)
+      setDeletingId(null)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -382,6 +432,14 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
                         >
                           <Eye className="h-4 w-4" />
                         </Link>
+                        <button
+                          onClick={() => handleDuplicate(product.id)}
+                          className={`p-1 rounded ${duplicatingId === product.id ? 'opacity-60 cursor-wait' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-50'}`}
+                          title={duplicatingId === product.id ? 'Kopyalanıyor...' : 'Kopyala'}
+                          disabled={duplicatingId === product.id}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </button>
                         <Link
                           href={`/admin/products/${product.id}`}
                           className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
@@ -390,9 +448,10 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
                           <Edit className="h-4 w-4" />
                         </Link>
                         <button
-                          onClick={() => onDeleteProduct?.(product.id)}
-                          className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
-                          title="Löschen"
+                          onClick={() => openDeleteModal(product.id, product.name)}
+                          className={`p-1 rounded ${deletingId === product.id ? 'opacity-60 cursor-wait' : 'text-red-600 hover:text-red-900 hover:bg-red-50'}`}
+                          title={deletingId === product.id ? 'Wird gelöscht...' : 'Löschen'}
+                          disabled={deletingId === product.id}
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -489,6 +548,24 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteModalOpen}
+        onClose={() => {
+          if (isDeleteLoading) return
+          setDeleteModalOpen(false)
+          setSelectedDeleteId(null)
+          setSelectedDeleteName(null)
+        }}
+        onConfirm={confirmDelete}
+        title="Produkt löschen"
+        message={`Sind Sie sicher, dass Sie das Produkt "${selectedDeleteName || ''}" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.`}
+        confirmText="Ja, löschen"
+        cancelText="Abbrechen"
+        isLoading={isDeleteLoading}
+        variant="danger"
+      />
     </div>
   )
 }

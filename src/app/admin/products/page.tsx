@@ -3,10 +3,15 @@
 import { ProductsTable } from '@/components/admin/ProductsTable'
 
 export default function ProductsPage() {
-  const handleDeleteProduct = (productId: string) => {
-    if (confirm('Sind Sie sicher, dass Sie dieses Produkt löschen möchten?')) {
-      // TODO: Implement delete functionality
-      console.log('Deleting product:', productId)
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      const res = await fetch(`/api/products/${productId}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err?.error || 'Löschen fehlgeschlagen')
+      }
+    } catch (e: any) {
+      alert(e?.message || 'Beim Löschen ist ein Fehler aufgetreten')
     }
   }
 

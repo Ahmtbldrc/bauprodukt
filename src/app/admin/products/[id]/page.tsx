@@ -613,10 +613,18 @@ export default function EditProductPage() {
     const value = (target as HTMLInputElement).type === 'checkbox'
       ? (target as HTMLInputElement).checked
       : target.value
-    setFormData(prev => ({
-      ...prev,
-      [name]: value as any
-    }))
+    setFormData(prev => {
+      const next: any = { ...prev, [name]: value as any }
+      if (name === 'name') {
+        const slug = (value as string)
+          .toLowerCase()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .trim()
+        next.slug = slug
+      }
+      return next
+    })
   }
 
 
