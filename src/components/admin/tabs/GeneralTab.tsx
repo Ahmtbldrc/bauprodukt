@@ -87,7 +87,7 @@ export default function GeneralTab({ formData, brands, mainCategories, handleInp
       } catch {}
     }
     initFromExisting()
-  }, [formData.category_id, mainId])
+  }, [formData.category_id, formData.main_category_id, mainId, onMainCategoryStateChange])
 
   return (
     <div className="space-y-8">

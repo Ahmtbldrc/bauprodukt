@@ -105,10 +105,12 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
     }
   }
 
-  const sortArray = (list: any[]) => {
-    if (!sortKey) return list
+ 
+
+  const sortedAllProducts = useMemo(() => {
+    if (!sortKey) return allProducts
     const direction = sortOrder === 'asc' ? 1 : -1
-    return [...list].sort((a, b) => {
+    return [...allProducts].sort((a, b) => {
       const va = getComparableValue(a, sortKey)
       const vb = getComparableValue(b, sortKey)
       if (typeof va === 'number' && typeof vb === 'number') {
@@ -116,9 +118,7 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
       }
       return va.toString().localeCompare(vb.toString()) * direction
     })
-  }
-
-  const sortedAllProducts = useMemo(() => sortArray(allProducts), [allProducts, sortKey, sortOrder])
+  }, [allProducts, sortKey, sortOrder])
 
   // API'den gelen tüm ürün sayısına göre pagination
   const totalProducts = pagination?.total || 0

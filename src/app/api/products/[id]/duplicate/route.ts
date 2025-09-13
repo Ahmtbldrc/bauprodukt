@@ -60,14 +60,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       : null
 
     // Build insert payload for products table (omit id/created_at/updated_at)
-    const {
-      id: _omit1,
-      created_at: _omit2,
-      updated_at: _omit3,
-      slug: _omit4,
-      stock_code: _omit5,
-      ...rest
-    } = original
+    const rest = { ...original } as any
+    delete rest.id
+    delete rest.created_at
+    delete rest.updated_at
+    delete rest.slug
+    delete rest.stock_code
 
     const productInsert = {
       ...rest,
@@ -221,7 +219,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         for (const variant of variants) {
           const baseSku = variant.sku
           const uniqueSku = await generateUnique(supabase, 'product_variants', 'sku', baseSku, { suffix: '-COPY', toUpper: false })
-          const { id: _vId, created_at: _vC, updated_at: _vU, product_id: _vPid, sku: _vSku, ...variantRest } = variant
+          const variantRest = { ...variant } as any
+          delete variantRest.id
+          delete variantRest.created_at
+          delete variantRest.updated_at
+          delete variantRest.product_id
+          delete variantRest.sku
           const { data: inserted, error: vErr } = await (supabase as any)
             .from('product_variants')
             .insert([{ ...variantRest, product_id: newProductId, sku: uniqueSku }])
