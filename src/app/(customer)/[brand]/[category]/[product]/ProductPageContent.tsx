@@ -461,9 +461,9 @@ export default function ProductPageContent({
               
               {/* Main Image */}
               <div className="flex-1">
-                <div className="aspect-square bg-white rounded-lg overflow-hidden relative border border-gray-200 flex items-center justify-center">
+                <div className="aspect-square bg-white rounded-lg overflow-hidden relative border border-gray-200 flex items-center justify-center z-0">
                   {hasDiscount && (
-                    <div className="absolute top-4 left-4 text-white px-4 py-1.5 rounded-sm text-lg font-light z-50" style={{backgroundColor: '#F39236'}}>
+                    <div className="absolute top-4 left-4 text-white px-4 py-1.5 rounded-sm text-lg font-light z-30" style={{backgroundColor: '#F39236'}}>
                       Sale
                     </div>
                   )}
