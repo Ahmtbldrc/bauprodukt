@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Settings, Plus, Trash2, Pencil, Check, X, GripVertical } from 'lucide-react'
 
 interface TechnicalSpec {
@@ -42,6 +42,23 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
 
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+
+  const newDescRef = useRef<HTMLTextAreaElement | null>(null)
+  const editDescRef = useRef<HTMLTextAreaElement | null>(null)
+
+  const adjustHeight = (el: HTMLTextAreaElement | null) => {
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }
+
+  useEffect(() => {
+    adjustHeight(newDescRef.current)
+  }, [newSpec.description])
+
+  useEffect(() => {
+    adjustHeight(editDescRef.current)
+  }, [editingId, editingIndex, editingValues.description])
 
   const handleAddSpec = async () => {
     if (newSpec.title.trim() && newSpec.description.trim()) {
@@ -143,12 +160,16 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
                               <label className="block text-sm font-medium text-gray-700 mb-2">
                   Beschreibung
                 </label>
-              <input
-                type="text"
+              <textarea
+                ref={newDescRef}
+                rows={1}
                 value={newSpec.description}
-                onChange={(e) => setNewSpec({ ...newSpec, description: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200"
-                style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
+                onChange={(e) => {
+                  setNewSpec({ ...newSpec, description: e.target.value })
+                  adjustHeight(e.target as HTMLTextAreaElement)
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200 resize-none"
+                style={{'--tw-ring-color': '#F39236', overflow: 'hidden'} as React.CSSProperties}
                 placeholder="z.B.: 1500W, 60x40x80 cm, Edelstahl, 15.5 kg, Weiß"
               />
             </div>
@@ -236,12 +257,16 @@ export default function SpecificationsTab({ specifications, handleSpecificationC
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900">
                           {isEditing ? (
-                            <input
-                              type="text"
+                            <textarea
+                              ref={editDescRef}
+                              rows={1}
                               value={editingValues.description}
-                              onChange={(e) => setEditingValues({ ...editingValues, description: e.target.value })}
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200"
-                              style={{'--tw-ring-color': '#F39236'} as React.CSSProperties}
+                              onChange={(e) => {
+                                setEditingValues({ ...editingValues, description: e.target.value })
+                                adjustHeight(e.target as HTMLTextAreaElement)
+                              }}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:border-transparent transition-all duration-200 resize-none"
+                              style={{'--tw-ring-color': '#F39236', overflow: 'hidden'} as React.CSSProperties}
                             />
                           ) : (
                             <span className="text-gray-700">{spec.description}</span>
