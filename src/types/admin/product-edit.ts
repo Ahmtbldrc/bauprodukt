@@ -107,6 +107,7 @@ export interface ProductDocument {
   product_id: string
   title: string
   file_url: string
+  file_key?: string
   file_type?: string
   file_size?: number
   is_active: boolean

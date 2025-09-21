@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { formatPriceAdmin } from '@/lib/url-utils'
 import { useProducts } from '@/hooks/useProducts'
 import { useAdminSearch } from '@/contexts/AdminSearchContext'
@@ -86,7 +86,7 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
     return typeof product?.price === 'number' ? product.price : 0
   }
 
-  const getComparableValue = (product: any, key: SortKey): string | number => {
+  const getComparableValue = useCallback((product: any, key: SortKey): string | number => {
     switch (key) {
       case 'name':
         return (product?.name ?? '').toString().toLowerCase()
@@ -103,7 +103,7 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
         return Number.isFinite(ts) ? ts : 0
       }
     }
-  }
+  }, [])
 
  
 
@@ -118,7 +118,7 @@ export function ProductsTable({ onDeleteProduct }: ProductsTableProps) {
       }
       return va.toString().localeCompare(vb.toString()) * direction
     })
-  }, [allProducts, sortKey, sortOrder])
+  }, [allProducts, sortKey, sortOrder, getComparableValue])
 
   // API'den gelen tüm ürün sayısına göre pagination
   const totalProducts = pagination?.total || 0

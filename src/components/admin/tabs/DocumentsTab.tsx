@@ -11,6 +11,7 @@ interface DocumentImage {
   previewUrl: string
   name: string
   file_url?: string
+  file_key?: string
   file_type?: string
   file_size?: number
 }
@@ -68,8 +69,8 @@ export default function DocumentsTab({ documents, setDocuments, openDeleteDialog
     }
     setUploadingImage(true)
     try {
-      // Validate file before upload
-      const validation = validateFile(file, 100 * 1024 * 1024, ['application/pdf', 'image/*'])
+      // Validate file type only (no size limit for MinIO)
+      const validation = validateFile(file, Number.MAX_SAFE_INTEGER, ['application/pdf', 'image/*'])
       if (!validation.valid) {
         throw new Error(validation.error || 'File validation failed')
       }
@@ -97,7 +98,11 @@ export default function DocumentsTab({ documents, setDocuments, openDeleteDialog
         id: result.data[0].id,
         file: file,
         previewUrl: result.data[0].file_url,
-        name: result.data[0].title
+        name: result.data[0].title,
+        file_url: result.data[0].file_url,
+        file_key: result.data[0].file_key,
+        file_type: file.type,
+        file_size: file.size
       }
       
       setDocuments([...documents, newImage])

@@ -1,26 +1,47 @@
 import { supabase } from './supabase'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/types/database'
+import { storageProvider } from './storage/storage-factory'
+import { USE_S3_STORAGE } from './s3-client'
 
 export type UploadResult = {
   success: boolean
   url?: string
   error?: string
+  key?: string
 }
 
 export async function uploadFile(
   file: File,
   bucket: string = 'images',
   folder: string = 'products',
-  supabaseClient?: SupabaseClient<Database>
+  supabaseClient?: SupabaseClient<Database>,
+  productId?: string
 ): Promise<UploadResult> {
   try {
     // Use passed client or fall back to default
     const client = supabaseClient || supabase
     
-    // Generate unique filename
+    // Generate unique filename with original name
     const fileExt = file.name.split('.').pop()
-    const fileName = `${folder}/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+    const timestamp = Date.now()
+    const random = Math.random().toString(36).substring(2, 8)
+    
+    // Clean the original filename - remove extension and sanitize
+    const originalName = file.name.replace(/\.[^/.]+$/, '') // Remove extension
+      .replace(/[^a-zA-Z0-9\-_]/g, '-') // Replace special chars with dash
+      .replace(/-+/g, '-') // Replace multiple dashes with single dash
+      .replace(/^-|-$/g, '') // Remove leading/trailing dashes
+      .toLowerCase()
+    
+    let fileName: string
+    if (productId) {
+      // Format: folder/productId/productId-originalname-timestamp-random.ext
+      fileName = `${folder}/${productId}/${productId}-${originalName}-${timestamp}-${random}.${fileExt}`
+    } else {
+      // Format: folder/originalname-timestamp-random.ext
+      fileName = `${folder}/${originalName}-${timestamp}-${random}.${fileExt}`
+    }
 
     // Upload file to Supabase Storage
     const { data, error } = await client.storage
@@ -45,7 +66,8 @@ export async function uploadFile(
 
     return {
       success: true,
-      url: publicUrl
+      url: publicUrl,
+      key: data.path
     }
   } catch (error) {
     console.error('Upload error:', error)
@@ -155,34 +177,52 @@ export async function uploadDocument(
   productId: string
 ): Promise<UploadResult> {
   try {
-    // Generate unique filename for documents
-    const fileExt = file.name.split('.').pop()
-    const fileName = `products/${productId}/documents/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+    // Use the storage provider (S3 or Supabase based on configuration)
+    if (USE_S3_STORAGE) {
+      const result = await storageProvider.upload(file, 'products', productId)
+      return result
+    } else {
+      // Legacy Supabase implementation
+      const fileExt = file.name.split('.').pop()
+      const timestamp = Date.now()
+      const random = Math.random().toString(36).substring(2, 8)
+      
+      // Clean the original filename - remove extension and sanitize
+      const originalName = file.name.replace(/\.[^/.]+$/, '') // Remove extension
+        .replace(/[^a-zA-Z0-9\-_]/g, '-') // Replace special chars with dash
+        .replace(/-+/g, '-') // Replace multiple dashes with single dash
+        .replace(/^-|-$/g, '') // Remove leading/trailing dashes
+        .toLowerCase()
+      
+      // Format: products/productId/documents/productId-originalname-timestamp-random.ext
+      const fileName = `products/${productId}/documents/${productId}-${originalName}-${timestamp}-${random}.${fileExt}`
 
-    // Upload file to Supabase Storage documents bucket
-    const { data, error } = await supabase.storage
-      .from('documents')
-      .upload(fileName, file, {
-        cacheControl: '3600',
-        upsert: false
-      })
+      // Upload file to Supabase Storage documents bucket
+      const { data, error } = await supabase.storage
+        .from('documents')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
 
-    if (error) {
-      console.error('Document upload error:', error)
-      return {
-        success: false,
-        error: error.message
+      if (error) {
+        console.error('Document upload error:', error)
+        return {
+          success: false,
+          error: error.message
+        }
       }
-    }
 
-    // Get public URL
-    const { data: { publicUrl } } = supabase.storage
-      .from('documents')
-      .getPublicUrl(data.path)
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('documents')
+        .getPublicUrl(data.path)
 
-    return {
-      success: true,
-      url: publicUrl
+      return {
+        success: true,
+        url: publicUrl,
+        key: data.path
+      }
     }
   } catch (error) {
     console.error('Document upload error:', error)
@@ -201,7 +241,18 @@ export async function uploadVideo(
   try {
     // Generate unique filename for videos
     const fileExt = file.name.split('.').pop()
-    const fileName = `products/${productId}/videos/${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`
+    const timestamp = Date.now()
+    const random = Math.random().toString(36).substring(2, 8)
+    
+    // Clean the original filename - remove extension and sanitize
+    const originalName = file.name.replace(/\.[^/.]+$/, '') // Remove extension
+      .replace(/[^a-zA-Z0-9\-_]/g, '-') // Replace special chars with dash
+      .replace(/-+/g, '-') // Replace multiple dashes with single dash
+      .replace(/^-|-$/g, '') // Remove leading/trailing dashes
+      .toLowerCase()
+    
+    // Format: products/productId/videos/productId-originalname-timestamp-random.ext
+    const fileName = `products/${productId}/videos/${productId}-${originalName}-${timestamp}-${random}.${fileExt}`
 
     // Upload file to Supabase Storage videos bucket
     const { data, error } = await supabase.storage
@@ -226,7 +277,8 @@ export async function uploadVideo(
 
     return {
       success: true,
-      url: publicUrl
+      url: publicUrl,
+      key: data.path
     }
   } catch (error) {
     console.error('Video upload error:', error)

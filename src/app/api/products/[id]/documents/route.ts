@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { USE_S3_STORAGE } from '@/lib/s3-client'
+import { storageProvider } from '@/lib/storage/storage-factory'
+import type { ProductDocument } from '@/types/admin/product-edit'
 
 export const runtime = 'nodejs'
 
@@ -28,6 +31,19 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       )
     }
 
+    // If using S3, generate public URLs for documents
+    if (USE_S3_STORAGE && data) {
+      const documentsWithPublicUrls = (data as ProductDocument[]).map((doc) => {
+        if (doc.file_key) {
+          // Generate public URL from the S3 key
+          const publicUrl = `${process.env.S3_ENDPOINT || 'http://localhost:9000'}/${process.env.S3_BUCKET_NAME || 'product-documents'}/${doc.file_key}`
+          return { ...doc, file_url: publicUrl }
+        }
+        return doc
+      })
+      return NextResponse.json({ data: documentsWithPublicUrls })
+    }
+
     return NextResponse.json({ data: data || [] })
   } catch (error) {
     console.error('Documents API error:', error)
@@ -45,7 +61,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const body = await request.json()
     const supabase = createClient()
     
-    const { title, file_url, file_type, file_size } = body
+    const { title, file_url, file_type, file_size, file_key } = body
 
     if (!title || !file_url) {
       return NextResponse.json(
@@ -60,6 +76,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         product_id: id,
         title,
         file_url,
+        file_key: file_key || null, // Store S3 key if available
         file_type: file_type || null,
         file_size: file_size || null
       })
@@ -72,6 +89,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         { error: 'Failed to create document' },
         { status: 500 }
       )
+    }
+
+    // If using S3, generate public URL for the response
+    if (USE_S3_STORAGE && data.file_key) {
+      const publicUrl = `${process.env.S3_ENDPOINT || 'http://localhost:9000'}/${process.env.S3_BUCKET_NAME || 'product-documents'}/${data.file_key}`
+      data.file_url = publicUrl
     }
 
     return NextResponse.json(data, { status: 201 })
@@ -211,6 +234,17 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       )
     }
 
+    // Delete the file from storage if using S3
+    if (USE_S3_STORAGE && document.file_key) {
+      try {
+        await storageProvider.delete(document.file_key)
+        console.log('Deleted file from S3:', document.file_key)
+      } catch (storageError) {
+        console.error('Failed to delete file from storage:', storageError)
+        // Continue with database deletion even if storage deletion fails
+      }
+    }
+
     // Delete the document from database
     const { error: deleteError } = await (supabase as any)
       .from('product_documents')
@@ -225,10 +259,6 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         { status: 500 }
       )
     }
-
-    // Note: File deletion from storage should be handled separately
-    // as it requires different permissions and error handling
-    // The file will remain in storage but the database reference is removed
 
     return NextResponse.json({
       message: 'Document deleted successfully',

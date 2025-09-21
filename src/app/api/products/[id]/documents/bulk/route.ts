@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { uploadFile, validateFile } from '@/lib/upload'
-
+import { uploadDocument, validateFile } from '@/lib/upload'
 interface RouteParams {
   params: Promise<{ id: string }>
 }
@@ -48,10 +47,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       )
     }
 
-    // 1. Tüm dosyaları validate et (PDF ve image dosyaları)
+    // 1. Tüm dosyaları validate et (PDF ve image dosyaları) - no size limit for MinIO
     for (const file of files) {
       console.log('Validating file:', file.name, file.type, file.size)
-      const validation = validateFile(file, 100 * 1024 * 1024, ['application/pdf', 'image/*'])
+      const validation = validateFile(file, Number.MAX_SAFE_INTEGER, ['application/pdf', 'image/*'])
       console.log('Validation result:', validation)
       
       if (!validation.valid) {
@@ -82,7 +81,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     console.log('Starting bulk upload...')
     const uploadPromises = files.map(async (file, index) => {
       console.log(`Uploading file ${index}: ${file.name}`)
-      const uploadResult = await uploadFile(file, 'documents', 'products')
+      
+      // Use document-specific upload for S3/Supabase
+      const uploadResult = await uploadDocument(file, productId)
       console.log(`Upload result for ${file.name}:`, uploadResult)
       
       if (!uploadResult.success) {
@@ -93,6 +94,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         product_id: productId,
         title: titles[index],
         file_url: uploadResult.url!,
+        file_key: uploadResult.key, // Store S3 key if available
         file_type: file.type,
         file_size: file.size
       }
