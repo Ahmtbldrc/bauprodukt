@@ -6,9 +6,27 @@ import {
   CreateBucketCommand,
   HeadBucketCommand,
   PutBucketPolicyCommand,
+  PutBucketCorsCommand,
+  CreateMultipartUploadCommand,
+  UploadPartCommand,
+  CompleteMultipartUploadCommand,
+  AbortMultipartUploadCommand,
 } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { s3Client, S3_BUCKET_NAME, S3_PUBLIC_URL_BASE } from '@/lib/s3-client'
-import type { StorageProvider, UploadResult, DeleteResult, StorageFile } from './types'
+import type {
+  StorageProvider,
+  UploadResult,
+  DeleteResult,
+  StorageFile,
+  CreateMultipartUploadParams,
+  CreateMultipartUploadResult,
+  GetMultipartUploadUrlParams,
+  CompleteMultipartUploadParams,
+  AbortMultipartUploadParams,
+  UploadMultipartPartParams,
+  UploadMultipartPartResult,
+} from './types'
 
 export class S3StorageProvider implements StorageProvider {
   private bucketName: string
@@ -23,8 +41,9 @@ export class S3StorageProvider implements StorageProvider {
       // Check if bucket exists
       await s3Client.send(new HeadBucketCommand({ Bucket: this.bucketName }))
       
-      // Set public read policy for the bucket
+      // Set public read policy for the bucket and ensure CORS support
       await this.setBucketPublicPolicy()
+      await this.setBucketCorsConfiguration()
     } catch (error: any) {
       if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
         try {
@@ -32,8 +51,9 @@ export class S3StorageProvider implements StorageProvider {
           await s3Client.send(new CreateBucketCommand({ Bucket: this.bucketName }))
           console.log(`Created S3 bucket: ${this.bucketName}`)
           
-          // Set public read policy for the new bucket
+          // Set public read policy for the new bucket and ensure CORS support
           await this.setBucketPublicPolicy()
+          await this.setBucketCorsConfiguration()
         } catch (createError: any) {
           // Ignore error if bucket already exists (race condition)
           if (createError.name !== 'BucketAlreadyOwnedByYou' && 
@@ -72,29 +92,60 @@ export class S3StorageProvider implements StorageProvider {
     }
   }
 
+  private async setBucketCorsConfiguration(): Promise<void> {
+    try {
+      const allowedOriginsEnv = process.env.S3_ALLOWED_ORIGINS
+      const allowedOrigins = allowedOriginsEnv
+        ? allowedOriginsEnv.split(',').map(origin => origin.trim()).filter(Boolean)
+        : ['*']
+
+      await s3Client.send(new PutBucketCorsCommand({
+        Bucket: this.bucketName,
+        CORSConfiguration: {
+          CORSRules: [
+            {
+              AllowedHeaders: ['*'],
+              AllowedMethods: ['GET', 'PUT', 'POST', 'DELETE', 'HEAD'],
+              AllowedOrigins: allowedOrigins.length > 0 ? allowedOrigins : ['*'],
+              ExposeHeaders: ['ETag', 'etag', 'x-amz-request-id'],
+              MaxAgeSeconds: 3000,
+            },
+          ],
+        },
+      }))
+    } catch (error: any) {
+      if (error?.Code === 'NotImplemented' || error?.name === 'NotImplemented') {
+        console.warn('Bucket backend does not support CORS configuration via API; skipping automatic setup.')
+        return
+      }
+      console.error('Failed to set bucket CORS configuration:', error)
+      // Ignore to avoid breaking uploads if permissions are limited; callers can configure manually.
+    }
+  }
+
+  private generateObjectKey(fileName: string, folder: string, productId?: string): string {
+    const fileExt = fileName.split('.').pop()
+    const timestamp = Date.now()
+    const random = Math.random().toString(36).substring(2, 8)
+
+    const baseName = fileName.replace(/\.[^/.]+$/, '')
+      .replace(/[^a-zA-Z0-9\-_]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .toLowerCase()
+
+    const normalizedExt = fileExt ? `.${fileExt}` : ''
+
+    if (productId) {
+      return `${folder}/${productId}/${productId}-${baseName}-${timestamp}-${random}${normalizedExt}`
+    }
+
+    return `${folder}/${baseName}-${timestamp}-${random}${normalizedExt}`
+  }
+
   async upload(file: File, folder: string, productId?: string): Promise<UploadResult> {
     try {
-      // Generate unique key with original filename
-      const fileExt = file.name.split('.').pop()
-      const timestamp = Date.now()
-      const random = Math.random().toString(36).substring(2, 8)
-      
-      // Clean the original filename - remove extension and sanitize
-      const originalName = file.name.replace(/\.[^/.]+$/, '') // Remove extension
-        .replace(/[^a-zA-Z0-9\-_]/g, '-') // Replace special chars with dash
-        .replace(/-+/g, '-') // Replace multiple dashes with single dash
-        .replace(/^-|-$/g, '') // Remove leading/trailing dashes
-        .toLowerCase()
-      
-      let key: string
-      if (productId) {
-        // Format: products/productId/productId-originalname-timestamp-random.ext
-        key = `${folder}/${productId}/${productId}-${originalName}-${timestamp}-${random}.${fileExt}`
-      } else {
-        // Format: folder/originalname-timestamp-random.ext
-        key = `${folder}/${originalName}-${timestamp}-${random}.${fileExt}`
-      }
-
+      const key = this.generateObjectKey(file.name, folder, productId)
       return await this.uploadWithKey(file, key)
     } catch (error) {
       console.error('S3 upload error:', error)
@@ -161,6 +212,108 @@ export class S3StorageProvider implements StorageProvider {
   getPublicUrl(key: string): string {
     // Return direct public URL to the object
     return `${S3_PUBLIC_URL_BASE}/${this.bucketName}/${key}`
+  }
+
+  async createMultipartUpload({ fileName, folder, productId, contentType }: CreateMultipartUploadParams): Promise<CreateMultipartUploadResult> {
+    const key = this.generateObjectKey(fileName, folder, productId)
+
+    const command = new CreateMultipartUploadCommand({
+      Bucket: this.bucketName,
+      Key: key,
+      ContentType: contentType || 'application/octet-stream',
+    })
+
+    const response = await s3Client.send(command)
+
+    if (!response.UploadId) {
+      throw new Error('Failed to initiate multipart upload')
+    }
+
+    return {
+      uploadId: response.UploadId,
+      key,
+    }
+  }
+
+  async getMultipartUploadUrl({ key, uploadId, partNumber, expiresIn = 3600 }: GetMultipartUploadUrlParams): Promise<string> {
+    const command = new UploadPartCommand({
+      Bucket: this.bucketName,
+      Key: key,
+      UploadId: uploadId,
+      PartNumber: partNumber,
+    })
+
+    return getSignedUrl(s3Client, command, { expiresIn })
+  }
+
+  async uploadMultipartPart({ key, uploadId, partNumber, body }: UploadMultipartPartParams): Promise<UploadMultipartPartResult> {
+    const buffer = Buffer.isBuffer(body)
+      ? body
+      : body instanceof Uint8Array
+        ? Buffer.from(body)
+        : Buffer.from(body)
+
+    const command = new UploadPartCommand({
+      Bucket: this.bucketName,
+      Key: key,
+      UploadId: uploadId,
+      PartNumber: partNumber,
+      Body: buffer,
+      ContentLength: buffer.byteLength,
+    })
+
+    const response = await s3Client.send(command)
+    const etag = response.ETag || response.ETag
+
+    if (!etag) {
+      throw new Error('Multipart upload part response missing ETag')
+    }
+
+    return {
+      etag: etag.replace(/"/g, ''),
+    }
+  }
+
+  async completeMultipartUpload({ key, uploadId, parts }: CompleteMultipartUploadParams): Promise<UploadResult> {
+    if (!parts.length) {
+      throw new Error('No parts provided for multipart completion')
+    }
+
+    const sortedParts = [...parts]
+      .sort((a, b) => a.partNumber - b.partNumber)
+      .map(part => ({
+        ETag: part.etag,
+        PartNumber: part.partNumber,
+      }))
+
+    const command = new CompleteMultipartUploadCommand({
+      Bucket: this.bucketName,
+      Key: key,
+      UploadId: uploadId,
+      MultipartUpload: {
+        Parts: sortedParts,
+      },
+    })
+
+    await s3Client.send(command)
+
+    const url = this.getPublicUrl(key)
+
+    return {
+      success: true,
+      key,
+      url,
+    }
+  }
+
+  async abortMultipartUpload({ key, uploadId }: AbortMultipartUploadParams): Promise<void> {
+    const command = new AbortMultipartUploadCommand({
+      Bucket: this.bucketName,
+      Key: key,
+      UploadId: uploadId,
+    })
+
+    await s3Client.send(command)
   }
 
   async exists(key: string): Promise<boolean> {

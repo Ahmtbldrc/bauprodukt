@@ -120,6 +120,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           product_id: newProductId,
           title: doc.title,
           file_url: doc.file_url,
+          file_key: doc.file_key ?? null,
           file_type: doc.file_type ?? null,
           file_size: doc.file_size ?? null,
           is_active: doc.is_active ?? true
@@ -289,5 +290,4 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     )
   }
 }
-
 
