@@ -60,7 +60,7 @@ export default function DocumentsTab({ documents, setDocuments, openDeleteDialog
     setUploadState({ inProgress: true, progress: 0, fileName: file.name })
 
     const pushDocument = (doc: DocumentImage) => {
-      setDocuments(prev => [...prev, doc])
+      setDocuments([...documents, doc])
     }
 
     try {

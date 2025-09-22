@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { usePlumberAuth } from '@/contexts/PlumberAuthContext'
 import type { LoginCredentials } from '@/types/auth'
-import { Wrench, Eye, EyeOff, Mail, Lock, Loader2, Check, Home } from 'lucide-react'
+import { Wrench, Eye, EyeOff, Mail, Lock, Loader2, Check } from 'lucide-react'
 import Link from 'next/link'
 
 export function PlumberLoginForm() {
@@ -54,7 +54,7 @@ export function PlumberLoginForm() {
         localStorage.removeItem('bauprodukt_plumber_remember_password')
       }
       setTimeout(() => router.replace('/plumber'), 1000)
-    } catch (e) {
+    } catch {
       // handled by context
     }
   }

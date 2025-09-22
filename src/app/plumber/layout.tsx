@@ -1,8 +1,6 @@
 'use client'
 
 import React from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
 import { PlumberAuthProvider, usePlumberAuth } from '@/contexts/PlumberAuthContext'
 import { PlumberSidebar } from '@/components/plumber/PlumberSidebar'
 import { PlumberHeader } from '@/components/plumber/PlumberHeader'
