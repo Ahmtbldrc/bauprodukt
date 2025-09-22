@@ -6,7 +6,7 @@ export interface User {
   firstName: string
   lastName: string
   fullName: string
-  role: 'user' | 'admin'
+  role: 'user' | 'admin' | 'plumber'
   avatar?: string
   phone?: string
   address?: Address

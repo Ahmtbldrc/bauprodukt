@@ -33,3 +33,13 @@ export const supabaseAdminClient = createClient<Database>(supabaseUrl, supabaseA
     storageKey: 'bauprodukt_admin_auth',
   },
 })
+
+// Create a separate client for plumber with its own storage key to isolate sessions
+export const supabasePlumberClient = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: 'bauprodukt_plumber_auth',
+  },
+})
