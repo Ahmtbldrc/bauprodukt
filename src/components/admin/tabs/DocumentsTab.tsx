@@ -29,8 +29,8 @@ interface UploadState {
   fileName?: string
 }
 
-const DEFAULT_CHUNK_SIZE = 8 * 1024 * 1024 // 8MB parts keep S3 compliant
-const MIN_CHUNK_SIZE = 5 * 1024 * 1024
+const DEFAULT_CHUNK_SIZE = 3 * 1024 * 1024 // 3MB parts keep S3 compliant
+const MIN_CHUNK_SIZE = 2 * 1024 * 1024
 
 export default function DocumentsTab({ documents, setDocuments, openDeleteDialog, productId }: DocumentsTabProps) {
   const [isDragOver, setIsDragOver] = useState(false)
