@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { usePlumberAuth } from '@/contexts/PlumberAuthContext'
 import type { LoginCredentials } from '@/types/auth'
 import { Wrench, Eye, EyeOff, Mail, Lock, Loader2, Check } from 'lucide-react'
@@ -9,6 +9,7 @@ import Link from 'next/link'
 
 export function PlumberLoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { login, isLoading, error, clearError } = usePlumberAuth()
 
   const [formData, setFormData] = useState<LoginCredentials>({ email: '', password: '' })
@@ -53,7 +54,9 @@ export function PlumberLoginForm() {
         localStorage.removeItem('bauprodukt_plumber_remember_email')
         localStorage.removeItem('bauprodukt_plumber_remember_password')
       }
-      setTimeout(() => router.replace('/plumber'), 1000)
+      const redirectParam = searchParams?.get('redirect')
+      const target = redirectParam ? decodeURIComponent(redirectParam) : '/plumber'
+      setTimeout(() => router.replace(target), 600)
     } catch {
       // handled by context
     }

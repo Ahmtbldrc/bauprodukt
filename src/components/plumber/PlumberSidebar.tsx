@@ -9,9 +9,9 @@ export function PlumberSidebar() {
 
   const menuItems = [
     { name: 'Übersicht', href: '/plumber', icon: <HomeIcon className="w-5 h-5" strokeWidth={1.5} />, current: pathname === '/plumber' },
-    { name: 'Hesaplama A', href: '/plumber/calculator-a', icon: <Calculator className="w-5 h-5" strokeWidth={1.5} />, current: pathname.startsWith('/plumber/calculator-a') },
-    { name: 'Hesaplama B', href: '/plumber/calculator-b', icon: <Calculator className="w-5 h-5" strokeWidth={1.5} />, current: pathname.startsWith('/plumber/calculator-b') },
-    { name: 'Geçmiş', href: '/plumber/history', icon: <History className="w-5 h-5" strokeWidth={1.5} />, current: pathname.startsWith('/plumber/history') },
+    { name: 'Calculator', href: '/plumber/calculator', icon: <Calculator className="w-5 h-5" strokeWidth={1.5} />, current: pathname.startsWith('/plumber/calculator') },
+    { name: 'Protocol', href: '/plumber/protocol', icon: <Calculator className="w-5 h-5" strokeWidth={1.5} />, current: pathname.startsWith('/plumber/protocol') },
+    { name: 'History', href: '/plumber/history', icon: <History className="w-5 h-5" strokeWidth={1.5} />, current: pathname.startsWith('/plumber/history') },
   ]
 
   return (

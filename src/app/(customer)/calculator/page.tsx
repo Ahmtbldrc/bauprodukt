@@ -3,9 +3,11 @@
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { HelpCircle } from 'lucide-react'
+import { useRouter } from 'next/navigation'
  
 
 export default function CalculatorPage() {
+  const router = useRouter()
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -38,6 +40,7 @@ Wasserzähler.`}
                   <button
                     className="px-5 py-2.5 rounded-lg text-white font-medium shadow-sm hover:opacity-95 transition flex items-center"
                     style={{ backgroundColor: '#F39236' }}
+                    onClick={() => router.push('/plumber/calculator')}
                   >
                     Rechner starten
                     <span className="ml-2 inline-flex items-center relative group">
@@ -49,6 +52,7 @@ Wasserzähler.`}
                   </button>
                   <button
                     className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-medium bg-white hover:bg-gray-50 transition flex items-center"
+                    onClick={() => router.push('/plumber/protocol')}
                   >
                     Rechner mit Protokoll
                     <span className="ml-2 inline-flex items-center relative group">

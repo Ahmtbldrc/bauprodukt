@@ -4,16 +4,18 @@ import React from 'react'
 import { PlumberAuthProvider, usePlumberAuth } from '@/contexts/PlumberAuthContext'
 import { PlumberSidebar } from '@/components/plumber/PlumberSidebar'
 import { PlumberHeader } from '@/components/plumber/PlumberHeader'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 
 function PlumberLayoutInner({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated, isLoading } = usePlumberAuth()
   const router = useRouter()
+  const pathname = usePathname()
 
   React.useEffect(() => {
     if (!isLoading) {
       if (!isAuthenticated) {
-        router.replace('/plumber-login')
+        const redirect = encodeURIComponent(pathname || '/plumber')
+        router.replace(`/plumber-login?redirect=${redirect}`)
       } else {
         const roleSlug = (user as any)?.roleData?.slug
         if (roleSlug !== 'plumber' && roleSlug !== 'admin') {
@@ -21,7 +23,7 @@ function PlumberLayoutInner({ children }: { children: React.ReactNode }) {
         }
       }
     }
-  }, [isLoading, isAuthenticated, router, user])
+  }, [isLoading, isAuthenticated, router, user, pathname])
 
   if (isLoading) {
     return (
