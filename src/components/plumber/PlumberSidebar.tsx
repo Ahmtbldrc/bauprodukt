@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Calculator, History, HomeIcon } from 'lucide-react'
+import { Calculator, History, HomeIcon, FileText } from 'lucide-react'
 
 export function PlumberSidebar() {
   const pathname = usePathname()
@@ -10,7 +10,7 @@ export function PlumberSidebar() {
   const menuItems = [
     { name: 'Übersicht', href: '/plumber', icon: <HomeIcon className="w-5 h-5" strokeWidth={1.5} />, current: pathname === '/plumber' },
     { name: 'Calculator', href: '/plumber/calculator', icon: <Calculator className="w-5 h-5" strokeWidth={1.5} />, current: pathname.startsWith('/plumber/calculator') },
-    { name: 'Protocol', href: '/plumber/protocol', icon: <Calculator className="w-5 h-5" strokeWidth={1.5} />, current: pathname.startsWith('/plumber/protocol') },
+    { name: 'Protocol', href: '/plumber/protocol', icon: <FileText className="w-5 h-5" strokeWidth={1.5} />, current: pathname.startsWith('/plumber/protocol') },
     { name: 'History', href: '/plumber/history', icon: <History className="w-5 h-5" strokeWidth={1.5} />, current: pathname.startsWith('/plumber/history') },
   ]
 
