@@ -22,6 +22,7 @@ export function InstallationInfoPrefill() {
   const from = searchParams?.get('from')
 
   const [data, setData] = React.useState<ProtocolStoredData | null>(null)
+  const [remark, setRemark] = React.useState('')
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return
@@ -119,6 +120,22 @@ export function InstallationInfoPrefill() {
 
         {/* Fixtures Section - 4 columns with collapsible content */}
         <FixturesSection />
+
+        
+
+        {/* Remark textarea */}
+        <div className="mt-6">
+          <label htmlFor="remark" className="block text-sm font-medium text-gray-900 mb-2">Bemerkung *</label>
+          <textarea
+            id="remark"
+            value={remark}
+            onChange={(e) => setRemark(e.target.value)}
+            placeholder="Eine Bemerkung verfassen..."
+            rows={5}
+            className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 focus:outline-none focus:ring-2"
+            style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+          />
+        </div>
       </div>
     </div>
   )
@@ -127,31 +144,31 @@ export function InstallationInfoPrefill() {
 export default InstallationInfoPrefill
 
 // ---- Fixtures (4 columns) ----
-type FixtureItem = { id: string; name: string }
+type FixtureItem = { id: string; name: string; luKalt: number; luWarm: number }
 
 const SANITAER_ITEMS: FixtureItem[] = [
-  { id: 'wc', name: 'WC-Spülkasten' },
-  { id: 'waschtisch', name: 'Waschtisch' },
-  { id: 'dusche', name: 'Dusche' },
-  { id: 'badewanne', name: 'Badewanne' },
-  { id: 'bidet', name: 'Bidet' },
-  { id: 'urinoir', name: 'Urinoir Spülung automatisch' },
+  { id: 'wc', name: 'WC-Spülkasten', luKalt: 1, luWarm: 0 },
+  { id: 'waschtisch', name: 'Waschtisch', luKalt: 1, luWarm: 1 },
+  { id: 'dusche', name: 'Dusche', luKalt: 2, luWarm: 2 },
+  { id: 'badewanne', name: 'Badewanne', luKalt: 3, luWarm: 3 },
+  { id: 'bidet', name: 'Bidet', luKalt: 1, luWarm: 1 },
+  { id: 'urinoir', name: 'Urinoir Spülung automatisch', luKalt: 3, luWarm: 0 },
 ]
 
 const AUSSEN_ITEMS: FixtureItem[] = [
-  { id: 'balkon', name: 'Entnahmearmatur für Balkon' },
-  { id: 'garten', name: 'Entnahmearmatur Garten und Garage' },
-  { id: 'waschrinne', name: 'Waschrinne' },
-  { id: 'waschtrog', name: 'Waschtrog' },
+  { id: 'balkon', name: 'Entnahmearmatur für Balkon', luKalt: 2, luWarm: 0 },
+  { id: 'garten', name: 'Entnahmearmatur Garten und Garage', luKalt: 5, luWarm: 1 },
+  { id: 'waschrinne', name: 'Waschrinne', luKalt: 1, luWarm: 1 },
+  { id: 'waschtrog', name: 'Waschtrog', luKalt: 2, luWarm: 2 },
 ]
 
 const GEWERBE_ITEMS: FixtureItem[] = [
-  { id: 'automat', name: 'Getränkeautomat' },
-  { id: 'coiffeur', name: 'Coiffeurbrause' },
+  { id: 'automat', name: 'Getränkeautomat', luKalt: 2, luWarm: 0 },
+  { id: 'coiffeur', name: 'Coiffeurbrause', luKalt: 5, luWarm: 1 },
 ]
 
 const SICHERHEIT_ITEMS: FixtureItem[] = [
-  { id: 'hydrant', name: 'Wasserlöschposten' },
+  { id: 'hydrant', name: 'Wasserlöschposten', luKalt: 2, luWarm: 0 },
 ]
 
 function FixturesSection() {
@@ -188,7 +205,10 @@ function FixturesSection() {
         <div className="mt-3 space-y-3">
           {items.map(item => (
             <div key={item.id} className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3">
-              <div className="text-sm text-gray-900">{item.name}</div>
+              <div>
+                <div className="text-sm text-gray-900">{item.name}</div>
+                <div className="text-xs text-gray-500">LU kalt: {item.luKalt}  LU warm: {item.luWarm}</div>
+              </div>
               <div className="flex items-center gap-2">
                 <button type="button" onClick={() => dec(item.id)} className="h-7 w-7 rounded-md border border-gray-300 text-gray-600">
                   −
@@ -214,36 +234,35 @@ function FixturesSection() {
         <Column title="Sicherheit" panelKey="s4" items={SICHERHEIT_ITEMS} />
       </div>
 
-      {/* Checkboxes row */}
-      <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <label className="inline-flex items-center gap-2">
-          <input
-            type="checkbox"
-            className="h-4 w-4 accent-[#F39236]"
-            checked={method === 'm1'}
-            onChange={() => setMethod('m1')}
-          />
-          <span className="text-sm text-gray-800">Methode 1 (0.3 l/s bis 300 l/s)</span>
-        </label>
-        <label className="inline-flex items-center gap-2">
-          <input
-            type="checkbox"
-            className="h-4 w-4 accent-[#F39236]"
-            checked={method === 'm2'}
-            onChange={() => setMethod('m2')}
-          />
-          <span className="text-sm text-gray-800">Methode 2 (0.5 l/s bis 15 l/s)</span>
-        </label>
-        <label className="inline-flex items-center gap-2">
-          <input
-            type="checkbox"
-            className="h-4 w-4 accent-[#F39236]"
-            checked={(counts['hydrant'] || 0) > 0}
-            onChange={() => {}}
-            disabled
-          />
-          <span className="text-sm text-gray-800">Wasserlöschposten (Zusatz)</span>
-        </label>
+      {/* QD method segmented checkboxes with heading and footnote */}
+      <div className="mt-8">
+        <div className="text-gray-900 text-sm font-normal mb-1">Berechnung Spitzendurchfluss QD in l/s *</div>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center">
+          {/* Left: two options (smaller size) */}
+          <div className="md:col-span-8">
+            <div className="rounded-lg border border-gray-300 p-1 inline-flex items-center gap-1">
+              <label className="flex items-center gap-1 px-2 py-1 rounded-md cursor-pointer select-none">
+                <input type="checkbox" className="sr-only peer" checked={method === 'm1'} onChange={() => setMethod('m1')} />
+                <span className="inline-flex items-center justify-center h-3 w-3 rounded-[4px] bg-gray-200 text-gray-700 text-[9px] leading-none peer-checked:bg-[#F39236] peer-checked:text-white">✓</span>
+                <span className="text-sm text-gray-900">Methode 1 (0.3 l/s bis 300 l/s)</span>
+              </label>
+              <label className="flex items-center gap-1 px-2 py-1 rounded-md cursor-pointer select-none">
+                <input type="checkbox" className="sr-only peer" checked={method === 'm2'} onChange={() => setMethod('m2')} />
+                <span className="inline-flex items-center justify-center h-3 w-3 rounded-[4px] bg-gray-200 text-gray-700 text-[9px] leading-none peer-checked:bg-[#F39236] peer-checked:text-white">✓</span>
+                <span className="text-sm text-gray-900">Methode 2 (0.5 l/s bis 15 l/s)</span>
+              </label>
+            </div>
+          </div>
+
+          {/* Right: Wasserlöschposten checkbox */}
+          <div className="md:col-span-4 flex justify-end">
+            <label className="inline-flex items-center gap-2">
+              <input type="checkbox" className="h-4 w-4 accent-[#F39236]" checked={(counts['hydrant'] || 0) > 0} onChange={() => {}} disabled />
+              <span className="text-sm text-gray-800">Wasserlöschposten (Zusatz)</span>
+            </label>
+          </div>
+        </div>
+        <p className="text-xs text-gray-500 mt-1">Bitte eine QD‑Methode auswählen.</p>
       </div>
     </div>
   )
