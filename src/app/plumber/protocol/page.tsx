@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { useRouter } from 'next/navigation'
 
 type ProtocolFormData = {
   meterAction: 'new' | 'exchange'
@@ -21,6 +22,7 @@ type ProtocolFormData = {
 }
 
 export default function ProtocolPage() {
+  const router = useRouter()
   const [formData, setFormData] = React.useState<ProtocolFormData>({
     meterAction: 'new',
     zaehlernummer: '',
@@ -49,6 +51,23 @@ export default function ProtocolPage() {
     // TODO: integrate with backend flow
     // eslint-disable-next-line no-console
     console.log('Protocol form submitted', formData)
+    if (typeof window !== 'undefined') {
+      try {
+        const toStore = {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          address: formData.address,
+          postalCode: formData.postalCode,
+          city: formData.city,
+          phone: formData.phone,
+          email: formData.email,
+          parcelNumber: formData.parcelNumber,
+          building: formData.building,
+        }
+        localStorage.setItem('bauprodukt_protocol_form_v1', JSON.stringify(toStore))
+      } catch {}
+    }
+    router.replace('/plumber/calculator?from=protocol')
   }
 
   return (
