@@ -49,7 +49,6 @@ export default function ProtocolPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     // TODO: integrate with backend flow
-    // eslint-disable-next-line no-console
     console.log('Protocol form submitted', formData)
     if (typeof window !== 'undefined') {
       try {

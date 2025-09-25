@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { Suspense } from 'react'
 import { PlumberLoginForm } from '@/components/auth/PlumberLoginForm'
 import { PlumberAuthProvider } from '@/contexts/PlumberAuthContext'
 
@@ -14,7 +15,9 @@ export default function PlumberLoginPage() {
         {/* Login Form */}
         <div className="min-h-screen flex items-center justify-center p-4 relative z-10">
           <div className="w-full max-w-md">
-            <PlumberLoginForm />
+            <Suspense fallback={null}>
+              <PlumberLoginForm />
+            </Suspense>
           </div>
         </div>
       </div>
