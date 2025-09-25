@@ -43,6 +43,9 @@ export interface StorageProvider {
   completeMultipartUpload?(params: CompleteMultipartUploadParams): Promise<UploadResult>
   abortMultipartUpload?(params: AbortMultipartUploadParams): Promise<void>
   uploadMultipartPart?(params: UploadMultipartPartParams): Promise<UploadMultipartPartResult>
+
+  // Single-part presign for small files (<5 MiB)
+  getPutObjectUrl?(params: GetPutObjectUrlParams): Promise<{ url: string; key: string }>
 }
 
 export interface FileValidation {
@@ -90,4 +93,12 @@ export interface UploadMultipartPartParams {
 
 export interface UploadMultipartPartResult {
   etag: string
+}
+
+export interface GetPutObjectUrlParams {
+  fileName: string
+  folder: string
+  productId?: string
+  contentType?: string
+  expiresIn?: number
 }

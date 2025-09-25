@@ -31,12 +31,23 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const fileName = (body as any)?.fileName as string | undefined
     const contentType = (body as any)?.contentType as string | undefined
+    const singlePart = Boolean((body as any)?.singlePart)
 
     if (!fileName) {
       return NextResponse.json(
         { error: 'fileName is required' },
         { status: 400 }
       )
+    }
+
+    if (singlePart && provider.getPutObjectUrl) {
+      const result = await provider.getPutObjectUrl({
+        fileName,
+        contentType,
+        folder: 'products',
+        productId,
+      })
+      return NextResponse.json(result)
     }
 
     const result = await provider.createMultipartUpload({

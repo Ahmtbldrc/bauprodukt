@@ -29,8 +29,9 @@ interface UploadState {
   fileName?: string
 }
 
-const DEFAULT_CHUNK_SIZE = 3 * 1024 * 1024 // 3MB parts keep S3 compliant
-const MIN_CHUNK_SIZE = 2 * 1024 * 1024
+const DEFAULT_CHUNK_SIZE = 10 * 1024 * 1024
+const MIN_CHUNK_SIZE = 5 * 1024 * 1024
+const MAX_CONCURRENCY = 10
 
 export default function DocumentsTab({ documents, setDocuments, openDeleteDialog, productId }: DocumentsTabProps) {
   const [isDragOver, setIsDragOver] = useState(false)
@@ -303,6 +304,52 @@ async function uploadWithMultipart(
 ): Promise<DocumentImage | null> {
   const title = file.name.replace(/\.[^/.]+$/, '')
 
+  // single part path for <5 MiB
+  if (file.size < MIN_CHUNK_SIZE) {
+    const singleInit = await fetch(`/api/products/${productId}/documents/multipart/initiate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fileName: file.name, contentType: file.type || 'application/octet-stream', singlePart: true }),
+    })
+    if (!singleInit.ok) {
+      const errorBody = await singleInit.json().catch(() => null as unknown)
+      throw new Error((errorBody as any)?.error || 'Upload konnte nicht gestartet werden.')
+    }
+    const { url, key } = await singleInit.json() as { url: string; key: string }
+    const putResp = await fetch(url, { method: 'PUT', body: file })
+    if (!putResp.ok) {
+      throw new Error('Direkter Upload fehlgeschlagen')
+    }
+    onProgress(99, file.name)
+    const metadataResponse = await fetch(`/api/products/${productId}/documents`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title,
+        file_url: `${url.split('?')[0]}`.replace(/\?.*$/, ''),
+        file_key: key,
+        file_type: file.type,
+        file_size: file.size,
+      }),
+    })
+    if (!metadataResponse.ok) {
+      const metadataError = await metadataResponse.json().catch(() => null as unknown)
+      throw new Error((metadataError as any)?.error || 'Dokument konnte nicht gespeichert werden.')
+    }
+    const metadata = await metadataResponse.json() as any
+    onProgress(100, file.name)
+    return {
+      id: metadata.id,
+      file,
+      previewUrl: metadata.file_url,
+      name: metadata.title,
+      file_url: metadata.file_url,
+      file_key: metadata.file_key,
+      file_type: metadata.file_type || file.type,
+      file_size: metadata.file_size || file.size,
+    }
+  }
+
   const initiateResponse = await fetch(`/api/products/${productId}/documents/multipart/initiate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -326,66 +373,53 @@ async function uploadWithMultipart(
   const parts: Array<{ partNumber: number; etag: string }> = []
   let uploadedBytes = 0
 
-  const uploadPart = (partNumber: number, blob: Blob) => new Promise<string>((resolve, reject) => {
-    const xhr = new XMLHttpRequest()
-    xhr.open('POST', `/api/products/${productId}/documents/multipart/upload-part`)
-    xhr.responseType = 'json'
+  // Fetch all presigned URLs in parallel
+  const presignedUrls = await Promise.all(
+    Array.from({ length: totalParts }, (_, i) => {
+      const partNumber = i + 1
+      return fetch(`/api/products/${productId}/documents/multipart/sign`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key, uploadId, partNumber }),
+      })
+      .then(res => {
+        if (!res.ok) throw new Error(`Sign URL failed (part ${partNumber})`)
+        return res.json() as Promise<{ url: string }>
+      })
+      .then(data => ({ partNumber, url: data.url }))
+    })
+  )
 
-    xhr.setRequestHeader('x-upload-key', key)
-    xhr.setRequestHeader('x-upload-id', uploadId)
-    xhr.setRequestHeader('x-upload-part-number', String(partNumber))
-    xhr.setRequestHeader('x-upload-content-type', file.type || 'application/octet-stream')
+  const uploadPart = async (url: string, partNumber: number, blob: Blob) => {
+    const resp = await fetch(url, { method: 'PUT', body: blob })
+    if (!resp.ok) throw new Error(`Part ${partNumber} upload failed (${resp.status})`)
+    const etag = resp.headers.get('etag') || resp.headers.get('ETag')
+    if (!etag) throw new Error(`Part ${partNumber} missing ETag`)
 
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const loaded = uploadedBytes + event.loaded
-        const percent = Math.min(99, Math.floor((loaded / totalSize) * 100))
-        onProgress(percent, file.name)
-      }
-    }
-
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) {
-        const response = xhr.response || {}
-        const etag = (response as { etag?: string }).etag
-        if (!etag) {
-          const error = new Error('Antwort enthält kein ETag.')
-          reject(error)
-          return
-        }
-        resolve(etag)
-      } else {
-        const response = xhr.response || {}
-        const message = (response as { error?: string }).error
-        const error = new Error(message || `Teil-Upload fehlgeschlagen (Status ${xhr.status})`)
-        ;(error as any).status = xhr.status
-        reject(error)
-      }
-    }
-
-    xhr.onerror = () => {
-      const error = new Error('Netzwerkfehler beim Teil-Upload.')
-      ;(error as any).status = xhr.status || 0
-      reject(error)
-    }
-
-    xhr.send(blob)
-  })
+    uploadedBytes += blob.size
+    onProgress(Math.min(99, Math.floor((uploadedBytes / totalSize) * 100)), file.name)
+    parts[partNumber - 1] = { partNumber, etag: etag.replace(/"/g, '') }
+  }
 
   try {
-    for (let index = 0; index < totalParts; index++) {
-      const partNumber = index + 1
+    const tasks: Array<() => Promise<void>> = presignedUrls.map(({ partNumber, url }, index) => {
       const start = index * normalizedChunkSize
       const end = Math.min(start + normalizedChunkSize, totalSize)
       const blob = file.slice(start, end)
+      return () => uploadPart(url, partNumber, blob)
+    })
 
-      const etag = await uploadPart(partNumber, blob)
-      uploadedBytes += blob.size
-      const baseProgress = Math.min(99, Math.floor((uploadedBytes / totalSize) * 100))
-      onProgress(baseProgress, file.name)
-
-      parts.push({ partNumber, etag })
+    const workers: Promise<void>[] = []
+    for (let i = 0; i < Math.min(MAX_CONCURRENCY, tasks.length); i++) {
+      workers.push((async function run() {
+        while (tasks.length) {
+          const task = tasks.shift()
+          if (!task) break
+          await task()
+        }
+      })())
     }
+    await Promise.all(workers)
 
     const completeResponse = await fetch(`/api/products/${productId}/documents/multipart/complete`, {
       method: 'POST',

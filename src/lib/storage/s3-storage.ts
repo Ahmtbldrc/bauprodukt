@@ -107,8 +107,16 @@ export class S3StorageProvider implements StorageProvider {
               AllowedHeaders: ['*'],
               AllowedMethods: ['GET', 'PUT', 'POST', 'DELETE', 'HEAD'],
               AllowedOrigins: allowedOrigins.length > 0 ? allowedOrigins : ['*'],
-              ExposeHeaders: ['ETag', 'etag', 'x-amz-request-id'],
-              MaxAgeSeconds: 3000,
+              ExposeHeaders: [
+                'ETag', 
+                'etag', 
+                'x-amz-request-id', 
+                'x-amz-id-2',
+                'Access-Control-Allow-Origin',
+                'Access-Control-Allow-Methods',
+                'Access-Control-Allow-Headers'
+              ],
+              MaxAgeSeconds: 3600,
             },
           ],
         },
@@ -244,6 +252,17 @@ export class S3StorageProvider implements StorageProvider {
     })
 
     return getSignedUrl(s3Client, command, { expiresIn })
+  }
+
+  async getPutObjectUrl({ fileName, folder, productId, contentType, expiresIn = 900 }: { fileName: string; folder: string; productId?: string; contentType?: string; expiresIn?: number }): Promise<{ url: string; key: string }> {
+    const key = this.generateObjectKey(fileName, folder, productId)
+    const command = new PutObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+      ContentType: contentType || 'application/octet-stream',
+    })
+    const url = await getSignedUrl(s3Client, command, { expiresIn })
+    return { url, key }
   }
 
   async uploadMultipartPart({ key, uploadId, partNumber, body }: UploadMultipartPartParams): Promise<UploadMultipartPartResult> {

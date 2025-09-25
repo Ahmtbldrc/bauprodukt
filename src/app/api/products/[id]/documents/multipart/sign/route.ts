@@ -50,3 +50,5 @@ export async function POST(request: NextRequest) {
     )
   }
 }
+
+// Optional: support single-part presign via GET with query (?single=1)

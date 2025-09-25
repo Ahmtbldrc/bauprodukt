@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
 
   const provider = storageProvider
 
-  if (!provider.uploadMultipartPart) {
+  if (!provider.getMultipartUploadUrl) {
     return NextResponse.json(
       { error: 'Multipart uploads are not supported by the active storage provider' },
       { status: 400 }
@@ -22,48 +22,24 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const key = request.headers.get('x-upload-key') || undefined
-    const uploadId = request.headers.get('x-upload-id') || undefined
-    const partNumberHeader = request.headers.get('x-upload-part-number') || request.headers.get('x-part-number') || undefined
-    const contentType = request.headers.get('x-upload-content-type') || request.headers.get('content-type') || undefined
+    const body = await request.json().catch(() => null as unknown)
+    const key = (body as any)?.key as string | undefined
+    const uploadId = (body as any)?.uploadId as string | undefined
+    const partNumber = Number((body as any)?.partNumber)
 
-    if (!key || !uploadId || !partNumberHeader) {
+    if (!key || !uploadId || Number.isNaN(partNumber) || partNumber < 1) {
       return NextResponse.json(
-        { error: 'Missing multipart upload headers' },
+        { error: 'key, uploadId and partNumber are required' },
         { status: 400 }
       )
     }
 
-    const partNumber = Number(partNumberHeader)
-
-    if (Number.isNaN(partNumber) || partNumber < 1) {
-      return NextResponse.json(
-        { error: 'Invalid part number' },
-        { status: 400 }
-      )
-    }
-
-    const arrayBuffer = await request.arrayBuffer()
-
-    if (!arrayBuffer || arrayBuffer.byteLength === 0) {
-      return NextResponse.json(
-        { error: 'Empty part payload' },
-        { status: 400 }
-      )
-    }
-
-    const result = await provider.uploadMultipartPart({
-      key,
-      uploadId,
-      partNumber,
-      body: arrayBuffer,
-    })
-
-    return NextResponse.json({ etag: result.etag, contentType })
+    const url = await provider.getMultipartUploadUrl({ key, uploadId, partNumber })
+    return NextResponse.json({ url })
   } catch (error) {
-    console.error('Multipart upload-part error:', error)
+    console.error('Multipart upload-part sign error:', error)
     return NextResponse.json(
-      { error: 'Failed to upload multipart chunk' },
+      { error: 'Failed to generate presigned URL for part' },
       { status: 500 }
     )
   }
