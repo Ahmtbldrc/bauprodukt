@@ -2,6 +2,17 @@
 
 import React from 'react'
 import { useSearchParams } from 'next/navigation'
+import {
+  AUSSEN_ITEMS,
+  FixtureItem,
+  GEWERBE_ITEMS,
+  SANITAER_ITEMS,
+  SICHERHEIT_ITEMS,
+} from '@/lib/plumber-fixtures'
+import {
+  PlumberCalculationResult,
+  calculatePlumberValues,
+} from '@/lib/plumber-calculation'
 
 type ProtocolStoredData = {
   firstName?: string
@@ -143,34 +154,6 @@ export function InstallationInfoPrefill() {
 
 export default InstallationInfoPrefill
 
-// ---- Fixtures (4 columns) ----
-type FixtureItem = { id: string; name: string; luKalt: number; luWarm: number }
-
-const SANITAER_ITEMS: FixtureItem[] = [
-  { id: 'wc', name: 'WC-Spülkasten', luKalt: 1, luWarm: 0 },
-  { id: 'waschtisch', name: 'Waschtisch', luKalt: 1, luWarm: 1 },
-  { id: 'dusche', name: 'Dusche', luKalt: 2, luWarm: 2 },
-  { id: 'badewanne', name: 'Badewanne', luKalt: 3, luWarm: 3 },
-  { id: 'bidet', name: 'Bidet', luKalt: 1, luWarm: 1 },
-  { id: 'urinoir', name: 'Urinoir Spülung automatisch', luKalt: 3, luWarm: 0 },
-]
-
-const AUSSEN_ITEMS: FixtureItem[] = [
-  { id: 'balkon', name: 'Entnahmearmatur für Balkon', luKalt: 2, luWarm: 0 },
-  { id: 'garten', name: 'Entnahmearmatur Garten und Garage', luKalt: 5, luWarm: 1 },
-  { id: 'waschrinne', name: 'Waschrinne', luKalt: 1, luWarm: 1 },
-  { id: 'waschtrog', name: 'Waschtrog', luKalt: 2, luWarm: 2 },
-]
-
-const GEWERBE_ITEMS: FixtureItem[] = [
-  { id: 'automat', name: 'Getränkeautomat', luKalt: 2, luWarm: 0 },
-  { id: 'coiffeur', name: 'Coiffeurbrause', luKalt: 5, luWarm: 1 },
-]
-
-const SICHERHEIT_ITEMS: FixtureItem[] = [
-  { id: 'hydrant', name: 'Wasserlöschposten', luKalt: 2, luWarm: 0 },
-]
-
 function FixturesSection() {
   const [open, setOpen] = React.useState<{ [k: string]: boolean }>({
     s1: true,
@@ -180,10 +163,32 @@ function FixturesSection() {
   })
   const [counts, setCounts] = React.useState<Record<string, number>>({})
   const [method, setMethod] = React.useState<'m1' | 'm2'>('m1')
+  const [result, setResult] = React.useState<PlumberCalculationResult | null>(null)
+
+  const HYDRANT_ID = 'hydrant'
+
+  const hasHydrant = (counts[HYDRANT_ID] || 0) > 0
 
   const inc = (id: string) => setCounts(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }))
   const dec = (id: string) =>
     setCounts(prev => ({ ...prev, [id]: Math.max(0, (prev[id] || 0) - 1) }))
+
+  const handleCalculate = () => {
+    const calculation = calculatePlumberValues({
+      counts,
+      method,
+    })
+    setResult(calculation)
+  }
+
+  const formatNumber = React.useCallback(
+    (value: number, fractionDigits: number) =>
+      value.toLocaleString('de-CH', {
+        minimumFractionDigits: fractionDigits,
+        maximumFractionDigits: fractionDigits,
+      }),
+    []
+  )
 
   const Column: React.FC<{
     title: string
@@ -257,13 +262,60 @@ function FixturesSection() {
           {/* Right: Wasserlöschposten checkbox */}
           <div className="md:col-span-4 flex justify-end">
             <label className="inline-flex items-center gap-2">
-              <input type="checkbox" className="h-4 w-4 accent-[#F39236]" checked={(counts['hydrant'] || 0) > 0} onChange={() => {}} disabled />
+              <input
+                type="checkbox"
+                className="h-4 w-4 accent-[#F39236] disabled:opacity-40"
+                checked={hasHydrant}
+                readOnly
+                disabled
+              />
               <span className="text-sm text-gray-800">Wasserlöschposten (Zusatz)</span>
             </label>
           </div>
         </div>
         <p className="text-xs text-gray-500 mt-1">Bitte eine QD‑Methode auswählen.</p>
       </div>
+
+      <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <button
+          type="button"
+          onClick={handleCalculate}
+          className="inline-flex items-center justify-center rounded-xl bg-[#F39236] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#db7f2d] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F39236]"
+        >
+          Berechnung durchführen
+        </button>
+
+        <div className="text-sm text-gray-600">
+          <span className="font-semibold text-gray-900">Gesamte Zähler:</span>
+          <span className="ml-2">
+            {Object.values(counts).reduce((sum, val) => sum + (val || 0), 0)} Stück
+          </span>
+        </div>
+      </div>
+
+      {result && (
+        <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-4 md:p-6">
+          <h4 className="text-sm font-semibold text-gray-900 mb-4">Berechnungsergebnis</h4>
+          <dl className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-gray-500">Total LU</dt>
+              <dd className="text-lg font-semibold text-gray-900">{result.totalLU.toLocaleString('de-CH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-gray-500">Spitzendurchfluss (l/s)</dt>
+              <dd className="text-lg font-semibold text-gray-900">{formatNumber(result.totalLps, 3)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-gray-500">Volumenstrom (m³/h)</dt>
+              <dd className="text-lg font-semibold text-gray-900">{formatNumber(result.totalM3PerHour, 3)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-gray-500">Empfohlener DN</dt>
+              <dd className="text-lg font-semibold text-gray-900">{result.dn ?? '–'}</dd>
+            </div>
+          </dl>
+        </div>
+      )}
     </div>
   )
 }
