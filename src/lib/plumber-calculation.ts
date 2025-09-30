@@ -18,7 +18,6 @@ export type PlumberCalculationResult = {
 const HYDRANT_ID = 'hydrant'
 
 const Q3_BY_DN: { dn: string; q3: number }[] = [
-  { dn: 'DN15', q3: 2.5 },
   { dn: 'DN20', q3: 4.0 },
   { dn: 'DN25', q3: 6.3 },
   { dn: 'DN32', q3: 10.0 },
