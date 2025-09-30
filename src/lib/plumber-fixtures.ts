@@ -16,18 +16,18 @@ export const SANITAER_ITEMS: FixtureItem[] = [
 
 export const AUSSEN_ITEMS: FixtureItem[] = [
   { id: 'balkon', name: 'Entnahmearmatur für Balkon', luKalt: 2, luWarm: 0 },
-  { id: 'garten', name: 'Entnahmearmatur Garten und Garage', luKalt: 5, luWarm: 1 },
+  { id: 'garten', name: 'Entnahmearmatur Garten und Garage', luKalt: 5, luWarm: 0 },
   { id: 'waschrinne', name: 'Waschrinne', luKalt: 1, luWarm: 1 },
   { id: 'waschtrog', name: 'Waschtrog', luKalt: 2, luWarm: 2 },
 ]
 
 export const GEWERBE_ITEMS: FixtureItem[] = [
-  { id: 'automat', name: 'Getränkeautomat', luKalt: 2, luWarm: 0 },
-  { id: 'coiffeur', name: 'Coiffeurbrause', luKalt: 5, luWarm: 1 },
+  { id: 'automat', name: 'Getränkeautomat', luKalt: 1, luWarm: 0 },
+  { id: 'coiffeur', name: 'Coiffeurbrause', luKalt: 1, luWarm: 1 },
 ]
 
 export const SICHERHEIT_ITEMS: FixtureItem[] = [
-  { id: 'hydrant', name: 'Wasserlöschposten', luKalt: 2, luWarm: 0 },
+  { id: 'hydrant', name: 'Wasserlöschposten', luKalt: 0, luWarm: 0 },
 ]
 
 export const ALL_FIXTURES: FixtureItem[] = [
