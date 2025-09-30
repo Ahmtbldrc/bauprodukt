@@ -299,7 +299,7 @@ function FixturesSection() {
           <dl className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <dt className="text-xs uppercase tracking-wide text-gray-500">Total LU</dt>
-              <dd className="text-lg font-semibold text-gray-900">{result.totalLU.toLocaleString('de-CH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</dd>
+              <dd className="text-lg font-semibold text-gray-900">{formatNumber(result.totalLU * 0.1, 1)}</dd>
             </div>
             <div>
               <dt className="text-xs uppercase tracking-wide text-gray-500">Spitzendurchfluss (l/s)</dt>

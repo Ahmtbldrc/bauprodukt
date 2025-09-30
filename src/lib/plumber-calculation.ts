@@ -35,7 +35,7 @@ function calculateTotalLU(counts: Record<string, number | undefined>): number {
     if (!count) return sum
     const fixture = FIXTURE_MAP[id]
     if (!fixture) return sum
-    return sum + count * (fixture.luKalt + fixture.luWarm)
+    return sum + (fixture.luWarm * count) + (fixture.luKalt * count)
   }, 0)
 }
 
