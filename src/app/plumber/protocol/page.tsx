@@ -5,9 +5,29 @@ import { useRouter } from 'next/navigation'
 
 type ProtocolFormData = {
   meterAction: 'new' | 'exchange'
+  newForm: NewFormData
+  exchangeForm: ExchangeFormData
+}
+
+type NewFormData = CommonFormFields & {
   zaehlernummer: string
-  neueZaehlernummer?: string
-  einbauort: string
+}
+
+type ExchangeFormData = CommonFormFields & {
+  zaehlernummer: string
+  neueZaehlernummer: string
+}
+
+type CommonFormFields = PersonAddress & {
+  parcelNumber: string
+  building: string
+  ownerDifferent: boolean
+  managementDifferent: boolean
+  ownerInfo: PartyInfo
+  managementInfo: PartyInfo
+}
+
+type PersonAddress = {
   firstName: string
   lastName: string
   address: string
@@ -15,53 +35,142 @@ type ProtocolFormData = {
   city: string
   phone: string
   email: string
-  parcelNumber: string
-  building: string
-  ownerDifferent: boolean
-  managementDifferent: boolean
+}
+
+type PartyInfo = PersonAddress
+
+const EMPTY_PARTY_INFO: PartyInfo = {
+  firstName: '',
+  lastName: '',
+  address: '',
+  postalCode: '',
+  city: '',
+  phone: '',
+  email: '',
 }
 
 export default function ProtocolPage() {
   const router = useRouter()
   const [formData, setFormData] = React.useState<ProtocolFormData>({
     meterAction: 'new',
-    zaehlernummer: '',
-    einbauort: '',
-    firstName: '',
-    lastName: '',
-    address: '',
-    postalCode: '',
-    city: '',
-    phone: '',
-    email: '',
-    parcelNumber: '',
-    building: '',
-    ownerDifferent: false,
-    managementDifferent: false,
+    newForm: {
+      zaehlernummer: '',
+      firstName: '',
+      lastName: '',
+      address: '',
+      postalCode: '',
+      city: '',
+      phone: '',
+      email: '',
+      parcelNumber: '',
+      building: '',
+      ownerDifferent: false,
+      managementDifferent: false,
+      ownerInfo: { ...EMPTY_PARTY_INFO },
+      managementInfo: { ...EMPTY_PARTY_INFO },
+    },
+    exchangeForm: {
+      zaehlernummer: '',
+      neueZaehlernummer: '',
+      firstName: '',
+      lastName: '',
+      address: '',
+      postalCode: '',
+      city: '',
+      phone: '',
+      email: '',
+      parcelNumber: '',
+      building: '',
+      ownerDifferent: false,
+      managementDifferent: false,
+      ownerInfo: { ...EMPTY_PARTY_INFO },
+      managementInfo: { ...EMPTY_PARTY_INFO },
+    },
   })
 
   function updateField<K extends keyof ProtocolFormData>(key: K, value: ProtocolFormData[K]) {
     setFormData(prev => ({ ...prev, [key]: value }))
   }
 
+  const activeForm = formData.meterAction === 'new' ? formData.newForm : formData.exchangeForm
+
+  function updateActiveFormField(key: string, value: any) {
+    setFormData(prev => (
+      prev.meterAction === 'new'
+        ? { ...prev, newForm: { ...prev.newForm, [key]: value } }
+        : { ...prev, exchangeForm: { ...prev.exchangeForm, [key]: value } }
+    ))
+  }
+
+  function updateActiveOwnerField(key: keyof PartyInfo, value: string) {
+    setFormData(prev => (
+      prev.meterAction === 'new'
+        ? { ...prev, newForm: { ...prev.newForm, ownerInfo: { ...prev.newForm.ownerInfo, [key]: value } } }
+        : { ...prev, exchangeForm: { ...prev.exchangeForm, ownerInfo: { ...prev.exchangeForm.ownerInfo, [key]: value } } }
+    ))
+  }
+
+  function isOwnerInfoComplete(info: PartyInfo) {
+    return (
+      info.firstName.trim().length > 0 &&
+      info.lastName.trim().length > 0 &&
+      info.address.trim().length > 0 &&
+      info.postalCode.trim().length > 0 &&
+      info.city.trim().length > 0
+    )
+  }
+
   const [isLocationOpen, setIsLocationOpen] = React.useState(false)
+  const [isOwnerDialogOpen, setIsOwnerDialogOpen] = React.useState(false)
+  const [ownerDialogError, setOwnerDialogError] = React.useState<string | null>(null)
+  const [ownerDialogMode, setOwnerDialogMode] = React.useState<'create' | 'edit'>('create')
+
+  const [isManagementDialogOpen, setIsManagementDialogOpen] = React.useState(false)
+  const [managementDialogError, setManagementDialogError] = React.useState<string | null>(null)
+  const [managementDialogMode, setManagementDialogMode] = React.useState<'create' | 'edit'>('create')
+
+  function updateActiveManagementField(key: keyof PartyInfo, value: string) {
+    setFormData(prev => (
+      prev.meterAction === 'new'
+        ? { ...prev, newForm: { ...prev.newForm, managementInfo: { ...prev.newForm.managementInfo, [key]: value } } }
+        : { ...prev, exchangeForm: { ...prev.exchangeForm, managementInfo: { ...prev.exchangeForm.managementInfo, [key]: value } } }
+    ))
+  }
+
+  function isManagementInfoComplete(info: PartyInfo) {
+    return (
+      info.firstName.trim().length > 0 &&
+      info.lastName.trim().length > 0 &&
+      info.address.trim().length > 0 &&
+      info.postalCode.trim().length > 0 &&
+      info.city.trim().length > 0
+    )
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     // TODO: integrate with backend flow
-    console.log('Protocol form submitted', formData)
+    const active = formData.meterAction === 'new' ? formData.newForm : formData.exchangeForm
+    console.log('Protocol form submitted', { meterAction: formData.meterAction, data: active })
     if (typeof window !== 'undefined') {
       try {
         const toStore = {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          address: formData.address,
-          postalCode: formData.postalCode,
-          city: formData.city,
-          phone: formData.phone,
-          email: formData.email,
-          parcelNumber: formData.parcelNumber,
-          building: formData.building,
+          firstName: active.firstName,
+          lastName: active.lastName,
+          address: active.address,
+          postalCode: active.postalCode,
+          city: active.city,
+          phone: active.phone,
+          email: active.email,
+          parcelNumber: active.parcelNumber,
+          building: active.building,
+          ownerDifferent: active.ownerDifferent,
+          managementDifferent: active.managementDifferent,
+          ownerInfo: active.ownerInfo,
+          managementInfo: active.managementInfo,
+          meterAction: formData.meterAction,
+          zaehlernummer: active.zaehlernummer,
+          neueZaehlernummer: (active as any).neueZaehlernummer || '',
         }
         localStorage.setItem('bauprodukt_protocol_form_v1', JSON.stringify(toStore))
       } catch {}
@@ -111,8 +220,8 @@ export default function ProtocolPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Zählernummer</label>
               <input
                 type="text"
-                value={formData.zaehlernummer}
-                onChange={(e) => updateField('zaehlernummer', e.target.value)}
+                value={activeForm.zaehlernummer}
+                onChange={(e) => updateActiveFormField('zaehlernummer', e.target.value)}
                 placeholder="Zählernummer"
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
@@ -124,8 +233,8 @@ export default function ProtocolPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Aktuelle Zählernummer</label>
                 <input
                   type="text"
-                  value={formData.zaehlernummer}
-                  onChange={(e) => updateField('zaehlernummer', e.target.value)}
+                  value={activeForm.zaehlernummer}
+                  onChange={(e) => updateActiveFormField('zaehlernummer', e.target.value)}
                   placeholder="Aktuelle Zählernummer"
                   className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                   style={{ ['--tw-ring-color' as any]: '#F3923620' }}
@@ -135,8 +244,8 @@ export default function ProtocolPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Neue Zählernummer</label>
                 <input
                   type="text"
-                  value={formData.neueZaehlernummer || ''}
-                  onChange={(e) => updateField('neueZaehlernummer', e.target.value)}
+                  value={(activeForm as ExchangeFormData).neueZaehlernummer || ''}
+                  onChange={(e) => updateActiveFormField('neueZaehlernummer', e.target.value)}
                   placeholder="Neue Zählernummer"
                   className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                   style={{ ['--tw-ring-color' as any]: '#F3923620' }}
@@ -171,8 +280,8 @@ export default function ProtocolPage() {
                   <div>
                     <input
                       type="text"
-                      value={formData.firstName}
-                      onChange={(e) => updateField('firstName', e.target.value)}
+                      value={activeForm.firstName}
+                      onChange={(e) => updateActiveFormField('firstName', e.target.value)}
                       placeholder="Vorname"
                       className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                       style={{ ['--tw-ring-color' as any]: '#F3923620' }}
@@ -181,8 +290,8 @@ export default function ProtocolPage() {
                   <div>
                     <input
                       type="text"
-                      value={formData.lastName}
-                      onChange={(e) => updateField('lastName', e.target.value)}
+                      value={activeForm.lastName}
+                      onChange={(e) => updateActiveFormField('lastName', e.target.value)}
                       placeholder="Nachname"
                       className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                       style={{ ['--tw-ring-color' as any]: '#F3923620' }}
@@ -191,8 +300,8 @@ export default function ProtocolPage() {
                   <div className="md:col-span-2">
                     <input
                       type="text"
-                      value={formData.address}
-                      onChange={(e) => updateField('address', e.target.value)}
+                      value={activeForm.address}
+                      onChange={(e) => updateActiveFormField('address', e.target.value)}
                       placeholder="Adresse"
                       className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                       style={{ ['--tw-ring-color' as any]: '#F3923620' }}
@@ -202,8 +311,8 @@ export default function ProtocolPage() {
                     <input
                       type="text"
                       inputMode="numeric"
-                      value={formData.postalCode}
-                      onChange={(e) => updateField('postalCode', e.target.value)}
+                      value={activeForm.postalCode}
+                      onChange={(e) => updateActiveFormField('postalCode', e.target.value)}
                       placeholder="PLZ"
                       className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                       style={{ ['--tw-ring-color' as any]: '#F3923620' }}
@@ -212,8 +321,8 @@ export default function ProtocolPage() {
                   <div>
                     <input
                       type="text"
-                      value={formData.city}
-                      onChange={(e) => updateField('city', e.target.value)}
+                      value={activeForm.city}
+                      onChange={(e) => updateActiveFormField('city', e.target.value)}
                       placeholder="Ort"
                       className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                       style={{ ['--tw-ring-color' as any]: '#F3923620' }}
@@ -222,8 +331,8 @@ export default function ProtocolPage() {
                   <div>
                     <input
                       type="tel"
-                      value={formData.phone}
-                      onChange={(e) => updateField('phone', e.target.value)}
+                      value={activeForm.phone}
+                      onChange={(e) => updateActiveFormField('phone', e.target.value)}
                       placeholder="Telefon"
                       className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                       style={{ ['--tw-ring-color' as any]: '#F3923620' }}
@@ -232,8 +341,8 @@ export default function ProtocolPage() {
                   <div>
                     <input
                       type="email"
-                      value={formData.email}
-                      onChange={(e) => updateField('email', e.target.value)}
+                      value={activeForm.email}
+                      onChange={(e) => updateActiveFormField('email', e.target.value)}
                       placeholder="E-Mail"
                       className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                       style={{ ['--tw-ring-color' as any]: '#F3923620' }}
@@ -250,8 +359,8 @@ export default function ProtocolPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Parz. Nr.</label>
               <input
                 type="text"
-                value={formData.parcelNumber}
-                onChange={(e) => updateField('parcelNumber', e.target.value)}
+                value={activeForm.parcelNumber}
+                onChange={(e) => updateActiveFormField('parcelNumber', e.target.value)}
                 placeholder="Parz. Nr. eingeben"
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
@@ -261,8 +370,8 @@ export default function ProtocolPage() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Gebäude</label>
               <input
                 type="text"
-                value={formData.building}
-                onChange={(e) => updateField('building', e.target.value)}
+                value={activeForm.building}
+                onChange={(e) => updateActiveFormField('building', e.target.value)}
                 placeholder="Gebäude. eingeben"
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
@@ -276,21 +385,361 @@ export default function ProtocolPage() {
               <input
                 type="checkbox"
                 className="h-5 w-5"
-                checked={formData.ownerDifferent}
-                onChange={(e) => updateField('ownerDifferent', e.target.checked)}
+                checked={activeForm.ownerDifferent}
+                onChange={(e) => {
+                  const checked = e.target.checked
+                  if (checked) {
+                    updateActiveFormField('ownerDifferent', true)
+                    setOwnerDialogMode('create')
+                    setIsOwnerDialogOpen(true)
+                  } else {
+                    updateActiveFormField('ownerDifferent', false)
+                    setFormData(prev => (
+                      prev.meterAction === 'new'
+                        ? { ...prev, newForm: { ...prev.newForm, ownerInfo: { ...EMPTY_PARTY_INFO } } }
+                        : { ...prev, exchangeForm: { ...prev.exchangeForm, ownerInfo: { ...EMPTY_PARTY_INFO } } }
+                    ))
+                  }
+                }}
               />
               <span className="text-gray-800">Eigentümer abweichend</span>
+              {activeForm.ownerDifferent && isOwnerInfoComplete(activeForm.ownerInfo) && (
+                <button
+                  type="button"
+                  className="ml-2 inline-flex items-center rounded-full bg-green-100 text-green-800 text-xs px-2 py-0.5 hover:ring-2 hover:ring-green-200"
+                  onClick={() => {
+                    setOwnerDialogMode('edit')
+                    setIsOwnerDialogOpen(true)
+                  }}
+                  aria-label="Eigentümerdaten bearbeiten"
+                  title="Eigentümerdaten bearbeiten"
+                >
+                  Gespeichert
+                </button>
+              )}
             </label>
             <label className="flex items-center gap-3 cursor-pointer select-none">
               <input
                 type="checkbox"
                 className="h-5 w-5"
-                checked={formData.managementDifferent}
-                onChange={(e) => updateField('managementDifferent', e.target.checked)}
+                checked={activeForm.managementDifferent}
+                onChange={(e) => {
+                  const checked = e.target.checked
+                  if (checked) {
+                    updateActiveFormField('managementDifferent', true)
+                    setManagementDialogMode('create')
+                    setIsManagementDialogOpen(true)
+                  } else {
+                    updateActiveFormField('managementDifferent', false)
+                    setFormData(prev => (
+                      prev.meterAction === 'new'
+                        ? { ...prev, newForm: { ...prev.newForm, managementInfo: { ...EMPTY_PARTY_INFO } } }
+                        : { ...prev, exchangeForm: { ...prev.exchangeForm, managementInfo: { ...EMPTY_PARTY_INFO } } }
+                    ))
+                  }
+                }}
               />
               <span className="text-gray-800">Verwaltung abweichend</span>
+              {activeForm.managementDifferent && isManagementInfoComplete(activeForm.managementInfo) && (
+                <button
+                  type="button"
+                  className="ml-2 inline-flex items-center rounded-full bg-green-100 text-green-800 text-xs px-2 py-0.5 hover:ring-2 hover:ring-green-200"
+                  onClick={() => {
+                    setManagementDialogMode('edit')
+                    setIsManagementDialogOpen(true)
+                  }}
+                  aria-label="Verwaltungsdaten bearbeiten"
+                  title="Verwaltungsdaten bearbeiten"
+                >
+                  Gespeichert
+                </button>
+              )}
             </label>
           </div>
+
+          {/* Owner Different Dialog */}
+          {isOwnerDialogOpen && (
+            <div className="fixed inset-0 z-50">
+              <div
+                className="absolute inset-0 bg-black/40"
+                onClick={() => {
+                  setIsOwnerDialogOpen(false)
+                  setOwnerDialogError(null)
+                  if (ownerDialogMode === 'create') {
+                    updateActiveFormField('ownerDifferent', false)
+                    setFormData(prev => (
+                      prev.meterAction === 'new'
+                        ? { ...prev, newForm: { ...prev.newForm, ownerInfo: { ...EMPTY_PARTY_INFO } } }
+                        : { ...prev, exchangeForm: { ...prev.exchangeForm, ownerInfo: { ...EMPTY_PARTY_INFO } } }
+                    ))
+                  }
+                }}
+              />
+              <div className="absolute inset-0 flex items-center justify-center p-4">
+                <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg border border-gray-200">
+                  <div className="px-5 py-4 border-b border-gray-200">
+                    <div className="text-sm font-medium text-gray-900">Eigentümer (abweichend)</div>
+                  </div>
+                  <div className="p-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <input
+                          type="text"
+                          value={activeForm.ownerInfo.firstName}
+                          onChange={(e) => updateActiveOwnerField('firstName', e.target.value)}
+                          placeholder="Vorname"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          value={activeForm.ownerInfo.lastName}
+                          onChange={(e) => updateActiveOwnerField('lastName', e.target.value)}
+                          placeholder="Nachname"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <input
+                          type="text"
+                          value={activeForm.ownerInfo.address}
+                          onChange={(e) => updateActiveOwnerField('address', e.target.value)}
+                          placeholder="Adresse"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={activeForm.ownerInfo.postalCode}
+                          onChange={(e) => updateActiveOwnerField('postalCode', e.target.value)}
+                          placeholder="PLZ"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          value={activeForm.ownerInfo.city}
+                          onChange={(e) => updateActiveOwnerField('city', e.target.value)}
+                          placeholder="Ort"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="tel"
+                          value={activeForm.ownerInfo.phone}
+                          onChange={(e) => updateActiveOwnerField('phone', e.target.value)}
+                          placeholder="Telefon"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="email"
+                          value={activeForm.ownerInfo.email}
+                          onChange={(e) => updateActiveOwnerField('email', e.target.value)}
+                          placeholder="E-Mail"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                        />
+                      </div>
+                    </div>
+                    {ownerDialogError && (
+                      <div className="text-sm text-red-600 mt-3">{ownerDialogError}</div>
+                    )}
+                  </div>
+                  <div className="px-5 py-4 border-t border-gray-200 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                      onClick={() => {
+                        setIsOwnerDialogOpen(false)
+                        setOwnerDialogError(null)
+                        if (ownerDialogMode === 'create') {
+                          updateActiveFormField('ownerDifferent', false)
+                          setFormData(prev => (
+                            prev.meterAction === 'new'
+                              ? { ...prev, newForm: { ...prev.newForm, ownerInfo: { ...EMPTY_PARTY_INFO } } }
+                              : { ...prev, exchangeForm: { ...prev.exchangeForm, ownerInfo: { ...EMPTY_PARTY_INFO } } }
+                          ))
+                        }
+                      }}
+                    >
+                      Abbrechen
+                    </button>
+                    <button
+                      type="button"
+                      className="px-4 py-2 rounded-lg text-white font-medium shadow-sm hover:opacity-95 transition"
+                      style={{ backgroundColor: '#4b4b4b' }}
+                      onClick={() => {
+                        if (isOwnerInfoComplete(activeForm.ownerInfo)) {
+                          setIsOwnerDialogOpen(false)
+                          setOwnerDialogError(null)
+                          updateActiveFormField('ownerDifferent', true)
+                        } else {
+                          setOwnerDialogError('Bitte erforderliche Felder ausfüllen (Vorname, Nachname, Adresse, PLZ, Ort).')
+                        }
+                      }}
+                    >
+                      Speichern
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Management Different Dialog */}
+          {isManagementDialogOpen && (
+            <div className="fixed inset-0 z-50">
+              <div
+                className="absolute inset-0 bg-black/40"
+                onClick={() => {
+                  setIsManagementDialogOpen(false)
+                  setManagementDialogError(null)
+                  if (managementDialogMode === 'create') {
+                    updateActiveFormField('managementDifferent', false)
+                    setFormData(prev => (
+                      prev.meterAction === 'new'
+                        ? { ...prev, newForm: { ...prev.newForm, managementInfo: { ...EMPTY_PARTY_INFO } } }
+                        : { ...prev, exchangeForm: { ...prev.exchangeForm, managementInfo: { ...EMPTY_PARTY_INFO } } }
+                    ))
+                  }
+                }}
+              />
+              <div className="absolute inset-0 flex items-center justify-center p-4">
+                <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg border border-gray-200">
+                  <div className="px-5 py-4 border-b border-gray-200">
+                    <div className="text-sm font-medium text-gray-900">Verwaltung (abweichend)</div>
+                  </div>
+                  <div className="p-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <input
+                          type="text"
+                          value={activeForm.managementInfo.firstName}
+                          onChange={(e) => updateActiveManagementField('firstName', e.target.value)}
+                          placeholder="Vorname"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          value={activeForm.managementInfo.lastName}
+                          onChange={(e) => updateActiveManagementField('lastName', e.target.value)}
+                          placeholder="Nachname"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <input
+                          type="text"
+                          value={activeForm.managementInfo.address}
+                          onChange={(e) => updateActiveManagementField('address', e.target.value)}
+                          placeholder="Adresse"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={activeForm.managementInfo.postalCode}
+                          onChange={(e) => updateActiveManagementField('postalCode', e.target.value)}
+                          placeholder="PLZ"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          value={activeForm.managementInfo.city}
+                          onChange={(e) => updateActiveManagementField('city', e.target.value)}
+                          placeholder="Ort"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="tel"
+                          value={activeForm.managementInfo.phone}
+                          onChange={(e) => updateActiveManagementField('phone', e.target.value)}
+                          placeholder="Telefon"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="email"
+                          value={activeForm.managementInfo.email}
+                          onChange={(e) => updateActiveManagementField('email', e.target.value)}
+                          placeholder="E-Mail"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                        />
+                      </div>
+                    </div>
+                    {managementDialogError && (
+                      <div className="text-sm text-red-600 mt-3">{managementDialogError}</div>
+                    )}
+                  </div>
+                  <div className="px-5 py-4 border-t border-gray-200 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                      onClick={() => {
+                        setIsManagementDialogOpen(false)
+                        setManagementDialogError(null)
+                        if (managementDialogMode === 'create') {
+                          updateActiveFormField('managementDifferent', false)
+                          setFormData(prev => (
+                            prev.meterAction === 'new'
+                              ? { ...prev, newForm: { ...prev.newForm, managementInfo: { ...EMPTY_PARTY_INFO } } }
+                              : { ...prev, exchangeForm: { ...prev.exchangeForm, managementInfo: { ...EMPTY_PARTY_INFO } } }
+                          ))
+                        }
+                      }}
+                    >
+                      Abbrechen
+                    </button>
+                    <button
+                      type="button"
+                      className="px-4 py-2 rounded-lg text-white font-medium shadow-sm hover:opacity-95 transition"
+                      style={{ backgroundColor: '#4b4b4b' }}
+                      onClick={() => {
+                        if (isManagementInfoComplete(activeForm.managementInfo)) {
+                          setIsManagementDialogOpen(false)
+                          setManagementDialogError(null)
+                          updateActiveFormField('managementDifferent', true)
+                        } else {
+                          setManagementDialogError('Bitte erforderliche Felder ausfüllen (Vorname, Nachname, Adresse, PLZ, Ort).')
+                        }
+                      }}
+                    >
+                      Speichern
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Submit */}
           <div className="pt-2 flex justify-end">

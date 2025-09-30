@@ -14,6 +14,16 @@ import {
   calculatePlumberValues,
 } from '@/lib/plumber-calculation'
 
+type PartyInfo = {
+  firstName?: string
+  lastName?: string
+  address?: string
+  postalCode?: string
+  city?: string
+  phone?: string
+  email?: string
+}
+
 type ProtocolStoredData = {
   firstName?: string
   lastName?: string
@@ -24,6 +34,13 @@ type ProtocolStoredData = {
   email?: string
   parcelNumber?: string
   building?: string
+  ownerDifferent?: boolean
+  managementDifferent?: boolean
+  ownerInfo?: PartyInfo
+  managementInfo?: PartyInfo
+  meterAction?: 'new' | 'exchange'
+  zaehlernummer?: string
+  neueZaehlernummer?: string
 }
 
 const STORAGE_KEY = 'bauprodukt_protocol_form_v1'
@@ -49,6 +66,7 @@ export function InstallationInfoPrefill() {
   }, [from])
 
   const showPrefill = from === 'protocol' && !!data
+  const readOnly = showPrefill
 
   return (
     <div>
@@ -68,11 +86,11 @@ export function InstallationInfoPrefill() {
         <div className="md:col-span-3">
           <div className="text-sm font-medium text-gray-900 mb-2">Einbauort des Messgerätes</div>
           <div className="space-y-4">
-            <input type="text" defaultValue={data.city || ''} placeholder="Gemeinde Thusis" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
-            <input type="text" defaultValue={data.address || ''} placeholder="Strasse" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
-            <input type="text" placeholder="Strassen Nr." className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
-            <input type="text" inputMode="numeric" defaultValue={data.postalCode || ''} placeholder="PLZ" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
-            <input type="text" defaultValue={data.city || ''} placeholder="Ort" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+            <input type="text" defaultValue={data.city || ''} placeholder="Gemeinde Thusis" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="text" defaultValue={data.address || ''} placeholder="Strasse" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="text" placeholder="Strassen Nr." readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="text" inputMode="numeric" defaultValue={data.postalCode || ''} placeholder="PLZ" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="text" defaultValue={data.city || ''} placeholder="Ort" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
           </div>
         </div>
 
@@ -81,16 +99,16 @@ export function InstallationInfoPrefill() {
           <div className="flex items-end gap-4 mb-2">
             <div className="w-32">
               <div className="text-sm font-medium text-gray-900 mb-2">Gebäude</div>
-              <input type="text" defaultValue={data.building || ''} placeholder="Gebäude" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+              <input type="text" defaultValue={data.building || ''} placeholder="Gebäude" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
             </div>
             <div className="w-32">
               <div className="text-sm font-medium text-gray-900 mb-2">Parz. Nr.</div>
-              <input type="text" defaultValue={data.parcelNumber || ''} placeholder="Parz. Nr." className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+              <input type="text" defaultValue={data.parcelNumber || ''} placeholder="Parz. Nr." readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
             </div>
           </div>
           <div className="mt-4">
             <div className="text-sm font-medium text-gray-900 mb-2">Objekt-Bezeichnung</div>
-            <input type="text" placeholder="Truppenunterkunft Pantunweg 8-12" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+            <input type="text" placeholder="Truppenunterkunft Pantunweg 8-12" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
           </div>
         </div>
 
@@ -98,11 +116,11 @@ export function InstallationInfoPrefill() {
         <div className="md:col-span-3">
           <div className="text-sm font-medium text-gray-900 mb-2">Eigentümer (falls abweichend)</div>
           <div className="space-y-4">
-            <input type="text" placeholder="Gemeinde Thusis" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
-            <input type="text" placeholder="Strasse" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
-            <input type="text" placeholder="Strassen Nr." className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
-            <input type="text" placeholder="PLZ" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
-            <input type="text" placeholder="Ort" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+            <input type="text" defaultValue={data.ownerDifferent ? (data.ownerInfo?.firstName || '') : ''} placeholder="Vorname" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="text" defaultValue={data.ownerDifferent ? (data.ownerInfo?.address || '') : ''} placeholder="Adresse" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="text" placeholder="Strassen Nr." readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="text" defaultValue={data.ownerDifferent ? (data.ownerInfo?.postalCode || '') : ''} placeholder="PLZ" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="text" defaultValue={data.ownerDifferent ? (data.ownerInfo?.city || '') : ''} placeholder="Ort" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
           </div>
         </div>
 
@@ -110,11 +128,11 @@ export function InstallationInfoPrefill() {
         <div className="md:col-span-3">
           <div className="text-sm font-medium text-gray-900 mb-2">Verwaltung (falls abweichend)</div>
           <div className="space-y-4">
-            <input type="text" placeholder="Gemeinde Thusis" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
-            <input type="text" placeholder="Strasse" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
-            <input type="text" placeholder="Strassen Nr." className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
-            <input type="text" placeholder="PLZ" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
-            <input type="text" placeholder="Ort" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+            <input type="text" defaultValue={data.managementDifferent ? (data.managementInfo?.firstName || '') : ''} placeholder="Vorname" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="text" defaultValue={data.managementDifferent ? (data.managementInfo?.address || '') : ''} placeholder="Adresse" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="text" placeholder="Strassen Nr." readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="text" defaultValue={data.managementDifferent ? (data.managementInfo?.postalCode || '') : ''} placeholder="PLZ" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="text" defaultValue={data.managementDifferent ? (data.managementInfo?.city || '') : ''} placeholder="Ort" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
           </div>
         </div>
           </div>
