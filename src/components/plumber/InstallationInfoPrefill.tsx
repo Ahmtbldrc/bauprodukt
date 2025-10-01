@@ -86,9 +86,10 @@ export function InstallationInfoPrefill() {
         <div className="md:col-span-3">
           <div className="text-sm font-medium text-gray-900 mb-2">Einbauort des Messgerätes</div>
           <div className="space-y-4">
-            <input type="text" defaultValue={data.city || ''} placeholder="Gemeinde Thusis" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
-            <input type="text" defaultValue={data.address || ''} placeholder="Strasse" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
-            <input type="text" placeholder="Strassen Nr." readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="text" defaultValue={`${(data.firstName || '')}${data.lastName ? ` ${data.lastName}` : ''}`} placeholder="Vor- und Nachname" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="text" defaultValue={data.address || ''} placeholder="Adresse" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="tel" defaultValue={data.phone || ''} placeholder="Telefon" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="email" defaultValue={data.email || ''} placeholder="E-Mail" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
             <input type="text" inputMode="numeric" defaultValue={data.postalCode || ''} placeholder="PLZ" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
             <input type="text" defaultValue={data.city || ''} placeholder="Ort" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
           </div>
@@ -106,19 +107,54 @@ export function InstallationInfoPrefill() {
               <input type="text" defaultValue={data.parcelNumber || ''} placeholder="Parz. Nr." readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
             </div>
           </div>
-          <div className="mt-4">
-            <div className="text-sm font-medium text-gray-900 mb-2">Objekt-Bezeichnung</div>
-            <input type="text" placeholder="Truppenunterkunft Pantunweg 8-12" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
-          </div>
+          {/* Zählernummer area based on meter action */}
+          {data?.meterAction === 'new' && (
+            <div className="mt-4">
+              <div className="text-sm font-medium text-gray-900 mb-2">Zählernummer</div>
+              <input
+                type="text"
+                defaultValue={data.zaehlernummer || ''}
+                placeholder="Zählernummer"
+                readOnly={readOnly}
+                className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none"
+              />
+            </div>
+          )}
+          {data?.meterAction === 'exchange' && (
+            <div className="mt-4 space-y-4">
+              <div>
+                <div className="text-sm font-medium text-gray-900 mb-2">Aktuelle Zählernummer</div>
+                <input
+                  type="text"
+                  defaultValue={data.zaehlernummer || ''}
+                  placeholder="Aktuelle Zählernummer"
+                  readOnly={readOnly}
+                  className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none"
+                />
+              </div>
+              <div>
+                <div className="text-sm font-medium text-gray-900 mb-2">Neue Zählernummer</div>
+                <input
+                  type="text"
+                  defaultValue={data.neueZaehlernummer || ''}
+                  placeholder="Neue Zählernummer"
+                  readOnly={readOnly}
+                  className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none"
+                />
+              </div>
+            </div>
+          )}
+          
         </div>
 
         {/* 3. Sütun - Eigentümer */}
         <div className="md:col-span-3">
           <div className="text-sm font-medium text-gray-900 mb-2">Eigentümer (falls abweichend)</div>
           <div className="space-y-4">
-            <input type="text" defaultValue={data.ownerDifferent ? (data.ownerInfo?.firstName || '') : ''} placeholder="Vorname" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="text" defaultValue={data.ownerDifferent ? `${(data.ownerInfo?.firstName || '')}${data.ownerInfo?.lastName ? ` ${data.ownerInfo.lastName}` : ''}` : ''} placeholder="Vor- und Nachname" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
             <input type="text" defaultValue={data.ownerDifferent ? (data.ownerInfo?.address || '') : ''} placeholder="Adresse" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
-            <input type="text" placeholder="Strassen Nr." readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="tel" defaultValue={data.ownerDifferent ? (data.ownerInfo?.phone || '') : ''} placeholder="Telefon" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="email" defaultValue={data.ownerDifferent ? (data.ownerInfo?.email || '') : ''} placeholder="E-Mail" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
             <input type="text" defaultValue={data.ownerDifferent ? (data.ownerInfo?.postalCode || '') : ''} placeholder="PLZ" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
             <input type="text" defaultValue={data.ownerDifferent ? (data.ownerInfo?.city || '') : ''} placeholder="Ort" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
           </div>
@@ -128,9 +164,10 @@ export function InstallationInfoPrefill() {
         <div className="md:col-span-3">
           <div className="text-sm font-medium text-gray-900 mb-2">Verwaltung (falls abweichend)</div>
           <div className="space-y-4">
-            <input type="text" defaultValue={data.managementDifferent ? (data.managementInfo?.firstName || '') : ''} placeholder="Vorname" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="text" defaultValue={data.managementDifferent ? `${(data.managementInfo?.firstName || '')}${data.managementInfo?.lastName ? ` ${data.managementInfo.lastName}` : ''}` : ''} placeholder="Vor- und Nachname" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
             <input type="text" defaultValue={data.managementDifferent ? (data.managementInfo?.address || '') : ''} placeholder="Adresse" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
-            <input type="text" placeholder="Strassen Nr." readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="tel" defaultValue={data.managementDifferent ? (data.managementInfo?.phone || '') : ''} placeholder="Telefon" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="email" defaultValue={data.managementDifferent ? (data.managementInfo?.email || '') : ''} placeholder="E-Mail" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
             <input type="text" defaultValue={data.managementDifferent ? (data.managementInfo?.postalCode || '') : ''} placeholder="PLZ" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
             <input type="text" defaultValue={data.managementDifferent ? (data.managementInfo?.city || '') : ''} placeholder="Ort" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
           </div>
