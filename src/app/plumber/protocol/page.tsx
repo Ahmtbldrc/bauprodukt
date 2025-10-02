@@ -381,10 +381,10 @@ export default function ProtocolPage() {
 
           {/* Flags */}
           <div className="space-y-3">
-            <label className="flex items-center gap-3 cursor-pointer select-none">
+            <div className="flex items-center gap-3">
               <input
                 type="checkbox"
-                className="h-5 w-5"
+                className="h-5 w-5 cursor-pointer"
                 checked={activeForm.ownerDifferent}
                 onChange={(e) => {
                   const checked = e.target.checked
@@ -417,11 +417,11 @@ export default function ProtocolPage() {
                   Gespeichert
                 </button>
               )}
-            </label>
-            <label className="flex items-center gap-3 cursor-pointer select-none">
+            </div>
+            <div className="flex items-center gap-3">
               <input
                 type="checkbox"
-                className="h-5 w-5"
+                className="h-5 w-5 cursor-pointer"
                 checked={activeForm.managementDifferent}
                 onChange={(e) => {
                   const checked = e.target.checked
@@ -454,7 +454,7 @@ export default function ProtocolPage() {
                   Gespeichert
                 </button>
               )}
-            </label>
+            </div>
           </div>
 
           {/* Owner Different Dialog */}

@@ -558,7 +558,7 @@ export function Header() {
 
               <Link href="/calculator" className="flex items-center font-medium whitespace-nowrap" style={{ color: '#2C2C2C' }}>
                 <Calculator className="h-4 w-4 mr-1" />
-                Rechner
+                Service Public
               </Link>
             </div>
             

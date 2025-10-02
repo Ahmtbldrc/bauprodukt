@@ -69,16 +69,25 @@ export function InstallationInfoPrefill() {
   const readOnly = showPrefill
   const isFromProtocol = from === 'protocol'
 
+  // Eigentümer ve Verwaltung kolonlarının gösterilip gösterilmeyeceğini kontrol et
+  const showOwner = data?.ownerDifferent === true
+  const showManagement = data?.managementDifferent === true
+  
+  // Toplam kolon sayısını hesapla (her zaman gösterilen 2 kolon + opsiyonel 2 kolon)
+  const totalColumns = 2 + (showOwner ? 1 : 0) + (showManagement ? 1 : 0)
+  // Tailwind CSS için sabit class isimleri
+  const columnClass = totalColumns === 2 ? 'md:col-span-6' : totalColumns === 3 ? 'md:col-span-4' : 'md:col-span-3'
+
   return (
     <div>
       {/* Section 1 heading removed; now shown on page header */}
 
       {showPrefill && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8">
-          {/* 4 sütunlu düzen */}
+          {/* Dinamik sütun düzeni */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         {/* 1. Sütun - Einbauort des Messgerätes */}
-        <div className="md:col-span-3">
+        <div className={columnClass}>
           <div className="text-sm font-medium text-gray-900 mb-2">Einbauort des Messgerätes</div>
           <div className="space-y-4">
             <input type="text" defaultValue={`${(data.firstName || '')}${data.lastName ? ` ${data.lastName}` : ''}`} placeholder="Vor- und Nachname" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
@@ -91,7 +100,7 @@ export function InstallationInfoPrefill() {
         </div>
 
         {/* 2. Sütun - Gebäude / Parz. Nr. + Objekt-Bezeichnung */}
-        <div className="md:col-span-3">
+        <div className={columnClass}>
           <div className="flex items-end gap-4 mb-2">
             <div className="w-32">
               <div className="text-sm font-medium text-gray-900 mb-2">Gebäude</div>
@@ -142,31 +151,35 @@ export function InstallationInfoPrefill() {
           
         </div>
 
-        {/* 3. Sütun - Eigentümer */}
-        <div className="md:col-span-3">
-          <div className="text-sm font-medium text-gray-900 mb-2">Eigentümer (falls abweichend)</div>
-          <div className="space-y-4">
-            <input type="text" defaultValue={data.ownerDifferent ? `${(data.ownerInfo?.firstName || '')}${data.ownerInfo?.lastName ? ` ${data.ownerInfo.lastName}` : ''}` : ''} placeholder="Vor- und Nachname" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
-            <input type="text" defaultValue={data.ownerDifferent ? (data.ownerInfo?.address || '') : ''} placeholder="Adresse" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
-            <input type="tel" defaultValue={data.ownerDifferent ? (data.ownerInfo?.phone || '') : ''} placeholder="Telefon" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
-            <input type="email" defaultValue={data.ownerDifferent ? (data.ownerInfo?.email || '') : ''} placeholder="E-Mail" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
-            <input type="text" defaultValue={data.ownerDifferent ? (data.ownerInfo?.postalCode || '') : ''} placeholder="PLZ" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
-            <input type="text" defaultValue={data.ownerDifferent ? (data.ownerInfo?.city || '') : ''} placeholder="Ort" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+        {/* 3. Sütun - Eigentümer (sadece girildiğinde göster) */}
+        {showOwner && (
+          <div className={columnClass}>
+            <div className="text-sm font-medium text-gray-900 mb-2">Eigentümer (falls abweichend)</div>
+            <div className="space-y-4">
+              <input type="text" defaultValue={`${(data.ownerInfo?.firstName || '')}${data.ownerInfo?.lastName ? ` ${data.ownerInfo.lastName}` : ''}`} placeholder="Vor- und Nachname" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+              <input type="text" defaultValue={data.ownerInfo?.address || ''} placeholder="Adresse" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+              <input type="tel" defaultValue={data.ownerInfo?.phone || ''} placeholder="Telefon" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+              <input type="email" defaultValue={data.ownerInfo?.email || ''} placeholder="E-Mail" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+              <input type="text" defaultValue={data.ownerInfo?.postalCode || ''} placeholder="PLZ" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+              <input type="text" defaultValue={data.ownerInfo?.city || ''} placeholder="Ort" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* 4. Sütun - Verwaltung */}
-        <div className="md:col-span-3">
-          <div className="text-sm font-medium text-gray-900 mb-2">Verwaltung (falls abweichend)</div>
-          <div className="space-y-4">
-            <input type="text" defaultValue={data.managementDifferent ? `${(data.managementInfo?.firstName || '')}${data.managementInfo?.lastName ? ` ${data.managementInfo.lastName}` : ''}` : ''} placeholder="Vor- und Nachname" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
-            <input type="text" defaultValue={data.managementDifferent ? (data.managementInfo?.address || '') : ''} placeholder="Adresse" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
-            <input type="tel" defaultValue={data.managementDifferent ? (data.managementInfo?.phone || '') : ''} placeholder="Telefon" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
-            <input type="email" defaultValue={data.managementDifferent ? (data.managementInfo?.email || '') : ''} placeholder="E-Mail" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
-            <input type="text" defaultValue={data.managementDifferent ? (data.managementInfo?.postalCode || '') : ''} placeholder="PLZ" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
-            <input type="text" defaultValue={data.managementDifferent ? (data.managementInfo?.city || '') : ''} placeholder="Ort" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+        {/* 4. Sütun - Verwaltung (sadece girildiğinde göster) */}
+        {showManagement && (
+          <div className={columnClass}>
+            <div className="text-sm font-medium text-gray-900 mb-2">Verwaltung (falls abweichend)</div>
+            <div className="space-y-4">
+              <input type="text" defaultValue={`${(data.managementInfo?.firstName || '')}${data.managementInfo?.lastName ? ` ${data.managementInfo.lastName}` : ''}`} placeholder="Vor- und Nachname" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+              <input type="text" defaultValue={data.managementInfo?.address || ''} placeholder="Adresse" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+              <input type="tel" defaultValue={data.managementInfo?.phone || ''} placeholder="Telefon" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+              <input type="email" defaultValue={data.managementInfo?.email || ''} placeholder="E-Mail" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+              <input type="text" defaultValue={data.managementInfo?.postalCode || ''} placeholder="PLZ" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+              <input type="text" defaultValue={data.managementInfo?.city || ''} placeholder="Ort" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            </div>
           </div>
-        </div>
+        )}
           </div>
         </div>
       )}
