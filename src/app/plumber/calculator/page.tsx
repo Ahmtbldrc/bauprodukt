@@ -10,7 +10,6 @@ export default function CalculatorAPage() {
         <p className="text-gray-600">Bestimmung Belastungswerte, Spitzendurchfluss und Wasserzähler</p>
       </div>
       <InstallationInfoPrefill />
-      <p className="text-gray-600">Bu sayfa daha sonra doldurulacak placeholder içeriktir.</p>
     </div>
   )
 }
