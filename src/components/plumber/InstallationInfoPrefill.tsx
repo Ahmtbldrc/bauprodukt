@@ -216,6 +216,13 @@ function FixturesSection() {
     setIsResultDialogOpen(true)
   }
 
+  function resetCalculatorUI() {
+    setCounts({})
+    setMethod('m1')
+    setIncludeHydrantExtra(false)
+    setResult(null)
+  }
+
   function saveCurrentResult(name: string) {
     if (typeof window === 'undefined' || !result) return
     try {
@@ -417,6 +424,7 @@ function FixturesSection() {
                     saveCurrentResult(saveName)
                     setIsResultDialogOpen(false)
                     setSaveName('')
+                    resetCalculatorUI()
                   }}
                   disabled={!saveName.trim()}
                 >
@@ -431,7 +439,7 @@ function FixturesSection() {
                     saveCurrentResult(saveName)
                     setIsResultDialogOpen(false)
                     setSaveName('')
-                    router.push('/plumber/protocol')
+                    router.push('/plumber/protocol/convert')
                   }}
                   disabled={!saveName.trim()}
                 >
