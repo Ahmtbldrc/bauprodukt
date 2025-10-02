@@ -67,6 +67,7 @@ export function InstallationInfoPrefill() {
 
   const showPrefill = from === 'protocol' && !!data
   const readOnly = showPrefill
+  const isFromProtocol = from === 'protocol'
 
   return (
     <div>
@@ -179,7 +180,7 @@ export function InstallationInfoPrefill() {
         </div>
 
         {/* Fixtures Section - 4 columns with collapsible content */}
-        <FixturesSection />
+        <FixturesSection isFromProtocol={isFromProtocol} />
         
       </div>
     </div>
@@ -188,7 +189,7 @@ export function InstallationInfoPrefill() {
 
 export default InstallationInfoPrefill
 
-function FixturesSection() {
+function FixturesSection({ isFromProtocol }: { isFromProtocol: boolean }) {
   const router = useRouter()
   const [open, setOpen] = React.useState<{ [k: string]: boolean }>({
     s1: true,
@@ -213,7 +214,9 @@ function FixturesSection() {
       includeHydrantExtra,
     })
     setResult(calculation)
-    setIsResultDialogOpen(true)
+    if (isFromProtocol) {
+      setIsResultDialogOpen(true)
+    }
   }
 
   function resetCalculatorUI() {
@@ -356,7 +359,7 @@ function FixturesSection() {
         </div>
       </div>
 
-      {result && isResultDialogOpen && (
+      {result && isResultDialogOpen && isFromProtocol && (
         <div className="fixed inset-0 z-50">
           <div
             className="absolute inset-0 bg-black/40"
@@ -448,6 +451,31 @@ function FixturesSection() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Inline results when coming directly to calculator (no dialog, no save UX) */}
+      {result && !isFromProtocol && (
+        <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-4 md:p-6">
+          <h4 className="text-sm font-semibold text-gray-900 mb-4">Berechnungsergebnis</h4>
+          <dl className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-gray-500">Total LU</dt>
+              <dd className="text-lg font-semibold text-gray-900">{formatNumber(result.totalLU * 0.1, 1)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-gray-500">Spitzendurchfluss (l/s)</dt>
+              <dd className="text-lg font-semibold text-gray-900">{formatNumber(result.totalLps, 3)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-gray-500">Volumenstrom (m³/h)</dt>
+              <dd className="text-lg font-semibold text-gray-900">{formatNumber(result.totalM3PerHour, 3)}</dd>
+            </div>
+            <div>
+              <dt className="text-xs uppercase tracking-wide text-gray-500">Empfohlener DN</dt>
+              <dd className="text-lg font-semibold text-gray-900">{result.dn ?? '–'}</dd>
+            </div>
+          </dl>
         </div>
       )}
     </div>
