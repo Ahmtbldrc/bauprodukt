@@ -442,7 +442,7 @@ function FixturesSection({ isFromProtocol }: { isFromProtocol: boolean }) {
                     saveCurrentResult(saveName)
                     setIsResultDialogOpen(false)
                     setSaveName('')
-                    router.push('/plumber/protocol/convert')
+                    router.push('/plumber/protocol/create')
                   }}
                   disabled={!saveName.trim()}
                 >
