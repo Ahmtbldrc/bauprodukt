@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { HelpCircle } from 'lucide-react'
 import {
   AUSSEN_ITEMS,
@@ -44,6 +44,7 @@ type ProtocolStoredData = {
 }
 
 const STORAGE_KEY = 'bauprodukt_protocol_form_v1'
+const CALC_RESULTS_STORAGE_KEY = 'bauprodukt_calc_results_v1'
 
 export function InstallationInfoPrefill() {
   const searchParams = useSearchParams()
@@ -188,6 +189,7 @@ export function InstallationInfoPrefill() {
 export default InstallationInfoPrefill
 
 function FixturesSection() {
+  const router = useRouter()
   const [open, setOpen] = React.useState<{ [k: string]: boolean }>({
     s1: true,
     s2: true,
@@ -197,6 +199,8 @@ function FixturesSection() {
   const [method, setMethod] = React.useState<'m1' | 'm2'>('m1')
   const [result, setResult] = React.useState<PlumberCalculationResult | null>(null)
   const [includeHydrantExtra, setIncludeHydrantExtra] = React.useState(false)
+  const [isResultDialogOpen, setIsResultDialogOpen] = React.useState(false)
+  const [saveName, setSaveName] = React.useState('')
 
   const inc = (id: string) => setCounts(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }))
   const dec = (id: string) =>
@@ -209,6 +213,26 @@ function FixturesSection() {
       includeHydrantExtra,
     })
     setResult(calculation)
+    setIsResultDialogOpen(true)
+  }
+
+  function saveCurrentResult(name: string) {
+    if (typeof window === 'undefined' || !result) return
+    try {
+      const payload = {
+        id: Date.now(),
+        name: name.trim(),
+        createdAt: new Date().toISOString(),
+        inputs: { counts, method, includeHydrantExtra },
+        result,
+      }
+      const raw = localStorage.getItem(CALC_RESULTS_STORAGE_KEY)
+      const list = raw ? (JSON.parse(raw) as any[]) : []
+      list.push(payload)
+      localStorage.setItem(CALC_RESULTS_STORAGE_KEY, JSON.stringify(list))
+    } catch {
+      // ignore
+    }
   }
 
   const formatNumber = React.useCallback(
@@ -325,27 +349,97 @@ function FixturesSection() {
         </div>
       </div>
 
-      {result && (
-        <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-4 md:p-6">
-          <h4 className="text-sm font-semibold text-gray-900 mb-4">Berechnungsergebnis</h4>
-          <dl className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-gray-500">Total LU</dt>
-              <dd className="text-lg font-semibold text-gray-900">{formatNumber(result.totalLU * 0.1, 1)}</dd>
+      {result && isResultDialogOpen && (
+        <div className="fixed inset-0 z-50">
+          <div
+            className="absolute inset-0 bg-black/40"
+            onClick={() => setIsResultDialogOpen(false)}
+          />
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <div className="w-full max-w-3xl bg-white rounded-xl shadow-lg border border-gray-200">
+              <div className="px-5 py-4 border-b border-gray-200 flex items-center justify-between">
+                <div className="text-sm font-medium text-gray-900">Berechnungsergebnis speichern</div>
+                <button
+                  type="button"
+                  className="text-gray-500 hover:text-gray-700"
+                  onClick={() => setIsResultDialogOpen(false)}
+                  aria-label="Schliessen"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="p-5">
+                <dl className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-gray-500">Total LU</dt>
+                    <dd className="text-lg font-semibold text-gray-900">{formatNumber(result.totalLU * 0.1, 1)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-gray-500">Spitzendurchfluss (l/s)</dt>
+                    <dd className="text-lg font-semibold text-gray-900">{formatNumber(result.totalLps, 3)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-gray-500">Volumenstrom (m³/h)</dt>
+                    <dd className="text-lg font-semibold text-gray-900">{formatNumber(result.totalM3PerHour, 3)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs uppercase tracking-wide text-gray-500">Empfohlener DN</dt>
+                    <dd className="text-lg font-semibold text-gray-900">{result.dn ?? '–'}</dd>
+                  </div>
+                </dl>
+
+                <div className="mt-6">
+                  <div className="flex items-center gap-1 mb-2">
+                    <label className="text-sm text-gray-700">Name</label>
+                    <span className="inline-flex items-center relative group">
+                      <HelpCircle className="h-4 w-4 text-gray-600 align-middle" />
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 rounded-md bg-black/80 text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 pointer-events-none max-w-[28rem] w-max whitespace-normal text-left">
+                        In diesem Bereich ist zum Speichern des Ergebnisses ein Name erforderlich. Danach können Sie das gespeicherte Ergebnis im Bereich „History“ anhand des Namens ansehen; falls bereits ein Protokoll vorhanden ist, können Sie es herunterladen, andernfalls in ein Protokoll umwandeln.
+                      </span>
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    value={saveName}
+                    onChange={(e) => setSaveName(e.target.value)}
+                    placeholder="z. B. Wohnung 3A, Projekt X"
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                    style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                  />
+                </div>
+              </div>
+              <div className="px-5 py-4 border-t border-gray-200 flex justify-end gap-3">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                  onClick={() => {
+                    if (!saveName.trim()) return
+                    saveCurrentResult(saveName)
+                    setIsResultDialogOpen(false)
+                    setSaveName('')
+                  }}
+                  disabled={!saveName.trim()}
+                >
+                  Speichern
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-lg text-white font-medium shadow-sm hover:opacity-95 transition"
+                  style={{ backgroundColor: '#F39236' }}
+                  onClick={() => {
+                    if (!saveName.trim()) return
+                    saveCurrentResult(saveName)
+                    setIsResultDialogOpen(false)
+                    setSaveName('')
+                    router.push('/plumber/protocol')
+                  }}
+                  disabled={!saveName.trim()}
+                >
+                  Speichern und als Protokoll öffnen
+                </button>
+              </div>
             </div>
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-gray-500">Spitzendurchfluss (l/s)</dt>
-              <dd className="text-lg font-semibold text-gray-900">{formatNumber(result.totalLps, 3)}</dd>
-            </div>
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-gray-500">Volumenstrom (m³/h)</dt>
-              <dd className="text-lg font-semibold text-gray-900">{formatNumber(result.totalM3PerHour, 3)}</dd>
-            </div>
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-gray-500">Empfohlener DN</dt>
-              <dd className="text-lg font-semibold text-gray-900">{result.dn ?? '–'}</dd>
-            </div>
-          </dl>
+          </div>
         </div>
       )}
     </div>
