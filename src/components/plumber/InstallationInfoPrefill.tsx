@@ -2,12 +2,12 @@
 
 import React from 'react'
 import { useSearchParams } from 'next/navigation'
+import { HelpCircle } from 'lucide-react'
 import {
   AUSSEN_ITEMS,
   FixtureItem,
   GEWERBE_ITEMS,
   SANITAER_ITEMS,
-  SICHERHEIT_ITEMS,
 } from '@/lib/plumber-fixtures'
 import {
   PlumberCalculationResult,
@@ -50,7 +50,6 @@ export function InstallationInfoPrefill() {
   const from = searchParams?.get('from')
 
   const [data, setData] = React.useState<ProtocolStoredData | null>(null)
-  const [remark, setRemark] = React.useState('')
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return
@@ -180,22 +179,7 @@ export function InstallationInfoPrefill() {
 
         {/* Fixtures Section - 4 columns with collapsible content */}
         <FixturesSection />
-
         
-
-        {/* Remark textarea */}
-        <div className="mt-6">
-          <label htmlFor="remark" className="block text-sm font-medium text-gray-900 mb-2">Bemerkung *</label>
-          <textarea
-            id="remark"
-            value={remark}
-            onChange={(e) => setRemark(e.target.value)}
-            placeholder="Eine Bemerkung verfassen..."
-            rows={5}
-            className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 focus:outline-none focus:ring-2"
-            style={{ ['--tw-ring-color' as any]: '#F3923620' }}
-          />
-        </div>
       </div>
     </div>
   )
@@ -208,15 +192,11 @@ function FixturesSection() {
     s1: true,
     s2: true,
     s3: true,
-    s4: true,
   })
   const [counts, setCounts] = React.useState<Record<string, number>>({})
   const [method, setMethod] = React.useState<'m1' | 'm2'>('m1')
   const [result, setResult] = React.useState<PlumberCalculationResult | null>(null)
-
-  const HYDRANT_ID = 'hydrant'
-
-  const hasHydrant = (counts[HYDRANT_ID] || 0) > 0
+  const [includeHydrantExtra, setIncludeHydrantExtra] = React.useState(false)
 
   const inc = (id: string) => setCounts(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }))
   const dec = (id: string) =>
@@ -226,6 +206,7 @@ function FixturesSection() {
     const calculation = calculatePlumberValues({
       counts,
       method,
+      includeHydrantExtra,
     })
     setResult(calculation)
   }
@@ -281,19 +262,17 @@ function FixturesSection() {
 
   return (
     <div>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Column title="Sanitär - Bad / WC" panelKey="s1" items={SANITAER_ITEMS} />
         <Column title="Aussen / Sonstige Entnahmen" panelKey="s2" items={AUSSEN_ITEMS} />
         <Column title="Gewerblich / Spezial" panelKey="s3" items={GEWERBE_ITEMS} />
-        <Column title="Sicherheit" panelKey="s4" items={SICHERHEIT_ITEMS} />
       </div>
 
       {/* QD method segmented checkboxes with heading and footnote */}
       <div className="mt-8">
         <div className="text-gray-900 text-sm font-normal mb-1">Berechnung Spitzendurchfluss QD in l/s *</div>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center">
-          {/* Left: two options (smaller size) */}
-          <div className="md:col-span-8">
+          <div className="md:col-span-12 md:flex md:items-center md:gap-4">
             <div className="rounded-lg border border-gray-300 p-1 inline-flex items-center gap-1">
               <label className="flex items-center gap-1 px-2 py-1 rounded-md cursor-pointer select-none">
                 <input type="checkbox" className="sr-only peer" checked={method === 'm1'} onChange={() => setMethod('m1')} />
@@ -306,19 +285,23 @@ function FixturesSection() {
                 <span className="text-sm text-gray-900">Methode 2 (0.5 l/s bis 15 l/s)</span>
               </label>
             </div>
-          </div>
 
-          {/* Right: Wasserlöschposten checkbox */}
-          <div className="md:col-span-4 flex justify-end">
-            <label className="inline-flex items-center gap-2">
+            <label className="inline-flex items-center gap-2 mt-2 md:mt-0">
               <input
                 type="checkbox"
                 className="h-4 w-4 accent-[#F39236] disabled:opacity-40"
-                checked={hasHydrant}
-                readOnly
-                disabled
+                checked={includeHydrantExtra}
+                onChange={e => setIncludeHydrantExtra(e.target.checked)}
               />
-              <span className="text-sm text-gray-800">Wasserlöschposten (Zusatz)</span>
+              <span className="inline-flex items-center gap-1">
+                <span className="text-sm text-gray-800">Wasserlöschposten (Zusatz)</span>
+                <span className="inline-flex items-center relative group">
+                  <HelpCircle className="h-4 w-4 text-gray-600 align-middle" />
+                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 rounded-md bg-black/80 text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 pointer-events-none max-w-[28rem] w-max whitespace-normal text-left">
+                    W3 Anschlussleitung zu mehreren WLP für den Einsatz eines einzelnen auslegen; Ruhedruck ≥ 300 kPa, Zuleitung mind. DN32, Anschluss nach dem Wasserzähler.
+                  </span>
+                </span>
+              </span>
             </label>
           </div>
         </div>
@@ -329,12 +312,12 @@ function FixturesSection() {
         <button
           type="button"
           onClick={handleCalculate}
-          className="inline-flex items-center justify-center rounded-xl bg-[#F39236] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#db7f2d] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F39236]"
+          className="inline-flex items-center justify-center rounded-xl bg-[#F39236] px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-[#db7f2d] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F39236] md:order-2"
         >
           Berechnung durchführen
         </button>
 
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-600 md:order-1">
           <span className="font-semibold text-gray-900">Gesamte Zähler:</span>
           <span className="ml-2">
             {Object.values(counts).reduce((sum, val) => sum + (val || 0), 0)} Stück
