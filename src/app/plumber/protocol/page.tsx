@@ -20,6 +20,9 @@ type ExchangeFormData = CommonFormFields & {
 }
 
 type CommonFormFields = PersonAddress & {
+  personType: 'person' | 'company'
+  companyName: string
+  contactPerson: string
   parcelNumber: string
   building: string
   ownerDifferent: boolean
@@ -56,6 +59,9 @@ export default function ProtocolPage() {
     meterAction: 'new',
     newForm: {
       zaehlernummer: '',
+      personType: 'person',
+      companyName: '',
+      contactPerson: '',
       firstName: '',
       lastName: '',
       address: '',
@@ -73,6 +79,9 @@ export default function ProtocolPage() {
     exchangeForm: {
       zaehlernummer: '',
       neueZaehlernummer: '',
+      personType: 'person',
+      companyName: '',
+      contactPerson: '',
       firstName: '',
       lastName: '',
       address: '',
@@ -168,6 +177,9 @@ export default function ProtocolPage() {
     if (typeof window !== 'undefined') {
       try {
         const toStore = {
+          personType: active.personType,
+          companyName: active.companyName,
+          contactPerson: active.contactPerson,
           firstName: active.firstName,
           lastName: active.lastName,
           address: active.address,
@@ -284,41 +296,86 @@ export default function ProtocolPage() {
               onClick={() => setIsLocationOpen(v => !v)}
             >
               <span className="text-sm font-medium text-gray-900">Einbauort des Messgerätes</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                className={`h-4 w-4 transition-transform ${isLocationOpen ? 'rotate-180' : ''}`}
-              >
-                <path d="M6 9l6 6 6-6" />
-              </svg>
+              <div className="flex items-center gap-3">
+                <div className="flex bg-gray-100 rounded-full p-0.5 border border-gray-200">
+                  <button
+                    type="button"
+                    className={`px-3 py-1.5 text-xs rounded-full transition ${activeForm.personType === 'person' ? 'bg-[#F39236] text-white' : 'text-gray-700'}`}
+                    onClick={(e) => { e.stopPropagation(); updateActiveFormField('personType', 'person') }}
+                  >
+                    Person
+                  </button>
+                  <button
+                    type="button"
+                    className={`px-3 py-1.5 text-xs rounded-full transition ${activeForm.personType === 'company' ? 'bg-[#F39236] text-white' : 'text-gray-700'}`}
+                    onClick={(e) => { e.stopPropagation(); updateActiveFormField('personType', 'company') }}
+                  >
+                    Firma
+                  </button>
+                </div>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className={`h-4 w-4 transition-transform ${isLocationOpen ? 'rotate-180' : ''}`}
+                >
+                  <path d="M6 9l6 6 6-6" />
+                </svg>
+              </div>
             </button>
             {isLocationOpen && (
               <div className="px-4 pb-4">
                 {/* Person and address fields */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <input
-                      type="text"
-                      value={activeForm.firstName}
-                      onChange={(e) => updateActiveFormField('firstName', e.target.value)}
-                      placeholder="Vorname"
-                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
-                      style={{ ['--tw-ring-color' as any]: '#F3923620' }}
-                    />
-                  </div>
-                  <div>
-                    <input
-                      type="text"
-                      value={activeForm.lastName}
-                      onChange={(e) => updateActiveFormField('lastName', e.target.value)}
-                      placeholder="Nachname"
-                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
-                      style={{ ['--tw-ring-color' as any]: '#F3923620' }}
-                    />
-                  </div>
+                  {activeForm.personType === 'person' ? (
+                    <>
+                      <div>
+                        <input
+                          type="text"
+                          value={activeForm.firstName}
+                          onChange={(e) => updateActiveFormField('firstName', e.target.value)}
+                          placeholder="Vorname"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          value={activeForm.lastName}
+                          onChange={(e) => updateActiveFormField('lastName', e.target.value)}
+                          placeholder="Nachname"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <input
+                          type="text"
+                          value={activeForm.companyName}
+                          onChange={(e) => updateActiveFormField('companyName', e.target.value)}
+                          placeholder="Firmenname"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="text"
+                          value={activeForm.contactPerson}
+                          onChange={(e) => updateActiveFormField('contactPerson', e.target.value)}
+                          placeholder="Ansprechsperson"
+                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                        />
+                      </div>
+                    </>
+                  )}
                   <div className="md:col-span-2">
                     <input
                       type="text"
