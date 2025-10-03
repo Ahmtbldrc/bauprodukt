@@ -290,8 +290,9 @@ export default function ProtocolPage() {
 
           {/* Einbauort des Messgerätes (collapsible) */}
           <div className="rounded-xl border border-gray-200">
-            <button
-              type="button"
+            <div
+              role="button"
+              aria-expanded={isLocationOpen}
               className="w-full flex items-center justify-between px-4 py-3"
               onClick={() => setIsLocationOpen(v => !v)}
             >
@@ -324,7 +325,7 @@ export default function ProtocolPage() {
                   <path d="M6 9l6 6 6-6" />
                 </svg>
               </div>
-            </button>
+            </div>
             {isLocationOpen && (
               <div className="px-4 pb-4">
                 {/* Person and address fields */}
