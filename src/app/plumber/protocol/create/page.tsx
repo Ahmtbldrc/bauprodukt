@@ -1,12 +1,35 @@
 "use client"
 
 import React from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { supabasePlumberClient } from '@/lib/supabase'
+import type { MeterData } from '@/types/database'
 
 export default function ProtocolCreatePage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [agree, setAgree] = React.useState(false)
   const [prefill, setPrefill] = React.useState<any | null>(null)
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const formRef = React.useRef<HTMLFormElement>(null)
+  
+  // Get plumber_calculation_id from URL params or localStorage
+  const plumberCalculationId = React.useMemo(() => {
+    const urlParam = searchParams.get('calculation_id')
+    if (urlParam) return urlParam
+    
+    // Fallback to localStorage (last calculation)
+    try {
+      const raw = localStorage.getItem('bauprodukt_calc_results_v1')
+      if (!raw) return undefined
+      const list = JSON.parse(raw) as any[]
+      if (!Array.isArray(list) || list.length === 0) return undefined
+      const last = list[list.length - 1]
+      return last?.id
+    } catch {
+      return undefined
+    }
+  }, [searchParams])
 
   const years = React.useMemo(() => {
     const current = new Date().getFullYear()
@@ -57,16 +80,110 @@ export default function ProtocolCreatePage() {
     }
   }, [])
 
-  function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent) {
     e.preventDefault()
-    // TODO: integrate with backend / generation flow
-    alert('Protokoll wurde vorbereitet (Demo).')
+    if (!formRef.current || isSubmitting) return
+
+    setIsSubmitting(true)
+    
+    try {
+      const formData = new FormData(formRef.current)
+      
+      // Get auth token
+      const { data: { session }, error: sessionError } = await supabasePlumberClient.auth.getSession()
+      if (sessionError || !session?.access_token) {
+        alert('Sie müssen angemeldet sein, um ein Protokoll zu erstellen.')
+        return
+      }
+
+      // Build old meter data (only if exchange)
+      const isExchange = prefill?.meterAction === 'exchange'
+      const oldMeterData: MeterData | null = isExchange ? {
+        manufacturer: formData.get('old_manufacturer') as string || undefined,
+        meter_number: formData.get('old_meter_number') as string || undefined,
+        installation_length: formData.get('old_installation_length') as any || undefined,
+        meter_reading: formData.get('old_meter_reading') ? parseFloat(formData.get('old_meter_reading') as string) : undefined,
+        dimension: formData.get('old_dimension') as any || undefined,
+        flow_rate: formData.get('old_flow_rate') as any || undefined,
+        inlet_material: formData.get('old_inlet_material') as any || undefined,
+        inlet_size: formData.get('old_inlet_size') as any || undefined,
+        outlet_material: formData.get('old_outlet_material') as any || undefined,
+        outlet_size: formData.get('old_outlet_size') as any || undefined,
+        installation_type: formData.get('old_installation_type') as any || undefined,
+        installation_location: formData.get('old_installation_location') as any || undefined,
+        year_vintage: formData.get('old_year_vintage') as string || undefined,
+        removal_date: formData.get('old_removal_date') as string || undefined,
+      } : null
+
+      // Build new meter data
+      const newMeterData: MeterData = {
+        manufacturer: formData.get('new_manufacturer') as string || 'TOPAS ESKR',
+        meter_number: formData.get('new_meter_number') as string || undefined,
+        installation_length: formData.get('new_installation_length') as any || undefined,
+        meter_reading: formData.get('new_meter_reading') ? parseFloat(formData.get('new_meter_reading') as string) : undefined,
+        dimension: formData.get('new_dimension') as any || undefined,
+        flow_rate: formData.get('new_flow_rate') as any || undefined,
+        inlet_material: formData.get('new_inlet_material') as any || undefined,
+        inlet_size: formData.get('new_inlet_size') as any || undefined,
+        outlet_material: formData.get('new_outlet_material') as any || undefined,
+        outlet_size: formData.get('new_outlet_size') as any || undefined,
+        installation_type: formData.get('new_installation_type') as any || undefined,
+        installation_location: formData.get('new_installation_location') as any || undefined,
+        year_vintage: formData.get('new_year_vintage') as string || new Date().getFullYear().toString(),
+        installation_date: formData.get('new_installation_date') as string || new Date().toISOString().split('T')[0],
+      }
+
+      // Build request body
+      const requestBody = {
+        plumber_calculation_id: plumberCalculationId,
+        person_type: prefill?.personType === 'company' ? 'company' : 'person',
+        company_name: formData.get('company_name') as string || undefined,
+        contact_person: formData.get('contact_person') as string || undefined,
+        person_name: formData.get('person_name') as string || undefined,
+        street: formData.get('street') as string || undefined,
+        additional_info: formData.get('additional_info') as string || undefined,
+        postal_code: formData.get('postal_code') as string || undefined,
+        city: formData.get('city') as string || undefined,
+        phone: formData.get('phone') as string || undefined,
+        email: formData.get('email') as string || undefined,
+        old_meter_data: oldMeterData,
+        new_meter_data: newMeterData,
+        notes: formData.get('notes') as string || undefined,
+      }
+
+      // Send to API
+      const response = await fetch('/api/plumber-protocols', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Fehler beim Erstellen des Protokolls')
+      }
+
+      await response.json()
+      
+      // Success - redirect or show success message
+      alert('Protokoll wurde erfolgreich erstellt!')
+      router.push('/plumber/calculator')
+      
+    } catch (error) {
+      console.error('Protocol submission error:', error)
+      alert(error instanceof Error ? error.message : 'Ein Fehler ist aufgetreten')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
     <div className="w-full mr-auto">
       <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-6">Austauschprotokoll für einen Wasserzähler</h1>
-      <form onSubmit={onSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 space-y-6">
+      <form ref={formRef} onSubmit={onSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 space-y-6">
         {/* Einbauort des Messgerätes */}
         <div>
           <div className="flex items-center gap-2 mb-3">
@@ -79,7 +196,8 @@ export default function ProtocolCreatePage() {
                   <label className="sr-only">Firmenname *</label>
                   <input
                     type="text"
-                    placeholder="Firmenname *"
+                    name="company_name"
+                placeholder="Firmenname *"
                     defaultValue={prefill?.companyName ?? ''}
                     className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                     style={{ ['--tw-ring-color' as any]: '#F3923620' }}
@@ -89,7 +207,8 @@ export default function ProtocolCreatePage() {
                   <label className="sr-only">Ansprechsperson *</label>
                   <input
                     type="text"
-                    placeholder="Ansprechsperson *"
+                    name="contact_person"
+                placeholder="Ansprechsperson *"
                     defaultValue={prefill?.contactPerson ?? ''}
                     className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                     style={{ ['--tw-ring-color' as any]: '#F3923620' }}
@@ -101,6 +220,7 @@ export default function ProtocolCreatePage() {
                 <label className="sr-only">Name *</label>
                 <input
                   type="text"
+                  name="person_name"
                   placeholder="Name *"
                   defaultValue={`${prefill?.firstName ?? ''}${prefill?.lastName ? ` ${prefill?.lastName}` : ''}`}
                   className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
@@ -112,6 +232,7 @@ export default function ProtocolCreatePage() {
               <label className="sr-only">Strasse / Nr. *</label>
               <input
                 type="text"
+                name="street"
                 placeholder="Strasse / Nr. *"
                 defaultValue={prefill?.address ?? ''}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
@@ -122,6 +243,7 @@ export default function ProtocolCreatePage() {
               <label className="sr-only">Zusatz *</label>
               <input
                 type="text"
+                name="additional_info"
                 placeholder="Zusatz *"
                 defaultValue={[prefill?.parcelNumber, prefill?.building].filter(Boolean).join(', ')}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
@@ -132,6 +254,7 @@ export default function ProtocolCreatePage() {
               <label className="sr-only">PLZ *</label>
               <input
                 type="text"
+                name="postal_code"
                 inputMode="numeric"
                 placeholder="PLZ *"
                 defaultValue={prefill?.postalCode ?? ''}
@@ -143,6 +266,7 @@ export default function ProtocolCreatePage() {
               <label className="sr-only">Ort *</label>
               <input
                 type="text"
+                name="city"
                 placeholder="Ort *"
                 defaultValue={prefill?.city ?? ''}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
@@ -153,6 +277,7 @@ export default function ProtocolCreatePage() {
               <label className="sr-only">Telefon *</label>
               <input
                 type="tel"
+                name="phone"
                 placeholder="Telefon *"
                 defaultValue={prefill?.phone ?? ''}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
@@ -163,6 +288,7 @@ export default function ProtocolCreatePage() {
               <label className="sr-only">E‑Mail *</label>
               <input
                 type="email"
+                name="email"
                 placeholder="E‑Mail *"
                 defaultValue={prefill?.email ?? ''}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
@@ -181,13 +307,16 @@ export default function ProtocolCreatePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <input type="text" placeholder="Hersteller *" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+              <input type="text" name="old_manufacturer"
+                placeholder="Hersteller *" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
             </div>
             <div>
-              <input type="text" placeholder="Zähler‑Nr. *" defaultValue={prefill?.zaehlernummer ?? ''} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+              <input type="text" name="old_meter_number"
+                placeholder="Zähler‑Nr. *" defaultValue={prefill?.zaehlernummer ?? ''} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
             </div>
             <div>
               <select
+                name="old_installation_length"
                 defaultValue=""
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
@@ -203,25 +332,28 @@ export default function ProtocolCreatePage() {
               </select>
             </div>
             <div>
-              <input type="number" placeholder="Zählerstand in m³" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 placeholder-gray-400" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+              <input type="number" name="old_meter_reading"
+                placeholder="Zählerstand in m³" step="0.01" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 placeholder-gray-400" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
             </div>
             <div>
               <select
+                name="old_dimension"
                 defaultValue=""
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Dimension *</option>
-                <option>DN 20 - 3/4"</option>
-                <option>DN 25 - 1"</option>
-                <option>DN 32 - 1 1/4"</option>
-                <option>DN 40 - 1 1/2"</option>
-                <option>DN 50 - 2"</option>
+                <option>DN 20 - 3/4&quot;</option>
+                <option>DN 25 - 1&quot;</option>
+                <option>DN 32 - 1 1/4&quot;</option>
+                <option>DN 40 - 1 1/2&quot;</option>
+                <option>DN 50 - 2&quot;</option>
               </select>
             </div>
             <div>
               <select
+                name="old_flow_rate"
                 defaultValue=""
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
@@ -240,6 +372,7 @@ export default function ProtocolCreatePage() {
             </div>
             <div className="flex gap-3">
               <select
+                name="old_inlet_material"
                 defaultValue=""
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
@@ -253,20 +386,21 @@ export default function ProtocolCreatePage() {
                 <option>Kunststoff</option>
               </select>
               <select
+                name="old_inlet_size"
                 defaultValue=""
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
                 className="w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Grösse</option>
-                <option>1/2"</option>
-                <option>3/4"</option>
-                <option>1"</option>
-                <option>1 1/4"</option>
-                <option>1 1/2"</option>
-                <option>2"</option>
-                <option>2 1/2"</option>
-                <option>3"</option>
+                <option>1/2&quot;</option>
+                <option>3/4&quot;</option>
+                <option>1&quot;</option>
+                <option>1 1/4&quot;</option>
+                <option>1 1/2&quot;</option>
+                <option>2&quot;</option>
+                <option>2 1/2&quot;</option>
+                <option>3&quot;</option>
                 <option>15 mm</option>
                 <option>16 mm</option>
                 <option>18 mm</option>
@@ -286,6 +420,7 @@ export default function ProtocolCreatePage() {
             </div>
             <div className="flex gap-3">
               <select
+                name="old_outlet_material"
                 defaultValue=""
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
@@ -299,20 +434,21 @@ export default function ProtocolCreatePage() {
                 <option>Kunststoff</option>
               </select>
               <select
+                name="old_outlet_size"
                 defaultValue=""
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
                 className="w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Grösse</option>
-                <option>1/2"</option>
-                <option>3/4"</option>
-                <option>1"</option>
-                <option>1 1/4"</option>
-                <option>1 1/2"</option>
-                <option>2"</option>
-                <option>2 1/2"</option>
-                <option>3"</option>
+                <option>1/2&quot;</option>
+                <option>3/4&quot;</option>
+                <option>1&quot;</option>
+                <option>1 1/4&quot;</option>
+                <option>1 1/2&quot;</option>
+                <option>2&quot;</option>
+                <option>2 1/2&quot;</option>
+                <option>3&quot;</option>
                 <option>15 mm</option>
                 <option>16 mm</option>
                 <option>18 mm</option>
@@ -332,6 +468,7 @@ export default function ProtocolCreatePage() {
             </div>
             <div>
               <select
+                name="old_installation_type"
                 defaultValue=""
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
@@ -344,6 +481,7 @@ export default function ProtocolCreatePage() {
             </div>
             <div>
               <select
+                name="old_installation_location"
                 defaultValue=""
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
@@ -359,6 +497,7 @@ export default function ProtocolCreatePage() {
             </div>
             <div>
               <select
+                name="old_year_vintage"
                 defaultValue=""
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
@@ -420,7 +559,8 @@ export default function ProtocolCreatePage() {
               />
             </div>
             <div>
-              <input type="number" placeholder="Zählerstand in m³" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 placeholder-gray-400" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+              <input type="number" name="new_meter_reading"
+                placeholder="Zählerstand in m³" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 placeholder-gray-400" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
             </div>
             <div>
               <input
@@ -442,6 +582,7 @@ export default function ProtocolCreatePage() {
             </div>
             <div className="flex gap-3">
               <select
+                name="new_inlet_material"
                 defaultValue=""
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
@@ -455,20 +596,21 @@ export default function ProtocolCreatePage() {
                 <option>Kunststoff</option>
               </select>
               <select
+                name="new_inlet_size"
                 defaultValue=""
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
                 className="w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Grösse</option>
-                <option>1/2"</option>
-                <option>3/4"</option>
-                <option>1"</option>
-                <option>1 1/4"</option>
-                <option>1 1/2"</option>
-                <option>2"</option>
-                <option>2 1/2"</option>
-                <option>3"</option>
+                <option>1/2&quot;</option>
+                <option>3/4&quot;</option>
+                <option>1&quot;</option>
+                <option>1 1/4&quot;</option>
+                <option>1 1/2&quot;</option>
+                <option>2&quot;</option>
+                <option>2 1/2&quot;</option>
+                <option>3&quot;</option>
                 <option>15 mm</option>
                 <option>16 mm</option>
                 <option>18 mm</option>
@@ -488,6 +630,7 @@ export default function ProtocolCreatePage() {
             </div>
             <div className="flex gap-3">
               <select
+                name="new_outlet_material"
                 defaultValue=""
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
@@ -501,20 +644,21 @@ export default function ProtocolCreatePage() {
                 <option>Kunststoff</option>
               </select>
               <select
+                name="new_outlet_size"
                 defaultValue=""
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
                 className="w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Grösse</option>
-                <option>1/2"</option>
-                <option>3/4"</option>
-                <option>1"</option>
-                <option>1 1/4"</option>
-                <option>1 1/2"</option>
-                <option>2"</option>
-                <option>2 1/2"</option>
-                <option>3"</option>
+                <option>1/2&quot;</option>
+                <option>3/4&quot;</option>
+                <option>1&quot;</option>
+                <option>1 1/4&quot;</option>
+                <option>1 1/2&quot;</option>
+                <option>2&quot;</option>
+                <option>2 1/2&quot;</option>
+                <option>3&quot;</option>
                 <option>15 mm</option>
                 <option>16 mm</option>
                 <option>18 mm</option>
@@ -534,6 +678,7 @@ export default function ProtocolCreatePage() {
             </div>
             <div>
               <select
+                name="new_installation_type"
                 defaultValue=""
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
@@ -546,6 +691,7 @@ export default function ProtocolCreatePage() {
             </div>
             <div>
               <select
+                name="new_installation_location"
                 defaultValue=""
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
@@ -561,6 +707,7 @@ export default function ProtocolCreatePage() {
             </div>
             <div>
               <select
+                name="new_year_vintage"
                 defaultValue=""
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
@@ -589,7 +736,8 @@ export default function ProtocolCreatePage() {
         {/* Bemerkung */}
         <div>
           <label className="sr-only">Bemerkung</label>
-          <textarea placeholder="Eine Bemerkung verfassen..." className="w-full min-h-[96px] rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+          <textarea name="notes"
+              placeholder="Eine Bemerkung verfassen..." className="w-full min-h-[96px] rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
         </div>
 
         {/* Agree + Submit */}

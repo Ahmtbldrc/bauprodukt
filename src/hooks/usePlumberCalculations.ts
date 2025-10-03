@@ -48,7 +48,7 @@ async function fetchCalculations(options?: {
   return result.data as PlumberCalculation[]
 }
 
-async function fetchCalculation(id: number) {
+async function fetchCalculation(id: string) {
   const headers = await getAuthHeaders()
   const response = await fetch(`/api/plumber-calculations/${id}`, { headers })
   if (!response.ok) {
@@ -74,7 +74,7 @@ async function createCalculation(calculation: Omit<PlumberCalculationInsert, 'us
   return result.data as PlumberCalculation
 }
 
-async function updateCalculation(id: number, updates: PlumberCalculationUpdate) {
+async function updateCalculation(id: string, updates: PlumberCalculationUpdate) {
   const headers = await getAuthHeaders()
   const response = await fetch(`/api/plumber-calculations/${id}`, {
     method: 'PATCH',
@@ -89,7 +89,7 @@ async function updateCalculation(id: number, updates: PlumberCalculationUpdate) 
   return result.data as PlumberCalculation
 }
 
-async function deleteCalculation(id: number) {
+async function deleteCalculation(id: string) {
   const headers = await getAuthHeaders()
   const response = await fetch(`/api/plumber-calculations/${id}`, {
     method: 'DELETE',
@@ -101,7 +101,7 @@ async function deleteCalculation(id: number) {
   }
 }
 
-async function deleteCalculationsBulk(ids: number[]) {
+async function deleteCalculationsBulk(ids: string[]) {
   const headers = await getAuthHeaders()
   const response = await fetch('/api/plumber-calculations/bulk', {
     method: 'DELETE',
@@ -125,7 +125,7 @@ async function fetchCalculationStats() {
   return result.data
 }
 
-async function duplicateCalculation(id: number, newName?: string) {
+async function duplicateCalculation(id: string, newName?: string) {
   const headers = await getAuthHeaders()
   const response = await fetch(`/api/plumber-calculations/duplicate/${id}`, {
     method: 'POST',
@@ -158,7 +158,7 @@ export function usePlumberCalculations(options?: {
 /**
  * Hook for fetching a single calculation
  */
-export function usePlumberCalculation(id: number | null) {
+export function usePlumberCalculation(id: string | null) {
   return useQuery({
     queryKey: ['plumber-calculation', id],
     queryFn: () => fetchCalculation(id!),
@@ -189,7 +189,7 @@ export function useUpdatePlumberCalculation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, updates }: { id: number; updates: PlumberCalculationUpdate }) =>
+    mutationFn: ({ id, updates }: { id: string; updates: PlumberCalculationUpdate }) =>
       updateCalculation(id, updates),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['plumber-calculations'] })
@@ -206,7 +206,7 @@ export function useDeletePlumberCalculation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: number) => deleteCalculation(id),
+    mutationFn: (id: string) => deleteCalculation(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plumber-calculations'] })
       queryClient.invalidateQueries({ queryKey: ['plumber-calculation-stats'] })
@@ -221,7 +221,7 @@ export function useDeletePlumberCalculationsBulk() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (ids: number[]) => deleteCalculationsBulk(ids),
+    mutationFn: (ids: string[]) => deleteCalculationsBulk(ids),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plumber-calculations'] })
       queryClient.invalidateQueries({ queryKey: ['plumber-calculation-stats'] })
@@ -288,7 +288,7 @@ export function useDuplicatePlumberCalculation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, newName }: { id: number; newName?: string }) =>
+    mutationFn: ({ id, newName }: { id: string; newName?: string }) =>
       duplicateCalculation(id, newName),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['plumber-calculations'] })

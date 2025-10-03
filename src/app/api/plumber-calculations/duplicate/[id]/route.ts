@@ -28,15 +28,7 @@ export async function POST(
       )
     }
 
-    const { id: idParam } = await params
-    const id = parseInt(idParam)
-
-    if (isNaN(id)) {
-      return NextResponse.json(
-        { error: 'Ungültige ID' },
-        { status: 400 }
-      )
-    }
+    const { id } = await params
 
     // Get original calculation
     const { data: original, error: fetchError } = await supabase

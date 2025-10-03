@@ -41,7 +41,7 @@ export default function PlumberHistoryPage() {
     setIsDialogOpen(true)
   }
 
-  function handleDelete(id: number) {
+  function handleDelete(id: string) {
     deleteMutation.mutate(id, {
       onSuccess: () => {
         setIsDialogOpen(false)
@@ -103,7 +103,7 @@ export default function PlumberHistoryPage() {
                   <button
                     className="px-3 py-2 rounded-lg text-white font-medium shadow-sm hover:opacity-95 transition"
                     style={{ backgroundColor: '#F39236' }}
-                    onClick={() => router.push('/plumber/protocol/create')}
+                    onClick={() => router.push(`/plumber/protocol/create?calculation_id=${it.id}`)}
                   >
                     Protokoll erstellen
                   </button>

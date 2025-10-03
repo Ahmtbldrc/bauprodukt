@@ -267,7 +267,7 @@ export const updateProfileSchema = createProfileSchema.partial()
 export const calculationMethodSchema = z.enum(['m1', 'm2'])
 
 export const plumberCalculationSchema = z.object({
-  id: z.number().int(),
+  id: z.string().uuid(),
   user_id: z.string().uuid(),
   name: z.string().min(1, 'Name ist erforderlich'),
   created_at: z.string(),

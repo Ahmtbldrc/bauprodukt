@@ -507,7 +507,7 @@ export interface PlumberCalculationResult {
 }
 
 export interface PlumberCalculation {
-  id: number
+  id: string
   user_id: string
   name: string
   created_at: string
@@ -519,6 +519,74 @@ export interface PlumberCalculation {
   total_m3_per_hour: number
   recommended_dn: string | null
   fixture_counts: Record<string, number>
+}
+
+// Enum types for meter data
+export type PipeMaterial = 'Verzinkt' | 'Kupfer' | 'Edelstahl' | 'Rotguss' | 'Kunststoff'
+export type PipeSize = '1/2"' | '3/4"' | '1"' | '1 1/4"' | '1 1/2"' | '2"' | '2 1/2"' | '3"' | 
+                       '15 mm' | '16 mm' | '18 mm' | '20 mm' | '22 mm' | '26 mm' | '28 mm' | 
+                       '32 mm' | '35 mm' | '40 mm' | '42 mm' | '50 mm' | '54 mm' | '63 mm' | '76.1 mm'
+export type InstallationType = 'waagerecht' | 'senkrecht'
+export type InstallationLocation = 'Keller' | 'Küche' | 'Bad' | 'Garage' | 'Technikraum'
+export type InstallationLength = '110 mm' | '190 mm' | '220 mm' | '260 mm' | '270 mm' | '300 mm'
+export type MeterDimension = 'DN 20 - 3/4"' | 'DN 25 - 1"' | 'DN 32 - 1 1/4"' | 'DN 40 - 1 1/2"' | 'DN 50 - 2"'
+export type FlowRate = '2,5 m3/h' | '3,5 m3/h' | '4 m3/h' | '6,3 m3/h' | '7 m3/h' | '10 m3/h' | '16 m3/h' | '25 m3/h'
+
+export interface MeterData {
+  // Basic meter information
+  manufacturer?: string                      // Hersteller (e.g., "TOPAS ESKR")
+  meter_number?: string                      // Zähler-Nr. (e.g., "12345678")
+  
+  // Technical specifications
+  installation_length?: InstallationLength   // Einbaulänge (e.g., "220 mm")
+  meter_reading?: number                     // Zählerstand in m³ (numeric value)
+  dimension?: MeterDimension                 // Dimension (e.g., "DN 20 - 3/4\"")
+  flow_rate?: FlowRate                       // Dauerdurchfluss Q3 (e.g., "4 m3/h")
+  
+  // Inlet pipe (Einlaufstrecke)
+  inlet_material?: PipeMaterial              // Material (e.g., "Kupfer")
+  inlet_size?: PipeSize                      // Größe (e.g., "3/4\"" or "22 mm")
+  
+  // Outlet pipe (Auslaufstrecke)
+  outlet_material?: PipeMaterial             // Material (e.g., "Kupfer")
+  outlet_size?: PipeSize                     // Größe (e.g., "3/4\"" or "22 mm")
+  
+  // Installation details
+  installation_type?: InstallationType       // Einbauart: "waagerecht" or "senkrecht"
+  installation_location?: InstallationLocation // Einbauort (e.g., "Keller")
+  year_vintage?: string                      // Jahrgang (YYYY format, e.g., "2025")
+  
+  // Dates (ISO format YYYY-MM-DD)
+  removal_date?: string                      // Ausbaudatum (for old meter, e.g., "2025-01-03")
+  installation_date?: string                 // Einbaudatum (for new meter, e.g., "2025-01-03")
+}
+
+export interface PlumberProtocol {
+  id: string
+  plumber_calculation_id: string | null
+  user_id: string
+  
+  // Installation Location
+  person_type: 'person' | 'company' | null
+  company_name: string | null
+  contact_person: string | null
+  person_name: string | null
+  street: string | null
+  additional_info: string | null
+  postal_code: string | null
+  city: string | null
+  phone: string | null
+  email: string | null
+  
+  // Meter Data (JSONB)
+  old_meter_data: MeterData | null
+  new_meter_data: MeterData | null
+  
+  // Additional
+  notes: string | null
+  
+  created_at: string
+  updated_at: string
 }
 
 // Profile Relations
@@ -625,6 +693,11 @@ export interface Database {
         Row: PlumberCalculation
         Insert: Omit<PlumberCalculation, 'id' | 'created_at' | 'updated_at'>
         Update: Partial<Omit<PlumberCalculation, 'id' | 'created_at' | 'user_id'>>
+      }
+      plumber_protocols: {
+        Row: PlumberProtocol
+        Insert: Omit<PlumberProtocol, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<PlumberProtocol, 'id' | 'created_at' | 'user_id'>>
       }
     }
     Views: {

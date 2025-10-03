@@ -504,10 +504,25 @@ function FixturesSection({ isFromProtocol }: { isFromProtocol: boolean }) {
                   style={{ backgroundColor: '#F39236' }}
                   onClick={() => {
                     if (!saveName.trim()) return
-                    saveCurrentResult(saveName, () => {
-                      setIsResultDialogOpen(false)
-                      setSaveName('')
-                      router.push('/plumber/protocol/create')
+                    createMutation.mutate({
+                      name: saveName.trim(),
+                      method,
+                      include_hydrant_extra: includeHydrantExtra,
+                      total_lu: result!.totalLU,
+                      total_lps: result!.totalLps,
+                      total_m3_per_hour: result!.totalM3PerHour,
+                      recommended_dn: result!.dn,
+                      fixture_counts: counts
+                    }, {
+                      onSuccess: (data) => {
+                        setIsResultDialogOpen(false)
+                        setSaveName('')
+                        router.push(`/plumber/protocol/create?calculation_id=${data.id}`)
+                      },
+                      onError: (error) => {
+                        console.error('Error saving calculation:', error)
+                        alert('Fehler beim Speichern der Berechnung')
+                      }
                     })
                   }}
                   disabled={!saveName.trim() || createMutation.isPending}

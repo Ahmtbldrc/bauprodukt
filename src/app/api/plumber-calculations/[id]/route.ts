@@ -30,15 +30,7 @@ export async function GET(
       )
     }
 
-    const { id: idParam } = await params
-    const id = parseInt(idParam)
-
-    if (isNaN(id)) {
-      return NextResponse.json(
-        { error: 'Ungültige ID' },
-        { status: 400 }
-      )
-    }
+    const { id } = await params
 
     const { data, error } = await supabase
       .from('plumber_calculations')
@@ -96,15 +88,7 @@ export async function PATCH(
       )
     }
 
-    const { id: idParam } = await params
-    const id = parseInt(idParam)
-
-    if (isNaN(id)) {
-      return NextResponse.json(
-        { error: 'Ungültige ID' },
-        { status: 400 }
-      )
-    }
+    const { id } = await params
 
     const body: PlumberCalculationUpdate = await request.json()
 
@@ -165,15 +149,7 @@ export async function DELETE(
       )
     }
 
-    const { id: idParam } = await params
-    const id = parseInt(idParam)
-
-    if (isNaN(id)) {
-      return NextResponse.json(
-        { error: 'Ungültige ID' },
-        { status: 400 }
-      )
-    }
+    const { id } = await params
 
     const { error } = await supabase
       .from('plumber_calculations')
