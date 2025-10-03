@@ -25,6 +25,72 @@ export type PlumberProtocolInsert = {
   notes?: string
 }
 
+// GET - Get protocol by calculation_id
+export async function GET(request: NextRequest) {
+  try {
+    // Get authorization header
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Nicht authentifiziert' },
+        { status: 401 }
+      )
+    }
+
+    const token = authHeader.replace('Bearer ', '')
+    const supabase = createClient()
+    
+    // Get user from token
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token)
+    
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Nicht authentifiziert' },
+        { status: 401 }
+      )
+    }
+
+    // Get calculation_id from query params
+    const { searchParams } = new URL(request.url)
+    const calculationId = searchParams.get('calculation_id')
+
+    if (!calculationId) {
+      return NextResponse.json(
+        { error: 'calculation_id ist erforderlich' },
+        { status: 400 }
+      )
+    }
+
+    // Query protocol by calculation_id and user_id
+    const { data, error } = await supabase
+      .from('plumber_protocols')
+      .select('*')
+      .eq('plumber_calculation_id', calculationId)
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (error) {
+      console.error('Error fetching protocol:', error)
+      return NextResponse.json(
+        { error: error.message },
+        { status: 400 }
+      )
+    }
+
+    return NextResponse.json({ 
+      data,
+      message: data ? 'Protokoll gefunden' : 'Kein Protokoll gefunden' 
+    }, { status: 200 })
+
+  } catch (error) {
+    console.error('Error fetching protocol:', error)
+    return NextResponse.json(
+      { error: 'Interner Serverfehler' },
+      { status: 500 }
+    )
+  }
+}
+
 // POST - Create new protocol
 export async function POST(request: NextRequest) {
   try {

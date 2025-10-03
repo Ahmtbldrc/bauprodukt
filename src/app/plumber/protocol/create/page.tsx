@@ -11,6 +11,7 @@ export default function ProtocolCreatePage() {
   const [agree, setAgree] = React.useState(false)
   const [prefill, setPrefill] = React.useState<any | null>(null)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [existingProtocol, setExistingProtocol] = React.useState<any | null>(null)
   const formRef = React.useRef<HTMLFormElement>(null)
   
   // Get plumber_calculation_id from URL params or localStorage
@@ -68,6 +69,38 @@ export default function ProtocolCreatePage() {
   }, [DN_MAP])
 
   const STORAGE_KEY = 'bauprodukt_protocol_form_v1'
+
+  // Fetch existing protocol if calculation_id is provided
+  React.useEffect(() => {
+    async function fetchExistingProtocol() {
+      if (!plumberCalculationId) return
+      
+      try {
+        const { data: { session }, error: sessionError } = await supabasePlumberClient.auth.getSession()
+        if (sessionError || !session?.access_token) {
+          console.error('No session for protocol fetch')
+          return
+        }
+
+        const response = await fetch(`/api/plumber-protocols?calculation_id=${plumberCalculationId}`, {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+        })
+
+        if (response.ok) {
+          const result = await response.json()
+          if (result.data) {
+            setExistingProtocol(result.data)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching existing protocol:', error)
+      }  
+    }
+
+    fetchExistingProtocol()
+  }, [plumberCalculationId])
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return
@@ -190,7 +223,7 @@ export default function ProtocolCreatePage() {
             <div className="text-sm font-medium text-gray-900">Einbauort des Messgerätes</div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-            {prefill?.personType === 'company' ? (
+            {(existingProtocol?.person_type === 'company' || prefill?.personType === 'company') ? (
               <>
                 <div className="md:col-span-12">
                   <label className="sr-only">Firmenname *</label>
@@ -198,7 +231,7 @@ export default function ProtocolCreatePage() {
                     type="text"
                     name="company_name"
                 placeholder="Firmenname *"
-                    defaultValue={prefill?.companyName ?? ''}
+                    defaultValue={existingProtocol?.company_name ?? prefill?.companyName ?? ''}
                     className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                     style={{ ['--tw-ring-color' as any]: '#F3923620' }}
                   />
@@ -209,7 +242,7 @@ export default function ProtocolCreatePage() {
                     type="text"
                     name="contact_person"
                 placeholder="Ansprechsperson *"
-                    defaultValue={prefill?.contactPerson ?? ''}
+                    defaultValue={existingProtocol?.contact_person ?? prefill?.contactPerson ?? ''}
                     className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                     style={{ ['--tw-ring-color' as any]: '#F3923620' }}
                   />
@@ -222,7 +255,7 @@ export default function ProtocolCreatePage() {
                   type="text"
                   name="person_name"
                   placeholder="Name *"
-                  defaultValue={`${prefill?.firstName ?? ''}${prefill?.lastName ? ` ${prefill?.lastName}` : ''}`}
+                  defaultValue={existingProtocol?.person_name ?? `${prefill?.firstName ?? ''}${prefill?.lastName ? ` ${prefill?.lastName}` : ''}`}
                   className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                   style={{ ['--tw-ring-color' as any]: '#F3923620' }}
                 />
@@ -234,7 +267,7 @@ export default function ProtocolCreatePage() {
                 type="text"
                 name="street"
                 placeholder="Strasse / Nr. *"
-                defaultValue={prefill?.address ?? ''}
+                defaultValue={existingProtocol?.street ?? prefill?.address ?? ''}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               />
@@ -245,7 +278,7 @@ export default function ProtocolCreatePage() {
                 type="text"
                 name="additional_info"
                 placeholder="Zusatz *"
-                defaultValue={[prefill?.parcelNumber, prefill?.building].filter(Boolean).join(', ')}
+                defaultValue={existingProtocol?.additional_info ?? [prefill?.parcelNumber, prefill?.building].filter(Boolean).join(', ')}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               />
@@ -257,7 +290,7 @@ export default function ProtocolCreatePage() {
                 name="postal_code"
                 inputMode="numeric"
                 placeholder="PLZ *"
-                defaultValue={prefill?.postalCode ?? ''}
+                defaultValue={existingProtocol?.postal_code ?? prefill?.postalCode ?? ''}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               />
@@ -268,7 +301,7 @@ export default function ProtocolCreatePage() {
                 type="text"
                 name="city"
                 placeholder="Ort *"
-                defaultValue={prefill?.city ?? ''}
+                defaultValue={existingProtocol?.city ?? prefill?.city ?? ''}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               />
@@ -279,7 +312,7 @@ export default function ProtocolCreatePage() {
                 type="tel"
                 name="phone"
                 placeholder="Telefon *"
-                defaultValue={prefill?.phone ?? ''}
+                defaultValue={existingProtocol?.phone ?? prefill?.phone ?? ''}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               />
@@ -290,7 +323,7 @@ export default function ProtocolCreatePage() {
                 type="email"
                 name="email"
                 placeholder="E‑Mail *"
-                defaultValue={prefill?.email ?? ''}
+                defaultValue={existingProtocol?.email ?? prefill?.email ?? ''}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               />
@@ -299,7 +332,7 @@ export default function ProtocolCreatePage() {
         </div>
 
         {/* Messgerätedaten / Einbausituation – altes Messgerät (nur bei Austausch) */}
-        {prefill?.meterAction === 'exchange' && (
+        {(existingProtocol?.old_meter_data || prefill?.meterAction === 'exchange') && (
         <div>
           <div className="flex items-center gap-2 mb-3">
             <div className="text-sm font-medium text-gray-900">Messgerätedaten / Einbausituation</div>
@@ -308,18 +341,18 @@ export default function ProtocolCreatePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <input type="text" name="old_manufacturer"
-                placeholder="Hersteller *" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+                placeholder="Hersteller *" defaultValue={existingProtocol?.old_meter_data?.manufacturer ?? ''} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
             </div>
             <div>
               <input type="text" name="old_meter_number"
-                placeholder="Zähler‑Nr. *" defaultValue={prefill?.zaehlernummer ?? ''} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+                placeholder="Zähler‑Nr. *" defaultValue={existingProtocol?.old_meter_data?.meter_number ?? prefill?.zaehlernummer ?? ''} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
             </div>
             <div>
               <select
                 name="old_installation_length"
-                defaultValue=""
+                defaultValue={existingProtocol?.old_meter_data?.installation_length ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                className={`w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.old_meter_data?.installation_length ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Einbaulänge *</option>
@@ -333,14 +366,14 @@ export default function ProtocolCreatePage() {
             </div>
             <div>
               <input type="number" name="old_meter_reading"
-                placeholder="Zählerstand in m³" step="0.01" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 placeholder-gray-400" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+                placeholder="Zählerstand in m³" step="0.01" defaultValue={existingProtocol?.old_meter_data?.meter_reading ?? ''} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 placeholder-gray-400" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
             </div>
             <div>
               <select
                 name="old_dimension"
-                defaultValue=""
+                defaultValue={existingProtocol?.old_meter_data?.dimension ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                className={`w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.old_meter_data?.dimension ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Dimension *</option>
@@ -354,9 +387,9 @@ export default function ProtocolCreatePage() {
             <div>
               <select
                 name="old_flow_rate"
-                defaultValue=""
+                defaultValue={existingProtocol?.old_meter_data?.flow_rate ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                className={`w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.old_meter_data?.flow_rate ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Dauerdurchfluss in m³/h</option>
@@ -373,9 +406,9 @@ export default function ProtocolCreatePage() {
             <div className="flex gap-3">
               <select
                 name="old_inlet_material"
-                defaultValue=""
+                defaultValue={existingProtocol?.old_meter_data?.inlet_material ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                className={`w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.old_meter_data?.inlet_material ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Einlaufstrecke *</option>
@@ -387,9 +420,9 @@ export default function ProtocolCreatePage() {
               </select>
               <select
                 name="old_inlet_size"
-                defaultValue=""
+                defaultValue={existingProtocol?.old_meter_data?.inlet_size ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className="w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                className={`w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.old_meter_data?.inlet_size ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Grösse</option>
@@ -421,9 +454,9 @@ export default function ProtocolCreatePage() {
             <div className="flex gap-3">
               <select
                 name="old_outlet_material"
-                defaultValue=""
+                defaultValue={existingProtocol?.old_meter_data?.outlet_material ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                className={`w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.old_meter_data?.outlet_material ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Auslaufstrecke *</option>
@@ -435,9 +468,9 @@ export default function ProtocolCreatePage() {
               </select>
               <select
                 name="old_outlet_size"
-                defaultValue=""
+                defaultValue={existingProtocol?.old_meter_data?.outlet_size ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className="w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                className={`w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.old_meter_data?.outlet_size ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Grösse</option>
@@ -469,9 +502,9 @@ export default function ProtocolCreatePage() {
             <div>
               <select
                 name="old_installation_type"
-                defaultValue=""
+                defaultValue={existingProtocol?.old_meter_data?.installation_type ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                className={`w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.old_meter_data?.installation_type ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Einbauart *</option>
@@ -482,9 +515,9 @@ export default function ProtocolCreatePage() {
             <div>
               <select
                 name="old_installation_location"
-                defaultValue=""
+                defaultValue={existingProtocol?.old_meter_data?.installation_location ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                className={`w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.old_meter_data?.installation_location ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Einbauort</option>
@@ -498,9 +531,9 @@ export default function ProtocolCreatePage() {
             <div>
               <select
                 name="old_year_vintage"
-                defaultValue=""
+                defaultValue={existingProtocol?.old_meter_data?.year_vintage ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                className={`w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.old_meter_data?.year_vintage ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Jahrgang *</option>
@@ -512,8 +545,9 @@ export default function ProtocolCreatePage() {
             <div>
               <input
                 type="date"
+                name="old_removal_date"
                 placeholder="Ausbaudatum"
-                defaultValue=""
+                defaultValue={existingProtocol?.old_meter_data?.removal_date ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
@@ -543,8 +577,9 @@ export default function ProtocolCreatePage() {
             <div>
               <input
                 type="text"
+                name="new_meter_number"
                 placeholder="Zähler‑Nr. *"
-                defaultValue={(prefill?.neueZaehlernummer ?? prefill?.zaehlernummer) ?? ''}
+                defaultValue={existingProtocol?.new_meter_data?.meter_number ?? (prefill?.neueZaehlernummer ?? prefill?.zaehlernummer) ?? ''}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               />
@@ -552,21 +587,23 @@ export default function ProtocolCreatePage() {
             <div>
               <input
                 type="text"
+                name="new_installation_length"
                 placeholder="Einbaulänge *"
-                defaultValue={dnAuto?.mm ?? ''}
+                defaultValue={existingProtocol?.new_meter_data?.installation_length ?? dnAuto?.mm ?? ''}
                 readOnly
                 className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none"
               />
             </div>
             <div>
               <input type="number" name="new_meter_reading"
-                placeholder="Zählerstand in m³" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 placeholder-gray-400" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+                placeholder="Zählerstand in m³" defaultValue={existingProtocol?.new_meter_data?.meter_reading ?? ''} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 placeholder-gray-400" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
             </div>
             <div>
               <input
                 type="text"
+                name="new_dimension"
                 placeholder="Dimension *"
-                defaultValue={dnAuto?.dimLabel ?? ''}
+                defaultValue={existingProtocol?.new_meter_data?.dimension ?? dnAuto?.dimLabel ?? ''}
                 readOnly
                 className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none"
               />
@@ -574,8 +611,9 @@ export default function ProtocolCreatePage() {
             <div>
               <input
                 type="text"
+                name="new_flow_rate"
                 placeholder="Dauerdurchfluss in m³/h"
-                defaultValue={dnAuto?.q3 ?? ''}
+                defaultValue={existingProtocol?.new_meter_data?.flow_rate ?? dnAuto?.q3 ?? ''}
                 readOnly
                 className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none"
               />
@@ -583,9 +621,9 @@ export default function ProtocolCreatePage() {
             <div className="flex gap-3">
               <select
                 name="new_inlet_material"
-                defaultValue=""
+                defaultValue={existingProtocol?.new_meter_data?.inlet_material ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                className={`w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.new_meter_data?.inlet_material ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Einlaufstrecke *</option>
@@ -597,9 +635,9 @@ export default function ProtocolCreatePage() {
               </select>
               <select
                 name="new_inlet_size"
-                defaultValue=""
+                defaultValue={existingProtocol?.new_meter_data?.inlet_size ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className="w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                className={`w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.new_meter_data?.inlet_size ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Grösse</option>
@@ -631,9 +669,9 @@ export default function ProtocolCreatePage() {
             <div className="flex gap-3">
               <select
                 name="new_outlet_material"
-                defaultValue=""
+                defaultValue={existingProtocol?.new_meter_data?.outlet_material ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                className={`w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.new_meter_data?.outlet_material ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Auslaufstrecke *</option>
@@ -645,9 +683,9 @@ export default function ProtocolCreatePage() {
               </select>
               <select
                 name="new_outlet_size"
-                defaultValue=""
+                defaultValue={existingProtocol?.new_meter_data?.outlet_size ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className="w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                className={`w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.new_meter_data?.outlet_size ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Grösse</option>
@@ -679,9 +717,9 @@ export default function ProtocolCreatePage() {
             <div>
               <select
                 name="new_installation_type"
-                defaultValue=""
+                defaultValue={existingProtocol?.new_meter_data?.installation_type ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                className={`w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.new_meter_data?.installation_type ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Einbauart *</option>
@@ -692,9 +730,9 @@ export default function ProtocolCreatePage() {
             <div>
               <select
                 name="new_installation_location"
-                defaultValue=""
+                defaultValue={existingProtocol?.new_meter_data?.installation_location ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                className={`w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.new_meter_data?.installation_location ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Einbauort</option>
@@ -708,9 +746,9 @@ export default function ProtocolCreatePage() {
             <div>
               <select
                 name="new_year_vintage"
-                defaultValue=""
+                defaultValue={existingProtocol?.new_meter_data?.year_vintage ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                className={`w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.new_meter_data?.year_vintage ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
                 <option value="">Jahrgang *</option>
@@ -722,8 +760,9 @@ export default function ProtocolCreatePage() {
             <div>
               <input
                 type="date"
-                placeholder="Ausbaudatum"
-                defaultValue=""
+                name="new_installation_date"
+                placeholder="Einbaudatum"
+                defaultValue={existingProtocol?.new_meter_data?.installation_date ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
@@ -737,7 +776,7 @@ export default function ProtocolCreatePage() {
         <div>
           <label className="sr-only">Bemerkung</label>
           <textarea name="notes"
-              placeholder="Eine Bemerkung verfassen..." className="w-full min-h-[96px] rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+              placeholder="Eine Bemerkung verfassen..." defaultValue={existingProtocol?.notes ?? ''} className="w-full min-h-[96px] rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
         </div>
 
         {/* Agree + Submit */}
