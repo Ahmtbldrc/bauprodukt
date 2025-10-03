@@ -2,9 +2,9 @@
 
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Eye } from 'lucide-react'
 import { ConfirmDialog } from '@/components/ui'
-import { usePlumberCalculations, useDeletePlumberCalculation } from '@/hooks'
+import { usePlumberCalculations, useDeletePlumberCalculation, usePlumberProtocols } from '@/hooks'
 import type { PlumberCalculation } from '@/types/database'
 
 export default function PlumberHistoryPage() {
@@ -25,6 +25,10 @@ export default function PlumberHistoryPage() {
   const deleteMutation = useDeletePlumberCalculation()
 
   const items = calculations || []
+  
+  // Fetch protocols for all calculations
+  const calculationIds = items.map(calc => calc.id)
+  const { data: protocolMap } = usePlumberProtocols(calculationIds)
 
   function formatDate(iso?: string) {
     if (!iso) return '-'
@@ -94,6 +98,16 @@ export default function PlumberHistoryPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 md:justify-end">
+                  {protocolMap?.[it.id] && (
+                    <button
+                      className="p-2 rounded-lg border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
+                      onClick={() => window.open(`/api/plumber-protocols/${protocolMap[it.id]}/pdf?inline=true`, '_blank')}
+                      aria-label="PDF anzeigen"
+                      title="PDF anzeigen"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                  )}
                   <button
                     className="px-3 py-2 rounded-lg border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
                     onClick={() => openDialog(it)}

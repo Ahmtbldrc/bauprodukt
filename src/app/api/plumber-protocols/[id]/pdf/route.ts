@@ -17,9 +17,10 @@ export async function GET(
     
     const previewUrl = `${baseUrl}/api/plumber-protocols/${id}/preview`
     
-    // Check if preview mode
+    // Check if preview mode or inline mode
     const { searchParams } = new URL(request.url)
     const isPreview = searchParams.get('preview') === 'true'
+    const isInline = searchParams.get('inline') === 'true'
     
     if (isPreview) {
       // Redirect to preview endpoint for iframe viewing
@@ -75,11 +76,15 @@ export async function GET(
     await browser.close()
     browser = null
     
-    // Return PDF
+    // Return PDF with appropriate Content-Disposition
+    const disposition = isInline 
+      ? `inline; filename="Bauprodukt Protokol.pdf"`
+      : `attachment; filename="Bauprodukt Protokol.pdf"`
+    
     return new NextResponse(Buffer.from(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="Bauprodukt Protokol.pdf"`,
+        'Content-Disposition': disposition,
       },
     })
 

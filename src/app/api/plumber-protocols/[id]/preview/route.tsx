@@ -264,7 +264,7 @@ function generateProtocolHTML(protocol: PlumberProtocol): string {
     ` : ''}
 
     <div class="footer">
-      <span>Bauprodukt AG</span>
+      <span>bauprodukt.ch</span>
       <span>Austauschprotokoll Wasserzähler</span>
     </div>
   </div>
