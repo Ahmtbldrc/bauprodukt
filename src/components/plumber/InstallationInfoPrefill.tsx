@@ -220,6 +220,9 @@ function FixturesSection({ isFromProtocol }: { isFromProtocol: boolean }) {
   const dec = (id: string) =>
     setCounts(prev => ({ ...prev, [id]: Math.max(0, (prev[id] || 0) - 1) }))
 
+  const setCount = (id: string, value: number) =>
+    setCounts(prev => ({ ...prev, [id]: Math.max(0, Number.isFinite(value) ? Math.floor(value) : 0) }))
+
   const handleCalculate = () => {
     const calculation = calculatePlumberValues({
       counts,
@@ -295,7 +298,19 @@ function FixturesSection({ isFromProtocol }: { isFromProtocol: boolean }) {
                 <button type="button" onClick={() => dec(item.id)} className="h-7 w-7 rounded-md border border-gray-300 text-gray-600">
                   −
                 </button>
-                <div className="min-w-[2rem] text-center text-sm text-gray-900">{counts[item.id] || 0}</div>
+                <input
+                  type="number"
+                  min={0}
+                  step={1}
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={counts[item.id] || 0}
+                  onChange={e => {
+                    const newValue = parseInt(e.target.value, 10)
+                    setCount(item.id, isNaN(newValue) ? 0 : newValue)
+                  }}
+                  className="no-spinner h-7 w-16 rounded-md border border-gray-300 text-center text-sm text-gray-900"
+                />
                 <button type="button" onClick={() => inc(item.id)} className="h-7 w-7 rounded-md border border-gray-300 text-gray-600">
                   +
                 </button>
