@@ -12,6 +12,10 @@ export const SANITAER_ITEMS: FixtureItem[] = [
   { id: 'badewanne', name: 'Badewanne', luKalt: 3, luWarm: 3 },
   { id: 'bidet', name: 'Bidet', luKalt: 1, luWarm: 1 },
   { id: 'urinoir', name: 'Urinoir Spülung automatisch', luKalt: 3, luWarm: 0 },
+  // Neue Sanitär-Elemente
+  { id: 'spuelbecken', name: 'Spülbecken', luKalt: 2, luWarm: 2 },
+  { id: 'haushaltsgeschirrspuelmaschine', name: 'Haushaltsgeschirrspülmaschine', luKalt: 1, luWarm: 0 },
+  { id: 'haushaltswaschautomat', name: 'Haushaltswaschautomat', luKalt: 2, luWarm: 0 },
 ]
 
 export const AUSSEN_ITEMS: FixtureItem[] = [
@@ -19,6 +23,8 @@ export const AUSSEN_ITEMS: FixtureItem[] = [
   { id: 'garten', name: 'Entnahmearmatur Garten und Garage', luKalt: 5, luWarm: 0 },
   { id: 'waschrinne', name: 'Waschrinne', luKalt: 1, luWarm: 1 },
   { id: 'waschtrog', name: 'Waschtrog', luKalt: 2, luWarm: 2 },
+  { id: 'ausgussbecken', name: 'Ausgussbecken', luKalt: 2, luWarm: 2 },
+  { id: 'stand_wandausguss', name: 'Stand- und Wandausguss', luKalt: 2, luWarm: 2 },
 ]
 
 export const GEWERBE_ITEMS: FixtureItem[] = [
