@@ -8,6 +8,7 @@ import {
   FixtureItem,
   GEWERBE_ITEMS,
   SANITAER_ITEMS,
+  FIXTURE_MAP,
 } from '@/lib/plumber-fixtures'
 import {
   PlumberCalculationResult,
@@ -270,6 +271,16 @@ function FixturesSection({ isFromProtocol }: { isFromProtocol: boolean }) {
     []
   )
 
+  const totalLUCurrent = React.useMemo(() => {
+    return Object.entries(counts).reduce((sum, [id, count]) => {
+      const qty = count || 0
+      if (!qty) return sum
+      const fx = FIXTURE_MAP[id]
+      if (!fx) return sum
+      return sum + qty * (fx.luKalt + fx.luWarm)
+    }, 0)
+  }, [counts])
+
   const Column: React.FC<{
     title: string
     panelKey: string
@@ -383,10 +394,8 @@ function FixturesSection({ isFromProtocol }: { isFromProtocol: boolean }) {
         </button>
 
         <div className="text-sm text-gray-600 md:order-1">
-          <span className="font-semibold text-gray-900">Gesamte Zähler:</span>
-          <span className="ml-2">
-            {Object.values(counts).reduce((sum, val) => sum + (val || 0), 0)} Stück
-          </span>
+          <span className="font-semibold text-gray-900">Total LU:</span>
+          <span className="ml-2">{formatNumber(totalLUCurrent, 0)} LU</span>
         </div>
       </div>
 
