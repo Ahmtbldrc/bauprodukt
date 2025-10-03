@@ -25,6 +25,24 @@ export type PlumberProtocolInsert = {
   notes?: string
 }
 
+// Helper function to clean MeterData - remove "Grösse" placeholder values
+function cleanMeterData(data: MeterData | null | undefined): MeterData | null | undefined {
+  if (!data) return data
+  
+  const cleaned = { ...data }
+  
+  // Remove "Grösse" from inlet_size and outlet_size
+  // Using type assertion as 'Grösse' is a UI placeholder not in PipeSize type
+  if ((cleaned.inlet_size as any) === 'Grösse' || cleaned.inlet_size === undefined || (cleaned.inlet_size as any) === '') {
+    delete cleaned.inlet_size
+  }
+  if ((cleaned.outlet_size as any) === 'Grösse' || cleaned.outlet_size === undefined || (cleaned.outlet_size as any) === '') {
+    delete cleaned.outlet_size
+  }
+  
+  return cleaned
+}
+
 // GET - Get protocol by calculation_id
 export async function GET(request: NextRequest) {
   try {
@@ -139,6 +157,8 @@ export async function POST(request: NextRequest) {
     const upsertData: any = {
       ...body,
       user_id: user.id,
+      old_meter_data: cleanMeterData(body.old_meter_data),
+      new_meter_data: cleanMeterData(body.new_meter_data),
     }
 
     // Use upsert to insert or update based on plumber_calculation_id

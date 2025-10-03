@@ -102,6 +102,22 @@ export default function ProtocolCreatePage() {
     fetchExistingProtocol()
   }, [plumberCalculationId])
 
+  // Update dnAuto when existingProtocol is loaded
+  React.useEffect(() => {
+    if (!existingProtocol?.new_meter_data?.dimension) return
+    
+    // Extract DN number from dimension (e.g., "DN 20 - 3/4\"" -> 20)
+    const dimension = existingProtocol.new_meter_data.dimension
+    const match = dimension.match(/DN\s*(\d+)/)
+    if (!match) return
+    
+    const dnNumeric = parseInt(match[1], 10)
+    const map = DN_MAP[dnNumeric as 20 | 25 | 32 | 40 | 50]
+    if (map) {
+      setDnAuto({ dn: dnNumeric, ...map })
+    }
+  }, [existingProtocol, DN_MAP])
+
   React.useEffect(() => {
     if (typeof window === 'undefined') return
     try {
@@ -129,59 +145,85 @@ export default function ProtocolCreatePage() {
         return
       }
 
-      // Build old meter data (only if exchange)
-      const isExchange = prefill?.meterAction === 'exchange'
-      const oldMeterData: MeterData | null = isExchange ? {
-        manufacturer: formData.get('old_manufacturer') as string || undefined,
-        meter_number: formData.get('old_meter_number') as string || undefined,
-        installation_length: formData.get('old_installation_length') as any || undefined,
-        meter_reading: formData.get('old_meter_reading') ? parseFloat(formData.get('old_meter_reading') as string) : undefined,
-        dimension: formData.get('old_dimension') as any || undefined,
-        flow_rate: formData.get('old_flow_rate') as any || undefined,
-        inlet_material: formData.get('old_inlet_material') as any || undefined,
-        inlet_size: formData.get('old_inlet_size') as any || undefined,
-        outlet_material: formData.get('old_outlet_material') as any || undefined,
-        outlet_size: formData.get('old_outlet_size') as any || undefined,
-        installation_type: formData.get('old_installation_type') as any || undefined,
-        installation_location: formData.get('old_installation_location') as any || undefined,
-        year_vintage: formData.get('old_year_vintage') as string || undefined,
-        removal_date: formData.get('old_removal_date') as string || undefined,
-      } : null
-
-      // Build new meter data
-      const newMeterData: MeterData = {
-        manufacturer: formData.get('new_manufacturer') as string || 'TOPAS ESKR',
-        meter_number: formData.get('new_meter_number') as string || undefined,
-        installation_length: formData.get('new_installation_length') as any || undefined,
-        meter_reading: formData.get('new_meter_reading') ? parseFloat(formData.get('new_meter_reading') as string) : undefined,
-        dimension: formData.get('new_dimension') as any || undefined,
-        flow_rate: formData.get('new_flow_rate') as any || undefined,
-        inlet_material: formData.get('new_inlet_material') as any || undefined,
-        inlet_size: formData.get('new_inlet_size') as any || undefined,
-        outlet_material: formData.get('new_outlet_material') as any || undefined,
-        outlet_size: formData.get('new_outlet_size') as any || undefined,
-        installation_type: formData.get('new_installation_type') as any || undefined,
-        installation_location: formData.get('new_installation_location') as any || undefined,
-        year_vintage: formData.get('new_year_vintage') as string || new Date().getFullYear().toString(),
-        installation_date: formData.get('new_installation_date') as string || new Date().toISOString().split('T')[0],
+      // Helper function to filter out placeholder values
+      const filterPlaceholder = (value: any, placeholder: string) => {
+        const val = value as string
+        // Filter out empty strings, the placeholder text, and whitespace-only values
+        return val && val.trim() !== '' && val !== placeholder ? val : undefined
       }
 
-      // Build request body
+      // Helper function to get form value or keep existing value
+      const getValueOrKeepExisting = (formValue: any, existingValue: any) => {
+        const val = formValue as string
+        if (val && val.trim() !== '') {
+          return val
+        }
+        return existingValue !== undefined ? existingValue : undefined
+      }
+
+      // Helper function to merge meter data (keep existing values for empty fields)
+      const mergeMeterData = (formPrefix: 'old' | 'new', existingData?: MeterData | null): MeterData | null => {
+        const manufacturer = formData.get(`${formPrefix}_manufacturer`) as string
+        const meterNumber = formData.get(`${formPrefix}_meter_number`) as string
+        const installationLength = formData.get(`${formPrefix}_installation_length`) as any
+        const meterReadingRaw = formData.get(`${formPrefix}_meter_reading`)
+        const dimension = formData.get(`${formPrefix}_dimension`) as any
+        const flowRate = formData.get(`${formPrefix}_flow_rate`) as any
+        const inletMaterial = formData.get(`${formPrefix}_inlet_material`) as any
+        const inletSizeRaw = formData.get(`${formPrefix}_inlet_size`)
+        const outletMaterial = formData.get(`${formPrefix}_outlet_material`) as any
+        const outletSizeRaw = formData.get(`${formPrefix}_outlet_size`)
+        const installationType = formData.get(`${formPrefix}_installation_type`) as any
+        const installationLocation = formData.get(`${formPrefix}_installation_location`) as any
+        const yearVintage = formData.get(`${formPrefix}_year_vintage`) as string
+        const dateField = formPrefix === 'old' ? formData.get('old_removal_date') : formData.get('new_installation_date')
+
+        return {
+          manufacturer: getValueOrKeepExisting(manufacturer, existingData?.manufacturer) || (formPrefix === 'new' ? 'TOPAS ESKR' : undefined),
+          meter_number: getValueOrKeepExisting(meterNumber, existingData?.meter_number),
+          installation_length: getValueOrKeepExisting(installationLength, existingData?.installation_length),
+          meter_reading: meterReadingRaw ? parseFloat(meterReadingRaw as string) : existingData?.meter_reading,
+          dimension: getValueOrKeepExisting(dimension, existingData?.dimension),
+          flow_rate: getValueOrKeepExisting(flowRate, existingData?.flow_rate),
+          inlet_material: getValueOrKeepExisting(inletMaterial, existingData?.inlet_material),
+          inlet_size: filterPlaceholder(inletSizeRaw, 'Grösse') || existingData?.inlet_size,
+          outlet_material: getValueOrKeepExisting(outletMaterial, existingData?.outlet_material),
+          outlet_size: filterPlaceholder(outletSizeRaw, 'Grösse') || existingData?.outlet_size,
+          installation_type: getValueOrKeepExisting(installationType, existingData?.installation_type),
+          installation_location: getValueOrKeepExisting(installationLocation, existingData?.installation_location),
+          year_vintage: getValueOrKeepExisting(yearVintage, existingData?.year_vintage) || (formPrefix === 'new' ? new Date().getFullYear().toString() : undefined),
+          ...(formPrefix === 'old' 
+            ? { removal_date: getValueOrKeepExisting(dateField, existingData?.removal_date) }
+            : { installation_date: getValueOrKeepExisting(dateField, existingData?.installation_date) || new Date().toISOString().split('T')[0] }
+          ),
+        } as MeterData
+      }
+
+      // Build old meter data (only if exchange or existing data)
+      const isExchange = prefill?.meterAction === 'exchange' || existingProtocol?.old_meter_data
+      const oldMeterData: MeterData | null = isExchange 
+        ? mergeMeterData('old', existingProtocol?.old_meter_data)
+        : null
+
+      // Build new meter data
+      const newMeterData: MeterData = mergeMeterData('new', existingProtocol?.new_meter_data) as MeterData
+
+      // Build request body (keep existing values for empty fields)
       const requestBody = {
         plumber_calculation_id: plumberCalculationId,
-        person_type: prefill?.personType === 'company' ? 'company' : 'person',
-        company_name: formData.get('company_name') as string || undefined,
-        contact_person: formData.get('contact_person') as string || undefined,
-        person_name: formData.get('person_name') as string || undefined,
-        street: formData.get('street') as string || undefined,
-        additional_info: formData.get('additional_info') as string || undefined,
-        postal_code: formData.get('postal_code') as string || undefined,
-        city: formData.get('city') as string || undefined,
-        phone: formData.get('phone') as string || undefined,
-        email: formData.get('email') as string || undefined,
+        person_type: (existingProtocol?.person_type === 'company' || prefill?.personType === 'company') ? 'company' : 'person',
+        company_name: getValueOrKeepExisting(formData.get('company_name'), existingProtocol?.company_name),
+        contact_person: getValueOrKeepExisting(formData.get('contact_person'), existingProtocol?.contact_person),
+        person_name: getValueOrKeepExisting(formData.get('person_name'), existingProtocol?.person_name),
+        street: getValueOrKeepExisting(formData.get('street'), existingProtocol?.street),
+        additional_info: getValueOrKeepExisting(formData.get('additional_info'), existingProtocol?.additional_info),
+        postal_code: getValueOrKeepExisting(formData.get('postal_code'), existingProtocol?.postal_code),
+        city: getValueOrKeepExisting(formData.get('city'), existingProtocol?.city),
+        phone: getValueOrKeepExisting(formData.get('phone'), existingProtocol?.phone),
+        email: getValueOrKeepExisting(formData.get('email'), existingProtocol?.email),
         old_meter_data: oldMeterData,
         new_meter_data: newMeterData,
-        notes: formData.get('notes') as string || undefined,
+        notes: getValueOrKeepExisting(formData.get('notes'), existingProtocol?.notes),
       }
 
       // Send to API
@@ -219,7 +261,12 @@ export default function ProtocolCreatePage() {
   return (
     <div className="w-full mr-auto">
       <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-6">Austauschprotokoll für einen Wasserzähler</h1>
-      <form ref={formRef} onSubmit={onSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 space-y-6">
+      <form 
+        key={existingProtocol?.id || 'new-form'} 
+        ref={formRef} 
+        onSubmit={onSubmit} 
+        className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 md:p-8 space-y-6"
+      >
         {/* Einbauort des Messgerätes */}
         <div>
           <div className="flex items-center gap-2 mb-3">
@@ -423,35 +470,35 @@ export default function ProtocolCreatePage() {
               </select>
               <select
                 name="old_inlet_size"
-                defaultValue={existingProtocol?.old_meter_data?.inlet_size ?? ""}
-                onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className={`w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.old_meter_data?.inlet_size ? 'text-gray-900' : 'text-gray-400'}`}
+                defaultValue={existingProtocol?.old_meter_data?.inlet_size ?? "Grösse"}
+                onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '' || e.currentTarget.value === 'Grösse')}
+                className={`w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.old_meter_data?.inlet_size && existingProtocol?.old_meter_data?.inlet_size !== 'Grösse' ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
-                <option value="">Grösse</option>
-                <option>1/2&quot;</option>
-                <option>3/4&quot;</option>
-                <option>1&quot;</option>
-                <option>1 1/4&quot;</option>
-                <option>1 1/2&quot;</option>
-                <option>2&quot;</option>
-                <option>2 1/2&quot;</option>
-                <option>3&quot;</option>
-                <option>15 mm</option>
-                <option>16 mm</option>
-                <option>18 mm</option>
-                <option>20 mm</option>
-                <option>22 mm</option>
-                <option>26 mm</option>
-                <option>28 mm</option>
-                <option>32 mm</option>
-                <option>35 mm</option>
-                <option>40 mm</option>
-                <option>42 mm</option>
-                <option>50 mm</option>
-                <option>54 mm</option>
-                <option>63 mm</option>
-                <option>76.1 mm</option>
+                <option value="Grösse">Grösse</option>
+                <option value='1/2"'>1/2&quot;</option>
+                <option value='3/4"'>3/4&quot;</option>
+                <option value='1"'>1&quot;</option>
+                <option value='1 1/4"'>1 1/4&quot;</option>
+                <option value='1 1/2"'>1 1/2&quot;</option>
+                <option value='2"'>2&quot;</option>
+                <option value='2 1/2"'>2 1/2&quot;</option>
+                <option value='3"'>3&quot;</option>
+                <option value="15 mm">15 mm</option>
+                <option value="16 mm">16 mm</option>
+                <option value="18 mm">18 mm</option>
+                <option value="20 mm">20 mm</option>
+                <option value="22 mm">22 mm</option>
+                <option value="26 mm">26 mm</option>
+                <option value="28 mm">28 mm</option>
+                <option value="32 mm">32 mm</option>
+                <option value="35 mm">35 mm</option>
+                <option value="40 mm">40 mm</option>
+                <option value="42 mm">42 mm</option>
+                <option value="50 mm">50 mm</option>
+                <option value="54 mm">54 mm</option>
+                <option value="63 mm">63 mm</option>
+                <option value="76.1 mm">76.1 mm</option>
               </select>
             </div>
             <div className="flex gap-3">
@@ -471,35 +518,35 @@ export default function ProtocolCreatePage() {
               </select>
               <select
                 name="old_outlet_size"
-                defaultValue={existingProtocol?.old_meter_data?.outlet_size ?? ""}
-                onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className={`w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.old_meter_data?.outlet_size ? 'text-gray-900' : 'text-gray-400'}`}
+                defaultValue={existingProtocol?.old_meter_data?.outlet_size ?? "Grösse"}
+                onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '' || e.currentTarget.value === 'Grösse')}
+                className={`w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.old_meter_data?.outlet_size && existingProtocol?.old_meter_data?.outlet_size !== 'Grösse' ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
-                <option value="">Grösse</option>
-                <option>1/2&quot;</option>
-                <option>3/4&quot;</option>
-                <option>1&quot;</option>
-                <option>1 1/4&quot;</option>
-                <option>1 1/2&quot;</option>
-                <option>2&quot;</option>
-                <option>2 1/2&quot;</option>
-                <option>3&quot;</option>
-                <option>15 mm</option>
-                <option>16 mm</option>
-                <option>18 mm</option>
-                <option>20 mm</option>
-                <option>22 mm</option>
-                <option>26 mm</option>
-                <option>28 mm</option>
-                <option>32 mm</option>
-                <option>35 mm</option>
-                <option>40 mm</option>
-                <option>42 mm</option>
-                <option>50 mm</option>
-                <option>54 mm</option>
-                <option>63 mm</option>
-                <option>76.1 mm</option>
+                <option value="Grösse">Grösse</option>
+                <option value='1/2"'>1/2&quot;</option>
+                <option value='3/4"'>3/4&quot;</option>
+                <option value='1"'>1&quot;</option>
+                <option value='1 1/4"'>1 1/4&quot;</option>
+                <option value='1 1/2"'>1 1/2&quot;</option>
+                <option value='2"'>2&quot;</option>
+                <option value='2 1/2"'>2 1/2&quot;</option>
+                <option value='3"'>3&quot;</option>
+                <option value="15 mm">15 mm</option>
+                <option value="16 mm">16 mm</option>
+                <option value="18 mm">18 mm</option>
+                <option value="20 mm">20 mm</option>
+                <option value="22 mm">22 mm</option>
+                <option value="26 mm">26 mm</option>
+                <option value="28 mm">28 mm</option>
+                <option value="32 mm">32 mm</option>
+                <option value="35 mm">35 mm</option>
+                <option value="40 mm">40 mm</option>
+                <option value="42 mm">42 mm</option>
+                <option value="50 mm">50 mm</option>
+                <option value="54 mm">54 mm</option>
+                <option value="63 mm">63 mm</option>
+                <option value="76.1 mm">76.1 mm</option>
               </select>
             </div>
             <div>
@@ -552,7 +599,7 @@ export default function ProtocolCreatePage() {
                 placeholder="Ausbaudatum"
                 defaultValue={existingProtocol?.old_meter_data?.removal_date ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                className={`w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.old_meter_data?.removal_date ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               />
             </div>
@@ -638,35 +685,35 @@ export default function ProtocolCreatePage() {
               </select>
               <select
                 name="new_inlet_size"
-                defaultValue={existingProtocol?.new_meter_data?.inlet_size ?? ""}
-                onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className={`w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.new_meter_data?.inlet_size ? 'text-gray-900' : 'text-gray-400'}`}
+                defaultValue={existingProtocol?.new_meter_data?.inlet_size ?? "Grösse"}
+                onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '' || e.currentTarget.value === 'Grösse')}
+                className={`w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.new_meter_data?.inlet_size && existingProtocol?.new_meter_data?.inlet_size !== 'Grösse' ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
-                <option value="">Grösse</option>
-                <option>1/2&quot;</option>
-                <option>3/4&quot;</option>
-                <option>1&quot;</option>
-                <option>1 1/4&quot;</option>
-                <option>1 1/2&quot;</option>
-                <option>2&quot;</option>
-                <option>2 1/2&quot;</option>
-                <option>3&quot;</option>
-                <option>15 mm</option>
-                <option>16 mm</option>
-                <option>18 mm</option>
-                <option>20 mm</option>
-                <option>22 mm</option>
-                <option>26 mm</option>
-                <option>28 mm</option>
-                <option>32 mm</option>
-                <option>35 mm</option>
-                <option>40 mm</option>
-                <option>42 mm</option>
-                <option>50 mm</option>
-                <option>54 mm</option>
-                <option>63 mm</option>
-                <option>76.1 mm</option>
+                <option value="Grösse">Grösse</option>
+                <option value='1/2"'>1/2&quot;</option>
+                <option value='3/4"'>3/4&quot;</option>
+                <option value='1"'>1&quot;</option>
+                <option value='1 1/4"'>1 1/4&quot;</option>
+                <option value='1 1/2"'>1 1/2&quot;</option>
+                <option value='2"'>2&quot;</option>
+                <option value='2 1/2"'>2 1/2&quot;</option>
+                <option value='3"'>3&quot;</option>
+                <option value="15 mm">15 mm</option>
+                <option value="16 mm">16 mm</option>
+                <option value="18 mm">18 mm</option>
+                <option value="20 mm">20 mm</option>
+                <option value="22 mm">22 mm</option>
+                <option value="26 mm">26 mm</option>
+                <option value="28 mm">28 mm</option>
+                <option value="32 mm">32 mm</option>
+                <option value="35 mm">35 mm</option>
+                <option value="40 mm">40 mm</option>
+                <option value="42 mm">42 mm</option>
+                <option value="50 mm">50 mm</option>
+                <option value="54 mm">54 mm</option>
+                <option value="63 mm">63 mm</option>
+                <option value="76.1 mm">76.1 mm</option>
               </select>
             </div>
             <div className="flex gap-3">
@@ -686,35 +733,35 @@ export default function ProtocolCreatePage() {
               </select>
               <select
                 name="new_outlet_size"
-                defaultValue={existingProtocol?.new_meter_data?.outlet_size ?? ""}
-                onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className={`w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.new_meter_data?.outlet_size ? 'text-gray-900' : 'text-gray-400'}`}
+                defaultValue={existingProtocol?.new_meter_data?.outlet_size ?? "Grösse"}
+                onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '' || e.currentTarget.value === 'Grösse')}
+                className={`w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.new_meter_data?.outlet_size && existingProtocol?.new_meter_data?.outlet_size !== 'Grösse' ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               >
-                <option value="">Grösse</option>
-                <option>1/2&quot;</option>
-                <option>3/4&quot;</option>
-                <option>1&quot;</option>
-                <option>1 1/4&quot;</option>
-                <option>1 1/2&quot;</option>
-                <option>2&quot;</option>
-                <option>2 1/2&quot;</option>
-                <option>3&quot;</option>
-                <option>15 mm</option>
-                <option>16 mm</option>
-                <option>18 mm</option>
-                <option>20 mm</option>
-                <option>22 mm</option>
-                <option>26 mm</option>
-                <option>28 mm</option>
-                <option>32 mm</option>
-                <option>35 mm</option>
-                <option>40 mm</option>
-                <option>42 mm</option>
-                <option>50 mm</option>
-                <option>54 mm</option>
-                <option>63 mm</option>
-                <option>76.1 mm</option>
+                <option value="Grösse">Grösse</option>
+                <option value='1/2"'>1/2&quot;</option>
+                <option value='3/4"'>3/4&quot;</option>
+                <option value='1"'>1&quot;</option>
+                <option value='1 1/4"'>1 1/4&quot;</option>
+                <option value='1 1/2"'>1 1/2&quot;</option>
+                <option value='2"'>2&quot;</option>
+                <option value='2 1/2"'>2 1/2&quot;</option>
+                <option value='3"'>3&quot;</option>
+                <option value="15 mm">15 mm</option>
+                <option value="16 mm">16 mm</option>
+                <option value="18 mm">18 mm</option>
+                <option value="20 mm">20 mm</option>
+                <option value="22 mm">22 mm</option>
+                <option value="26 mm">26 mm</option>
+                <option value="28 mm">28 mm</option>
+                <option value="32 mm">32 mm</option>
+                <option value="35 mm">35 mm</option>
+                <option value="40 mm">40 mm</option>
+                <option value="42 mm">42 mm</option>
+                <option value="50 mm">50 mm</option>
+                <option value="54 mm">54 mm</option>
+                <option value="63 mm">63 mm</option>
+                <option value="76.1 mm">76.1 mm</option>
               </select>
             </div>
             <div>
@@ -767,7 +814,7 @@ export default function ProtocolCreatePage() {
                 placeholder="Einbaudatum"
                 defaultValue={existingProtocol?.new_meter_data?.installation_date ?? ""}
                 onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                className={`w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 ${existingProtocol?.new_meter_data?.installation_date ? 'text-gray-900' : 'text-gray-400'}`}
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
               />
             </div>
