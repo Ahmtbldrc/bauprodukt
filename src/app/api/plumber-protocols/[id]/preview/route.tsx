@@ -85,6 +85,12 @@ function generateProtocolHTML(protocol: PlumberProtocol): string {
     .section {
       margin-bottom: 24px;
       break-inside: avoid;
+      page-break-inside: avoid;
+    }
+    
+    .section:not(:first-of-type) {
+      page-break-before: auto;
+      padding-top: 20px;
     }
     
     .section-title {
@@ -157,6 +163,14 @@ function generateProtocolHTML(protocol: PlumberProtocol): string {
       
       .header {
         margin: -20mm -20mm 20px -20mm;
+      }
+      
+      .section {
+        page-break-after: auto;
+      }
+      
+      .section:not(:first-of-type) {
+        margin-top: 30px;
       }
       
       .footer {
