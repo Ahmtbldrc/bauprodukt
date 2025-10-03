@@ -14,6 +14,7 @@ import {
   PlumberCalculationResult,
   calculatePlumberValues,
 } from '@/lib/plumber-calculation'
+import { useCreatePlumberCalculation } from '@/hooks'
 
 type PartyInfo = {
   firstName?: string
@@ -48,7 +49,6 @@ type ProtocolStoredData = {
 }
 
 const STORAGE_KEY = 'bauprodukt_protocol_form_v1'
-const CALC_RESULTS_STORAGE_KEY = 'bauprodukt_calc_results_v1'
 
 export function InstallationInfoPrefill() {
   const searchParams = useSearchParams()
@@ -234,6 +234,7 @@ function FixturesSection({ isFromProtocol }: { isFromProtocol: boolean }) {
   const [includeHydrantExtra, setIncludeHydrantExtra] = React.useState(false)
   const [isResultDialogOpen, setIsResultDialogOpen] = React.useState(false)
   const [saveName, setSaveName] = React.useState('')
+  const createMutation = useCreatePlumberCalculation()
 
   const inc = (id: string) => setCounts(prev => ({ ...prev, [id]: (prev[id] || 0) + 1 }))
   const dec = (id: string) =>
@@ -261,23 +262,28 @@ function FixturesSection({ isFromProtocol }: { isFromProtocol: boolean }) {
     setResult(null)
   }
 
-  function saveCurrentResult(name: string) {
-    if (typeof window === 'undefined' || !result) return
-    try {
-      const payload = {
-        id: Date.now(),
-        name: name.trim(),
-        createdAt: new Date().toISOString(),
-        inputs: { counts, method, includeHydrantExtra },
-        result,
+  function saveCurrentResult(name: string, onSuccess?: () => void) {
+    if (!result) return
+    
+    createMutation.mutate({
+      name: name.trim(),
+      method,
+      include_hydrant_extra: includeHydrantExtra,
+      total_lu: result.totalLU,
+      total_lps: result.totalLps,
+      total_m3_per_hour: result.totalM3PerHour,
+      recommended_dn: result.dn,
+      fixture_counts: counts
+    }, {
+      onSuccess: () => {
+        console.log('Calculation saved successfully')
+        onSuccess?.()
+      },
+      onError: (error) => {
+        console.error('Error saving calculation:', error)
+        alert('Fehler beim Speichern der Berechnung')
       }
-      const raw = localStorage.getItem(CALC_RESULTS_STORAGE_KEY)
-      const list = raw ? (JSON.parse(raw) as any[]) : []
-      list.push(payload)
-      localStorage.setItem(CALC_RESULTS_STORAGE_KEY, JSON.stringify(list))
-    } catch {
-      // ignore
-    }
+    })
   }
 
   const formatNumber = React.useCallback(
@@ -482,14 +488,15 @@ function FixturesSection({ isFromProtocol }: { isFromProtocol: boolean }) {
                   className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 bg-white hover:bg-gray-50"
                   onClick={() => {
                     if (!saveName.trim()) return
-                    saveCurrentResult(saveName)
-                    setIsResultDialogOpen(false)
-                    setSaveName('')
-                    resetCalculatorUI()
+                    saveCurrentResult(saveName, () => {
+                      setIsResultDialogOpen(false)
+                      setSaveName('')
+                      resetCalculatorUI()
+                    })
                   }}
-                  disabled={!saveName.trim()}
+                  disabled={!saveName.trim() || createMutation.isPending}
                 >
-                  Speichern
+                  {createMutation.isPending ? 'Wird gespeichert...' : 'Speichern'}
                 </button>
                 <button
                   type="button"
@@ -497,14 +504,15 @@ function FixturesSection({ isFromProtocol }: { isFromProtocol: boolean }) {
                   style={{ backgroundColor: '#F39236' }}
                   onClick={() => {
                     if (!saveName.trim()) return
-                    saveCurrentResult(saveName)
-                    setIsResultDialogOpen(false)
-                    setSaveName('')
-                    router.push('/plumber/protocol/create')
+                    saveCurrentResult(saveName, () => {
+                      setIsResultDialogOpen(false)
+                      setSaveName('')
+                      router.push('/plumber/protocol/create')
+                    })
                   }}
-                  disabled={!saveName.trim()}
+                  disabled={!saveName.trim() || createMutation.isPending}
                 >
-                  Speichern und als Protokoll öffnen
+                  {createMutation.isPending ? 'Wird gespeichert...' : 'Speichern und als Protokoll öffnen'}
                 </button>
               </div>
             </div>

@@ -263,6 +263,46 @@ export const createProfileSchema = z.object({
 
 export const updateProfileSchema = createProfileSchema.partial()
 
+// Plumber Calculation schemas
+export const calculationMethodSchema = z.enum(['m1', 'm2'])
+
+export const plumberCalculationSchema = z.object({
+  id: z.number().int(),
+  user_id: z.string().uuid(),
+  name: z.string().min(1, 'Name ist erforderlich'),
+  created_at: z.string(),
+  updated_at: z.string(),
+  method: calculationMethodSchema,
+  include_hydrant_extra: z.boolean(),
+  total_lu: z.number().min(0),
+  total_lps: z.number().min(0),
+  total_m3_per_hour: z.number().min(0),
+  recommended_dn: z.string().nullable(),
+  fixture_counts: z.record(z.number().int().min(0))
+})
+
+export const createPlumberCalculationSchema = z.object({
+  name: z.string().min(1, 'Name ist erforderlich').max(255, 'Name ist zu lang'),
+  method: calculationMethodSchema,
+  include_hydrant_extra: z.boolean().default(false),
+  total_lu: z.number().min(0, 'Total LU muss positiv sein'),
+  total_lps: z.number().min(0, 'Total l/s muss positiv sein'),
+  total_m3_per_hour: z.number().min(0, 'Total m³/h muss positiv sein'),
+  recommended_dn: z.string().nullable().optional(),
+  fixture_counts: z.record(z.number().int().min(0)).default({})
+})
+
+export const updatePlumberCalculationSchema = z.object({
+  name: z.string().min(1, 'Name ist erforderlich').max(255, 'Name ist zu lang').optional(),
+  method: calculationMethodSchema.optional(),
+  include_hydrant_extra: z.boolean().optional(),
+  total_lu: z.number().min(0, 'Total LU muss positiv sein').optional(),
+  total_lps: z.number().min(0, 'Total l/s muss positiv sein').optional(),
+  total_m3_per_hour: z.number().min(0, 'Total m³/h muss positiv sein').optional(),
+  recommended_dn: z.string().nullable().optional(),
+  fixture_counts: z.record(z.number().int().min(0)).optional()
+})
+
 // Type exports
 export type BrandFormData = z.infer<typeof createBrandSchema>
 export type CategoryFormData = z.infer<typeof createCategorySchema>
@@ -276,6 +316,8 @@ export type UpdateOrderStatusFormData = z.infer<typeof updateOrderStatusSchema>
 export type UpdateOrderFormData = z.infer<typeof updateOrderSchema>
 export type RoleFormData = z.infer<typeof createRoleSchema>
 export type ProfileFormData = z.infer<typeof createProfileSchema>
+export type PlumberCalculationFormData = z.infer<typeof createPlumberCalculationSchema>
+export type UpdatePlumberCalculationFormData = z.infer<typeof updatePlumberCalculationSchema>
 
 // Validation helpers
 export const validateBrand = (data: unknown) => createBrandSchema.safeParse(data)
@@ -289,4 +331,6 @@ export const validateCreateOrder = (data: unknown) => createOrderSchema.safePars
 export const validateUpdateOrderStatus = (data: unknown) => updateOrderStatusSchema.safeParse(data)
 export const validateUpdateOrder = (data: unknown) => updateOrderSchema.safeParse(data)
 export const validateRole = (data: unknown) => createRoleSchema.safeParse(data)
-export const validateProfile = (data: unknown) => createProfileSchema.safeParse(data) 
+export const validateProfile = (data: unknown) => createProfileSchema.safeParse(data)
+export const validatePlumberCalculation = (data: unknown) => createPlumberCalculationSchema.safeParse(data)
+export const validateUpdatePlumberCalculation = (data: unknown) => updatePlumberCalculationSchema.safeParse(data) 

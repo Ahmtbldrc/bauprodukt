@@ -490,6 +490,37 @@ export interface Profile {
   updated_at: string
 }
 
+// Plumber Calculation Types
+export type CalculationMethod = 'm1' | 'm2'
+
+export interface PlumberCalculationInputs {
+  counts: Record<string, number | undefined>
+  method: CalculationMethod
+  includeHydrantExtra?: boolean
+}
+
+export interface PlumberCalculationResult {
+  totalLU: number
+  totalLps: number
+  totalM3PerHour: number
+  dn: string | null
+}
+
+export interface PlumberCalculation {
+  id: number
+  user_id: string
+  name: string
+  created_at: string
+  updated_at: string
+  method: CalculationMethod
+  include_hydrant_extra: boolean
+  total_lu: number
+  total_lps: number
+  total_m3_per_hour: number
+  recommended_dn: string | null
+  fixture_counts: Record<string, number>
+}
+
 // Profile Relations
 export interface ProfileWithRole extends Profile {
   role: Role
@@ -589,6 +620,11 @@ export interface Database {
         Row: VariantAttributeValue
         Insert: VariantAttributeValue
         Update: VariantAttributeValue
+      }
+      plumber_calculations: {
+        Row: PlumberCalculation
+        Insert: Omit<PlumberCalculation, 'id' | 'created_at' | 'updated_at'>
+        Update: Partial<Omit<PlumberCalculation, 'id' | 'created_at' | 'user_id'>>
       }
     }
     Views: {

@@ -4,38 +4,27 @@ import React from 'react'
 import { useRouter } from 'next/navigation'
 import { Trash2 } from 'lucide-react'
 import { ConfirmDialog } from '@/components/ui'
-
-type SavedCalc = {
-  id: number
-  name: string
-  createdAt: string
-  inputs: { counts: Record<string, number | undefined>; method: 'm1' | 'm2'; includeHydrantExtra?: boolean }
-  result: { totalLU: number; totalLps: number; totalM3PerHour: number; dn: string | null }
-}
-
-const STORAGE_KEY = 'bauprodukt_calc_results_v1'
+import { usePlumberCalculations, useDeletePlumberCalculation } from '@/hooks'
+import type { PlumberCalculation } from '@/types/database'
 
 export default function PlumberHistoryPage() {
   const router = useRouter()
-  const [items, setItems] = React.useState<SavedCalc[]>([])
-  const [selected, setSelected] = React.useState<SavedCalc | null>(null)
+  const [selected, setSelected] = React.useState<PlumberCalculation | null>(null)
   const [isDialogOpen, setIsDialogOpen] = React.useState(false)
   const [page, setPage] = React.useState(1)
-  const [confirmItem, setConfirmItem] = React.useState<SavedCalc | null>(null)
+  const [confirmItem, setConfirmItem] = React.useState<PlumberCalculation | null>(null)
   const [confirmOpen, setConfirmOpen] = React.useState(false)
-  const [confirmLoading, setConfirmLoading] = React.useState(false)
   const pageSize = 10
 
-  React.useEffect(() => {
-    if (typeof window === 'undefined') return
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY)
-      const list = raw ? (JSON.parse(raw) as SavedCalc[]) : []
-      setItems(list.sort((a, b) => b.id - a.id))
-    } catch {
-      setItems([])
-    }
-  }, [])
+  // Fetch calculations from API
+  const { data: calculations, isLoading } = usePlumberCalculations({
+    orderBy: 'created_at',
+    ascending: false
+  })
+
+  const deleteMutation = useDeletePlumberCalculation()
+
+  const items = calculations || []
 
   function formatDate(iso?: string) {
     if (!iso) return '-'
@@ -47,26 +36,23 @@ export default function PlumberHistoryPage() {
     }
   }
 
-  function openDialog(it: SavedCalc) {
+  function openDialog(it: PlumberCalculation) {
     setSelected(it)
     setIsDialogOpen(true)
   }
 
-  function deleteItem(id: number) {
-    setItems(prev => {
-      const next = prev.filter(x => x.id !== id)
-      if (typeof window !== 'undefined') {
-        try {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-        } catch {}
+  function handleDelete(id: number) {
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        setIsDialogOpen(false)
+        setSelected(null)
+        setConfirmOpen(false)
+        setConfirmItem(null)
       }
-      return next
     })
-    setIsDialogOpen(false)
-    setSelected(null)
   }
 
-  function requestDelete(it: SavedCalc) {
+  function requestDelete(it: PlumberCalculation) {
     setConfirmItem(it)
     setConfirmOpen(true)
   }
@@ -88,7 +74,9 @@ export default function PlumberHistoryPage() {
         </button>
       </div>
 
-      {items.length === 0 ? (
+      {isLoading ? (
+        <div className="text-gray-600">Lädt...</div>
+      ) : items.length === 0 ? (
         <div className="text-gray-600">Keine gespeicherten Berechnungen gefunden.</div>
       ) : (
         <>
@@ -97,12 +85,12 @@ export default function PlumberHistoryPage() {
               <div key={it.id} className="rounded-xl border border-gray-200 bg-white p-4 md:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div className="space-y-1">
                   <div className="text-sm font-medium text-gray-900">{it.name || 'Unbenannte Berechnung'}</div>
-                  <div className="text-xs text-gray-500">{formatDate(it.createdAt)}</div>
+                  <div className="text-xs text-gray-500">{formatDate(it.created_at)}</div>
                   <div className="text-xs text-gray-600">
-                    LU: {(it.result.totalLU * 0.1).toLocaleString('de-CH', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
-                    {' '}| QD (l/s): {it.result.totalLps.toLocaleString('de-CH', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}
-                    {' '}| m³/h: {it.result.totalM3PerHour.toLocaleString('de-CH', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}
-                    {' '}| DN: {it.result.dn ?? '–'}
+                    LU: {it.total_lu.toLocaleString('de-CH', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}
+                    {' '}| QD (l/s): {it.total_lps.toLocaleString('de-CH', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}
+                    {' '}| m³/h: {it.total_m3_per_hour.toLocaleString('de-CH', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}
+                    {' '}| DN: {it.recommended_dn ?? '–'}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 md:justify-end">
@@ -172,24 +160,24 @@ export default function PlumberHistoryPage() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <div className="text-xs uppercase tracking-wide text-gray-500">Total LU</div>
-                  <div className="text-lg font-semibold text-gray-900">{(selected.result.totalLU * 0.1).toLocaleString('de-CH', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</div>
+                  <div className="text-lg font-semibold text-gray-900">{selected.total_lu.toLocaleString('de-CH', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</div>
                 </div>
                 <div>
                   <div className="text-xs uppercase tracking-wide text-gray-500">Spitzendurchfluss (l/s)</div>
-                  <div className="text-lg font-semibold text-gray-900">{selected.result.totalLps.toLocaleString('de-CH', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</div>
+                  <div className="text-lg font-semibold text-gray-900">{selected.total_lps.toLocaleString('de-CH', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</div>
                 </div>
                 <div>
                   <div className="text-xs uppercase tracking-wide text-gray-500">Volumenstrom (m³/h)</div>
-                  <div className="text-lg font-semibold text-gray-900">{selected.result.totalM3PerHour.toLocaleString('de-CH', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</div>
+                  <div className="text-lg font-semibold text-gray-900">{selected.total_m3_per_hour.toLocaleString('de-CH', { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</div>
                 </div>
                 <div>
                   <div className="text-xs uppercase tracking-wide text-gray-500">Empfohlener DN</div>
-                  <div className="text-lg font-semibold text-gray-900">{selected.result.dn ?? '–'}</div>
+                  <div className="text-lg font-semibold text-gray-900">{selected.recommended_dn ?? '–'}</div>
                 </div>
               </div>
               <div className="text-xs text-gray-600">
-                Methode: {selected.inputs.method === 'm1' ? 'Methode 1' : 'Methode 2'}
-                {selected.inputs.includeHydrantExtra ? ' • Wasserlöschposten berücksichtigt' : ''}
+                Methode: {selected.method === 'm1' ? 'Methode 1' : 'Methode 2'}
+                {selected.include_hydrant_extra ? ' • Wasserlöschposten berücksichtigt' : ''}
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
@@ -215,22 +203,16 @@ export default function PlumberHistoryPage() {
       <ConfirmDialog
         isOpen={confirmOpen}
         onClose={() => { setConfirmOpen(false); setConfirmItem(null) }}
-        onConfirm={async () => {
+        onConfirm={() => {
           if (!confirmItem) return
-          try {
-            setConfirmLoading(true)
-            deleteItem(confirmItem.id)
-          } finally {
-            setConfirmLoading(false)
-            setConfirmOpen(false)
-            setConfirmItem(null)
-          }
+          handleDelete(confirmItem.id)
         }}
         title="Eintrag löschen"
         message={`Möchten Sie die Berechnung "${confirmItem?.name || 'Unbenannte Berechnung'}" dauerhaft löschen? Diese Aktion kann nicht rückgängig gemacht werden.`}
         confirmText="Ja, löschen"
         cancelText="Abbrechen"
         variant="danger"
+        isLoading={deleteMutation.isPending}
       />
     </div>
   )
