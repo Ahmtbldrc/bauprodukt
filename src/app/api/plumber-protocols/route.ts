@@ -135,20 +135,25 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Prepare insert data
-    const insertData: any = {
+    // Prepare upsert data
+    const upsertData: any = {
       ...body,
       user_id: user.id,
     }
 
+    // Use upsert to insert or update based on plumber_calculation_id
+    // If plumber_calculation_id exists, it will update; otherwise insert new
     const { data, error } = await supabase
       .from('plumber_protocols')
-      .insert(insertData)
+      .upsert(upsertData, {
+        onConflict: 'plumber_calculation_id',
+        ignoreDuplicates: false
+      })
       .select()
       .single()
 
     if (error) {
-      console.error('Error creating protocol:', error)
+      console.error('Error creating/updating protocol:', error)
       return NextResponse.json(
         { error: error.message },
         { status: 400 }
@@ -157,8 +162,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ 
       data,
-      message: 'Protokoll erfolgreich erstellt' 
-    }, { status: 201 })
+      message: 'Protokoll erfolgreich gespeichert' 
+    }, { status: 200 })
 
   } catch (error) {
     console.error('Error creating protocol:', error)

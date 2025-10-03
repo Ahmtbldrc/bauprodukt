@@ -202,7 +202,10 @@ export default function ProtocolCreatePage() {
       await response.json()
       
       // Success - redirect or show success message
-      alert('Protokoll wurde erfolgreich erstellt!')
+      const message = existingProtocol 
+        ? 'Protokoll wurde erfolgreich aktualisiert!' 
+        : 'Protokoll wurde erfolgreich erstellt!'
+      alert(message)
       router.push('/plumber/calculator')
       
     } catch (error) {
@@ -788,11 +791,16 @@ export default function ProtocolCreatePage() {
           <div className="pt-1">
             <button
               type="submit"
-              disabled={!agree}
+              disabled={!agree || isSubmitting}
               className="w-full px-5 py-2.5 rounded-lg text-white text-base font-medium shadow-sm disabled:opacity-60"
               style={{ backgroundColor: '#4b4b4b' }}
             >
-              Protokoll an die Gemeinde versenden
+              {isSubmitting 
+                ? 'Wird gespeichert...' 
+                : existingProtocol 
+                  ? 'Protokoll aktualisieren und versenden'
+                  : 'Protokoll an die Gemeinde versenden'
+              }
             </button>
           </div>
           <div className="pt-1">
