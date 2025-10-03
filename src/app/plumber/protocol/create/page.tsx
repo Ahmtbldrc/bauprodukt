@@ -8,6 +8,12 @@ export default function ProtocolCreatePage() {
   const [agree, setAgree] = React.useState(false)
   const [prefill, setPrefill] = React.useState<any | null>(null)
 
+  const years = React.useMemo(() => {
+    const current = new Date().getFullYear()
+    const start = 1950
+    return Array.from({ length: current - start + 1 }, (_, i) => String(current - i))
+  }, [])
+
   const STORAGE_KEY = 'bauprodukt_protocol_form_v1'
 
   React.useEffect(() => {
@@ -148,39 +154,201 @@ export default function ProtocolCreatePage() {
               <input type="text" placeholder="Hersteller *" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
             </div>
             <div>
-              <input type="text" placeholder="Zähler‑Nr. *" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+              <input type="text" placeholder="Zähler‑Nr. *" defaultValue={prefill?.zaehlernummer ?? ''} className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
             </div>
             <div>
-              <input type="text" placeholder="Einbaulänge *" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+              <select
+                defaultValue=""
+                onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+              >
+                <option value="">Einbaulänge *</option>
+                <option>110 mm</option>
+                <option>190 mm</option>
+                <option>220 mm</option>
+                <option>260 mm</option>
+                <option>270 mm</option>
+                <option>300 mm</option>
+              </select>
             </div>
             <div>
-              <input type="text" placeholder="Zählerstand in m³" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+              <input type="number" placeholder="Zählerstand in m³" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 placeholder-gray-400" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
             </div>
             <div>
-              <input type="text" placeholder="Dimension *" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+              <select
+                defaultValue=""
+                onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+              >
+                <option value="">Dimension *</option>
+                <option>DN 20 - 3/4"</option>
+                <option>DN 25 - 1"</option>
+                <option>DN 32 - 1 1/4"</option>
+                <option>DN 40 - 1 1/2"</option>
+                <option>DN 50 - 2"</option>
+              </select>
             </div>
             <div>
-              <input type="text" placeholder="Dauerdurchfluss in m³/h" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+              <select
+                defaultValue=""
+                onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+              >
+                <option value="">Dauerdurchfluss in m³/h</option>
+                <option>2,5 m3/h</option>
+                <option>3,5 m3/h</option>
+                <option>4 m3/h</option>
+                <option>6,3 m3/h</option>
+                <option>7 m3/h</option>
+                <option>10 m3/h</option>
+                <option>16 m3/h</option>
+                <option>25 m3/h</option>
+              </select>
             </div>
             <div className="flex gap-3">
-              <input type="text" placeholder="Einlaufstrecke *" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
-              <input type="text" placeholder="1 ½" className="w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+              <select
+                defaultValue=""
+                onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+              >
+                <option value="">Einlaufstrecke *</option>
+                <option>Verzinkt</option>
+                <option>Kupfer</option>
+                <option>Edelstahl</option>
+                <option>Rotguss</option>
+                <option>Kunststoff</option>
+              </select>
+              <select
+                defaultValue=""
+                onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
+                className="w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+              >
+                <option value="">Grösse</option>
+                <option>1/2"</option>
+                <option>3/4"</option>
+                <option>1"</option>
+                <option>1 1/4"</option>
+                <option>1 1/2"</option>
+                <option>2"</option>
+                <option>2 1/2"</option>
+                <option>3"</option>
+                <option>15 mm</option>
+                <option>16 mm</option>
+                <option>18 mm</option>
+                <option>20 mm</option>
+                <option>22 mm</option>
+                <option>26 mm</option>
+                <option>28 mm</option>
+                <option>32 mm</option>
+                <option>35 mm</option>
+                <option>40 mm</option>
+                <option>42 mm</option>
+                <option>50 mm</option>
+                <option>54 mm</option>
+                <option>63 mm</option>
+                <option>76.1 mm</option>
+              </select>
             </div>
             <div className="flex gap-3">
-              <input type="text" placeholder="Auslaufstrecke *" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
-              <input type="text" placeholder="1 ½" className="w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+              <select
+                defaultValue=""
+                onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+              >
+                <option value="">Auslaufstrecke *</option>
+                <option>Verzinkt</option>
+                <option>Kupfer</option>
+                <option>Edelstahl</option>
+                <option>Rotguss</option>
+                <option>Kunststoff</option>
+              </select>
+              <select
+                defaultValue=""
+                onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
+                className="w-24 rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+              >
+                <option value="">Grösse</option>
+                <option>1/2"</option>
+                <option>3/4"</option>
+                <option>1"</option>
+                <option>1 1/4"</option>
+                <option>1 1/2"</option>
+                <option>2"</option>
+                <option>2 1/2"</option>
+                <option>3"</option>
+                <option>15 mm</option>
+                <option>16 mm</option>
+                <option>18 mm</option>
+                <option>20 mm</option>
+                <option>22 mm</option>
+                <option>26 mm</option>
+                <option>28 mm</option>
+                <option>32 mm</option>
+                <option>35 mm</option>
+                <option>40 mm</option>
+                <option>42 mm</option>
+                <option>50 mm</option>
+                <option>54 mm</option>
+                <option>63 mm</option>
+                <option>76.1 mm</option>
+              </select>
             </div>
             <div>
-              <input type="text" placeholder="Einbauort *" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+              <select
+                defaultValue=""
+                onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+              >
+                <option value="">Einbauart *</option>
+                <option>waagerecht</option>
+                <option>senkrecht</option>
+              </select>
             </div>
             <div>
-              <input type="text" placeholder="Einbauort" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+              <select
+                defaultValue=""
+                onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+              >
+                <option value="">Einbauort</option>
+                <option>Keller</option>
+                <option>Küche</option>
+                <option>Bad</option>
+                <option>Garage</option>
+                <option>Technikraum</option>
+              </select>
             </div>
             <div>
-              <input type="text" placeholder="Jahrgang *" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+              <select
+                defaultValue=""
+                onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+              >
+                <option value="">Jahrgang *</option>
+                {years.map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
             </div>
             <div>
-              <input type="text" placeholder="Ausbaudatum" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+              <input
+                type="date"
+                placeholder="Ausbaudatum"
+                defaultValue=""
+                onChange={(e) => e.currentTarget.classList.toggle('text-gray-400', e.currentTarget.value === '')}
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2 text-gray-400"
+                style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+              />
             </div>
           </div>
         </div>
@@ -227,7 +395,12 @@ export default function ProtocolCreatePage() {
               <input type="text" placeholder="Einbauort" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
             </div>
             <div>
-              <input type="text" placeholder="Jahrgang *" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />
+              <select className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }}>
+                <option value="">Jahrgang *</option>
+                {years.map(y => (
+                  <option key={y} value={y}>{y}</option>
+                ))}
+              </select>
             </div>
             <div>
               <input type="text" placeholder="Ausbaudatum" className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2" style={{ ['--tw-ring-color' as any]: '#F3923620' }} />

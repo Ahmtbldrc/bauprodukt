@@ -56,6 +56,13 @@ export function InstallationInfoPrefill() {
 
   const [data, setData] = React.useState<ProtocolStoredData | null>(null)
 
+  const phoneDisplay = React.useCallback((val?: string) => {
+    if (!val) return ''
+    const trimmed = String(val).trim()
+    if (!trimmed || trimmed === '41') return ''
+    return trimmed
+  }, [])
+
   React.useEffect(() => {
     if (typeof window === 'undefined') return
     if (from !== 'protocol') return
@@ -104,7 +111,7 @@ export function InstallationInfoPrefill() {
               <input type="text" defaultValue={`${(data.firstName || '')}${data.lastName ? ` ${data.lastName}` : ''}`} placeholder="Vor- und Nachname" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
             )}
             <input type="text" defaultValue={data.address || ''} placeholder="Adresse" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
-            <input type="tel" defaultValue={data.phone || ''} placeholder="Telefon" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            <input type="tel" defaultValue={phoneDisplay(data.phone)} placeholder="Telefon" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
             <input type="email" defaultValue={data.email || ''} placeholder="E-Mail" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
             <input type="text" inputMode="numeric" defaultValue={data.postalCode || ''} placeholder="PLZ" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
             <input type="text" defaultValue={data.city || ''} placeholder="Ort" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
@@ -170,7 +177,7 @@ export function InstallationInfoPrefill() {
             <div className="space-y-4">
               <input type="text" defaultValue={`${(data.ownerInfo?.firstName || '')}${data.ownerInfo?.lastName ? ` ${data.ownerInfo.lastName}` : ''}`} placeholder="Vor- und Nachname" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
               <input type="text" defaultValue={data.ownerInfo?.address || ''} placeholder="Adresse" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
-              <input type="tel" defaultValue={data.ownerInfo?.phone || ''} placeholder="Telefon" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+              <input type="tel" defaultValue={phoneDisplay(data.ownerInfo?.phone)} placeholder="Telefon" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
               <input type="email" defaultValue={data.ownerInfo?.email || ''} placeholder="E-Mail" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
               <input type="text" defaultValue={data.ownerInfo?.postalCode || ''} placeholder="PLZ" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
               <input type="text" defaultValue={data.ownerInfo?.city || ''} placeholder="Ort" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
@@ -185,7 +192,7 @@ export function InstallationInfoPrefill() {
             <div className="space-y-4">
               <input type="text" defaultValue={`${(data.managementInfo?.firstName || '')}${data.managementInfo?.lastName ? ` ${data.managementInfo.lastName}` : ''}`} placeholder="Vor- und Nachname" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
               <input type="text" defaultValue={data.managementInfo?.address || ''} placeholder="Adresse" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
-              <input type="tel" defaultValue={data.managementInfo?.phone || ''} placeholder="Telefon" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+              <input type="tel" defaultValue={phoneDisplay(data.managementInfo?.phone)} placeholder="Telefon" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
               <input type="email" defaultValue={data.managementInfo?.email || ''} placeholder="E-Mail" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
               <input type="text" defaultValue={data.managementInfo?.postalCode || ''} placeholder="PLZ" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
               <input type="text" defaultValue={data.managementInfo?.city || ''} placeholder="Ort" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
