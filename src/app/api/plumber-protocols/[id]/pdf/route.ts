@@ -26,28 +26,38 @@ export async function GET(
       return NextResponse.redirect(previewUrl)
     }
     
-    // Launch browser
+    // Launch browser with optimizations
     browser = await chromium.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-gpu'
+      ]
     })
     
     const context = await browser.newContext({
-      viewport: { width: 794, height: 1123 } // A4 size in pixels at 96 DPI
+      viewport: { width: 794, height: 1123 }, // A4 size in pixels at 96 DPI
+      deviceScaleFactor: 1
     })
     
     const page = await context.newPage()
     
-    // Navigate to preview page
+    // Navigate to preview page with faster wait strategy
     await page.goto(previewUrl, {
-      waitUntil: 'networkidle',
-      timeout: 30000
+      waitUntil: 'domcontentloaded', // Much faster than 'networkidle'
+      timeout: 15000
     })
     
-    // Wait for fonts to load
-    await page.waitForTimeout(1000)
+    // Wait for fonts to load (reduced time)
+    await page.waitForLoadState('load')
+    await page.waitForTimeout(300) // Reduced from 1000ms
     
-    // Generate PDF
+    // Generate PDF with optimizations
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
@@ -57,7 +67,9 @@ export async function GET(
         bottom: '0mm',
         left: '0mm'
       },
-      preferCSSPageSize: true
+      preferCSSPageSize: true,
+      displayHeaderFooter: false,
+      scale: 1
     })
     
     await browser.close()
@@ -67,7 +79,7 @@ export async function GET(
     return new NextResponse(Buffer.from(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="protokoll-${id}.pdf"`,
+        'Content-Disposition': `attachment; filename="Bauprodukt Protokol.pdf"`,
       },
     })
 

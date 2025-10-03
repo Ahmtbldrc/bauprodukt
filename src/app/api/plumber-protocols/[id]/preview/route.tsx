@@ -23,6 +23,8 @@ function generateProtocolHTML(protocol: PlumberProtocol): string {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Austauschprotokoll Wasserzähler</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <style>
     * {
@@ -32,11 +34,12 @@ function generateProtocolHTML(protocol: PlumberProtocol): string {
     }
     
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
       font-size: 10pt;
       line-height: 1.5;
       color: #1f2937;
       background: white;
+      -webkit-font-smoothing: antialiased;
     }
     
     .page {
