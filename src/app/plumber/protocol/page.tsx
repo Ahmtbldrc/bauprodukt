@@ -2,6 +2,7 @@
 
 import React from 'react'
 import { useRouter } from 'next/navigation'
+import PhoneInput from 'react-phone-input-2'
 
 type ProtocolFormData = {
   meterAction: 'new' | 'exchange'
@@ -45,7 +46,7 @@ const EMPTY_PARTY_INFO: PartyInfo = {
   address: '',
   postalCode: '',
   city: '',
-  phone: '',
+  phone: '41',
   email: '',
 }
 
@@ -60,7 +61,7 @@ export default function ProtocolPage() {
       address: '',
       postalCode: '',
       city: '',
-      phone: '',
+      phone: '41',
       email: '',
       parcelNumber: '',
       building: '',
@@ -77,7 +78,7 @@ export default function ProtocolPage() {
       address: '',
       postalCode: '',
       city: '',
-      phone: '',
+      phone: '41',
       email: '',
       parcelNumber: '',
       building: '',
@@ -146,6 +147,18 @@ export default function ProtocolPage() {
       info.city.trim().length > 0
     )
   }
+
+  // Simple validation regexes
+  const PHONE_REGEX = /^\+?[0-9 ()-]{7,}$/
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+  // Derived validation flags for inline messages
+  const mainPhoneInvalid = activeForm.phone.trim().length > 0 && !PHONE_REGEX.test(activeForm.phone)
+  const mainEmailInvalid = activeForm.email.trim().length > 0 && !EMAIL_REGEX.test(activeForm.email)
+  const ownerPhoneInvalid = activeForm.ownerInfo.phone.trim().length > 0 && !PHONE_REGEX.test(activeForm.ownerInfo.phone)
+  const ownerEmailInvalid = activeForm.ownerInfo.email.trim().length > 0 && !EMAIL_REGEX.test(activeForm.ownerInfo.email)
+  const managementPhoneInvalid = activeForm.managementInfo.phone.trim().length > 0 && !PHONE_REGEX.test(activeForm.managementInfo.phone)
+  const managementEmailInvalid = activeForm.managementInfo.email.trim().length > 0 && !EMAIL_REGEX.test(activeForm.managementInfo.email)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -219,12 +232,15 @@ export default function ProtocolPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Zählernummer</label>
               <input
-                type="text"
+                type="number"
                 value={activeForm.zaehlernummer}
                 onChange={(e) => updateActiveFormField('zaehlernummer', e.target.value)}
                 placeholder="Zählernummer"
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                inputMode="numeric"
+                min={0}
+                step={1}
               />
             </div>
           ) : (
@@ -232,23 +248,29 @@ export default function ProtocolPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Aktuelle Zählernummer</label>
                 <input
-                  type="text"
+                  type="number"
                   value={activeForm.zaehlernummer}
                   onChange={(e) => updateActiveFormField('zaehlernummer', e.target.value)}
                   placeholder="Aktuelle Zählernummer"
                   className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                   style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                  inputMode="numeric"
+                  min={0}
+                  step={1}
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Neue Zählernummer</label>
                 <input
-                  type="text"
+                  type="number"
                   value={(activeForm as ExchangeFormData).neueZaehlernummer || ''}
                   onChange={(e) => updateActiveFormField('neueZaehlernummer', e.target.value)}
                   placeholder="Neue Zählernummer"
                   className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                   style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                  inputMode="numeric"
+                  min={0}
+                  step={1}
                 />
               </div>
             </div>
@@ -309,13 +331,15 @@ export default function ProtocolPage() {
                   </div>
                   <div>
                     <input
-                      type="text"
+                      type="number"
                       inputMode="numeric"
                       value={activeForm.postalCode}
                       onChange={(e) => updateActiveFormField('postalCode', e.target.value)}
                       placeholder="PLZ"
                       className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                       style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                      min={0}
+                      step={1}
                     />
                   </div>
                   <div>
@@ -329,14 +353,36 @@ export default function ProtocolPage() {
                     />
                   </div>
                   <div>
-                    <input
-                      type="tel"
+                    <PhoneInput
+                      country={"ch"}
                       value={activeForm.phone}
-                      onChange={(e) => updateActiveFormField('phone', e.target.value)}
+                      onChange={(value) => updateActiveFormField('phone', value)}
+                      enableSearch
                       placeholder="Telefon"
-                      className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
-                      style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                      containerClass="w-full"
+                      inputStyle={{
+                        width: '100%',
+                        height: 'auto',
+                        paddingTop: '0.75rem',
+                        paddingBottom: '0.75rem',
+                        paddingRight: '0.75rem',
+                        paddingLeft: '3.5rem',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #D1D5DB',
+                        borderRadius: '0.5rem'
+                      }}
+                      buttonStyle={{
+                        backgroundColor: 'transparent',
+                        border: 'none'
+                      }}
+                      dropdownStyle={{
+                        zIndex: 50,
+                        borderRadius: '0.5rem'
+                      }}
                     />
+                    {mainPhoneInvalid && (
+                      <p className="text-sm text-red-600 mt-1">Bitte eine gültige Telefonnummer eingeben.</p>
+                    )}
                   </div>
                   <div>
                     <input
@@ -347,6 +393,9 @@ export default function ProtocolPage() {
                       className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                       style={{ ['--tw-ring-color' as any]: '#F3923620' }}
                     />
+                    {mainEmailInvalid && (
+                      <p className="text-sm text-red-600 mt-1">Bitte eine gültige E-Mail-Adresse eingeben.</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -358,12 +407,15 @@ export default function ProtocolPage() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Parz. Nr.</label>
               <input
-                type="text"
+                type="number"
                 value={activeForm.parcelNumber}
                 onChange={(e) => updateActiveFormField('parcelNumber', e.target.value)}
                 placeholder="Parz. Nr. eingeben"
                 className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                 style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                inputMode="numeric"
+                min={0}
+                step={1}
               />
             </div>
             <div>
@@ -514,13 +566,15 @@ export default function ProtocolPage() {
                       </div>
                       <div>
                         <input
-                          type="text"
+                          type="number"
                           inputMode="numeric"
                           value={activeForm.ownerInfo.postalCode}
                           onChange={(e) => updateActiveOwnerField('postalCode', e.target.value)}
                           placeholder="PLZ"
                           className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                           style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                          min={0}
+                          step={1}
                         />
                       </div>
                       <div>
@@ -534,14 +588,36 @@ export default function ProtocolPage() {
                         />
                       </div>
                       <div>
-                        <input
-                          type="tel"
+                        <PhoneInput
+                          country={"ch"}
                           value={activeForm.ownerInfo.phone}
-                          onChange={(e) => updateActiveOwnerField('phone', e.target.value)}
+                          onChange={(value) => updateActiveOwnerField('phone', value)}
+                          enableSearch
                           placeholder="Telefon"
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
-                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                          containerClass="w-full"
+                          inputStyle={{
+                            width: '100%',
+                            height: 'auto',
+                            paddingTop: '0.75rem',
+                            paddingBottom: '0.75rem',
+                            paddingRight: '0.75rem',
+                            paddingLeft: '3.5rem',
+                            backgroundColor: '#ffffff',
+                            border: '1px solid #D1D5DB',
+                            borderRadius: '0.5rem'
+                          }}
+                          buttonStyle={{
+                            backgroundColor: 'transparent',
+                            border: 'none'
+                          }}
+                          dropdownStyle={{
+                            zIndex: 50,
+                            borderRadius: '0.5rem'
+                          }}
                         />
+                        {ownerPhoneInvalid && (
+                          <p className="text-sm text-red-600 mt-1">Bitte eine gültige Telefonnummer eingeben.</p>
+                        )}
                       </div>
                       <div>
                         <input
@@ -552,6 +628,9 @@ export default function ProtocolPage() {
                           className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                           style={{ ['--tw-ring-color' as any]: '#F3923620' }}
                         />
+                        {ownerEmailInvalid && (
+                          <p className="text-sm text-red-600 mt-1">Bitte eine gültige E-Mail-Adresse eingeben.</p>
+                        )}
                       </div>
                     </div>
                     {ownerDialogError && (
@@ -656,13 +735,15 @@ export default function ProtocolPage() {
                       </div>
                       <div>
                         <input
-                          type="text"
+                          type="number"
                           inputMode="numeric"
                           value={activeForm.managementInfo.postalCode}
                           onChange={(e) => updateActiveManagementField('postalCode', e.target.value)}
                           placeholder="PLZ"
                           className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                           style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                          min={0}
+                          step={1}
                         />
                       </div>
                       <div>
@@ -676,14 +757,36 @@ export default function ProtocolPage() {
                         />
                       </div>
                       <div>
-                        <input
-                          type="tel"
+                        <PhoneInput
+                          country={"ch"}
                           value={activeForm.managementInfo.phone}
-                          onChange={(e) => updateActiveManagementField('phone', e.target.value)}
+                          onChange={(value) => updateActiveManagementField('phone', value)}
+                          enableSearch
                           placeholder="Telefon"
-                          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
-                          style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                          containerClass="w-full"
+                          inputStyle={{
+                            width: '100%',
+                            height: 'auto',
+                            paddingTop: '0.75rem',
+                            paddingBottom: '0.75rem',
+                            paddingRight: '0.75rem',
+                            paddingLeft: '3.5rem',
+                            backgroundColor: '#ffffff',
+                            border: '1px solid #D1D5DB',
+                            borderRadius: '0.5rem'
+                          }}
+                          buttonStyle={{
+                            backgroundColor: 'transparent',
+                            border: 'none'
+                          }}
+                          dropdownStyle={{
+                            zIndex: 50,
+                            borderRadius: '0.5rem'
+                          }}
                         />
+                        {managementPhoneInvalid && (
+                          <p className="text-sm text-red-600 mt-1">Bitte eine gültige Telefonnummer eingeben.</p>
+                        )}
                       </div>
                       <div>
                         <input
@@ -694,6 +797,9 @@ export default function ProtocolPage() {
                           className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
                           style={{ ['--tw-ring-color' as any]: '#F3923620' }}
                         />
+                        {managementEmailInvalid && (
+                          <p className="text-sm text-red-600 mt-1">Bitte eine gültige E-Mail-Adresse eingeben.</p>
+                        )}
                       </div>
                     </div>
                     {managementDialogError && (
