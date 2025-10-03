@@ -4,6 +4,7 @@ import React from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { supabasePlumberClient } from '@/lib/supabase'
 import type { MeterData } from '@/types/database'
+import { ProtocolSuccessDialog } from '@/components/ui'
 
 export default function ProtocolCreatePage() {
   const router = useRouter()
@@ -12,6 +13,8 @@ export default function ProtocolCreatePage() {
   const [prefill, setPrefill] = React.useState<any | null>(null)
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [existingProtocol, setExistingProtocol] = React.useState<any | null>(null)
+  const [showSuccessDialog, setShowSuccessDialog] = React.useState(false)
+  const [createdProtocolId, setCreatedProtocolId] = React.useState<string | null>(null)
   const formRef = React.useRef<HTMLFormElement>(null)
   
   // Get plumber_calculation_id from URL params or localStorage
@@ -241,14 +244,11 @@ export default function ProtocolCreatePage() {
         throw new Error(error.error || 'Fehler beim Erstellen des Protokolls')
       }
 
-      await response.json()
+      const result = await response.json()
       
-      // Success - redirect or show success message
-      const message = existingProtocol 
-        ? 'Protokoll wurde erfolgreich aktualisiert!' 
-        : 'Protokoll wurde erfolgreich erstellt!'
-      alert(message)
-      router.push('/plumber/calculator')
+      // Success - show dialog with protocol ID
+      setCreatedProtocolId(result.data?.id || null)
+      setShowSuccessDialog(true)
       
     } catch (error) {
       console.error('Protocol submission error:', error)
@@ -258,9 +258,26 @@ export default function ProtocolCreatePage() {
     }
   }
 
+  const handleDialogClose = () => {
+    setShowSuccessDialog(false)
+    // Redirect after dialog closes
+    setTimeout(() => {
+      router.push('/plumber/calculator')
+    }, 100)
+  }
+
   return (
     <div className="w-full mr-auto">
       <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-6">Austauschprotokoll für einen Wasserzähler</h1>
+      
+      {/* Success Dialog */}
+      <ProtocolSuccessDialog
+        isOpen={showSuccessDialog}
+        onClose={handleDialogClose}
+        protocolId={createdProtocolId}
+        isUpdate={!!existingProtocol}
+      />
+
       <form 
         key={existingProtocol?.id || 'new-form'} 
         ref={formRef} 
