@@ -203,6 +203,36 @@ export default function ProtocolPage() {
     router.replace('/plumber/calculator?from=protocol')
   }
 
+  // Persist form changes live so other pages can consume latest data
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const active = formData.meterAction === 'new' ? formData.newForm : formData.exchangeForm
+      const toStore = {
+        personType: active.personType,
+        companyName: active.companyName,
+        contactPerson: active.contactPerson,
+        firstName: active.firstName,
+        lastName: active.lastName,
+        address: active.address,
+        postalCode: active.postalCode,
+        city: active.city,
+        phone: active.phone,
+        email: active.email,
+        parcelNumber: active.parcelNumber,
+        building: active.building,
+        ownerDifferent: active.ownerDifferent,
+        managementDifferent: active.managementDifferent,
+        ownerInfo: active.ownerInfo,
+        managementInfo: active.managementInfo,
+        meterAction: formData.meterAction,
+        zaehlernummer: active.zaehlernummer,
+        neueZaehlernummer: (active as any).neueZaehlernummer || '',
+      }
+      localStorage.setItem('bauprodukt_protocol_form_v1', JSON.stringify(toStore))
+    } catch {}
+  }, [formData])
+
   return (
     <div className="w-full mr-auto">
       <h1 className="text-2xl md:text-3xl font-semibold text-gray-900 mb-6">Rechner + Protokoll erstellen</h1>

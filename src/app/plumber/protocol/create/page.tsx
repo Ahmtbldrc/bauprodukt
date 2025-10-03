@@ -37,16 +37,41 @@ export default function ProtocolCreatePage() {
             <div className="text-sm font-medium text-gray-900">Einbauort des Messgerätes</div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-            <div className="md:col-span-12">
-              <label className="sr-only">Name *</label>
-              <input
-                type="text"
-                placeholder="Name *"
-                defaultValue={`${prefill?.firstName ?? ''}${prefill?.lastName ? ` ${prefill?.lastName}` : ''}`}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
-                style={{ ['--tw-ring-color' as any]: '#F3923620' }}
-              />
-            </div>
+            {prefill?.personType === 'company' ? (
+              <>
+                <div className="md:col-span-12">
+                  <label className="sr-only">Firmenname *</label>
+                  <input
+                    type="text"
+                    placeholder="Firmenname *"
+                    defaultValue={prefill?.companyName ?? ''}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                    style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                  />
+                </div>
+                <div className="md:col-span-12">
+                  <label className="sr-only">Ansprechsperson *</label>
+                  <input
+                    type="text"
+                    placeholder="Ansprechsperson *"
+                    defaultValue={prefill?.contactPerson ?? ''}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                    style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                  />
+                </div>
+              </>
+            ) : (
+              <div className="md:col-span-12">
+                <label className="sr-only">Name *</label>
+                <input
+                  type="text"
+                  placeholder="Name *"
+                  defaultValue={`${prefill?.firstName ?? ''}${prefill?.lastName ? ` ${prefill?.lastName}` : ''}`}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 focus:outline-none focus:ring-2"
+                  style={{ ['--tw-ring-color' as any]: '#F3923620' }}
+                />
+              </div>
+            )}
             <div className="md:col-span-6">
               <label className="sr-only">Strasse / Nr. *</label>
               <input

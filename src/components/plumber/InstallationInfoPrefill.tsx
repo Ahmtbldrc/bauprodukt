@@ -26,6 +26,9 @@ type PartyInfo = {
 }
 
 type ProtocolStoredData = {
+  personType?: 'person' | 'company'
+  companyName?: string
+  contactPerson?: string
   firstName?: string
   lastName?: string
   address?: string
@@ -73,6 +76,7 @@ export function InstallationInfoPrefill() {
   // Eigentümer ve Verwaltung kolonlarının gösterilip gösterilmeyeceğini kontrol et
   const showOwner = data?.ownerDifferent === true
   const showManagement = data?.managementDifferent === true
+  const isCompany = data?.personType === 'company'
   
   // Toplam kolon sayısını hesapla (her zaman gösterilen 2 kolon + opsiyonel 2 kolon)
   const totalColumns = 2 + (showOwner ? 1 : 0) + (showManagement ? 1 : 0)
@@ -91,7 +95,14 @@ export function InstallationInfoPrefill() {
         <div className={columnClass}>
           <div className="text-sm font-medium text-gray-900 mb-2">Einbauort des Messgerätes</div>
           <div className="space-y-4">
-            <input type="text" defaultValue={`${(data.firstName || '')}${data.lastName ? ` ${data.lastName}` : ''}`} placeholder="Vor- und Nachname" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            {isCompany ? (
+              <>
+                <input type="text" defaultValue={data.companyName || ''} placeholder="Firmenname" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+                <input type="text" defaultValue={data.contactPerson || ''} placeholder="Ansprechsperson" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+              </>
+            ) : (
+              <input type="text" defaultValue={`${(data.firstName || '')}${data.lastName ? ` ${data.lastName}` : ''}`} placeholder="Vor- und Nachname" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
+            )}
             <input type="text" defaultValue={data.address || ''} placeholder="Adresse" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
             <input type="tel" defaultValue={data.phone || ''} placeholder="Telefon" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
             <input type="email" defaultValue={data.email || ''} placeholder="E-Mail" readOnly={readOnly} className="w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-700 px-3 py-3 focus:outline-none" />
