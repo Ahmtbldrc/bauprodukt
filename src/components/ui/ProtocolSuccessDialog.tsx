@@ -61,7 +61,7 @@ export function ProtocolSuccessDialog({
 
   if (!isOpen) return null
 
-  const pdfUrl = protocolId ? `/api/plumber-protocols/${protocolId}/pdf?preview=true` : ''
+  const pdfUrl = protocolId ? `/api/plumber-protocols/${protocolId}/preview` : ''
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -78,7 +78,7 @@ export function ProtocolSuccessDialog({
         isVisible 
           ? 'opacity-100 scale-100 translate-y-0' 
           : 'opacity-0 scale-95 translate-y-4'
-      }`} style={{ maxHeight: '90vh' }}>
+      }`} style={{ height: '90vh' }}>
         {/* Close Button */}
         <button
           onClick={handleClose}
@@ -87,9 +87,9 @@ export function ProtocolSuccessDialog({
           <X className="h-6 w-6" />
         </button>
 
-        <div className="flex flex-col h-full" style={{ maxHeight: '90vh' }}>
+        <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center gap-3 p-6 pb-4 border-b border-gray-200">
+          <div className="flex items-center gap-3 p-6 pb-4 border-b border-gray-200 flex-shrink-0">
             <div className="flex-shrink-0 w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
               <CheckCircle2 className="h-7 w-7 text-green-600" />
             </div>
@@ -120,7 +120,7 @@ export function ProtocolSuccessDialog({
                 )}
                 <iframe
                   src={pdfUrl}
-                  className="w-full h-full min-h-[500px]"
+                  className="w-full h-full"
                   title="Protokoll PDF"
                   onLoad={() => setIsPdfLoading(false)}
                 />
@@ -134,7 +134,7 @@ export function ProtocolSuccessDialog({
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3 p-6 pt-4 border-t border-gray-200 bg-white">
+          <div className="flex gap-3 p-6 pt-4 border-t border-gray-200 bg-white flex-shrink-0">
             <button
               onClick={handleClose}
               className="flex-1 px-5 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
