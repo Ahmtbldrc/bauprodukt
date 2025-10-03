@@ -348,21 +348,24 @@ function FixturesSection({ isFromProtocol }: { isFromProtocol: boolean }) {
               </label>
             </div>
 
-            <label className="inline-flex items-center gap-2 mt-2 md:mt-0">
+            <label className="flex items-center gap-2">
               <input
                 type="checkbox"
                 className="h-4 w-4 accent-[#F39236] disabled:opacity-40"
                 checked={includeHydrantExtra}
                 onChange={e => setIncludeHydrantExtra(e.target.checked)}
               />
-              <span className="inline-flex items-center gap-1">
-                <span className="text-sm text-gray-800">Wasserlöschposten (Zusatz)</span>
-                <span className="inline-flex items-center relative group">
-                  <HelpCircle className="h-4 w-4 text-gray-600 align-middle" />
-                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 rounded-md bg-black/80 text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 pointer-events-none max-w-[28rem] w-max whitespace-normal text-left">
-                    W3 Anschlussleitung zu mehreren WLP für den Einsatz eines einzelnen auslegen; Ruhedruck ≥ 300 kPa, Zuleitung mind. DN32, Anschluss nach dem Wasserzähler.
+              <span className="flex flex-col">
+                <span className="inline-flex items-center gap-1 leading-none">
+                  <span className="text-sm text-gray-800 leading-none">Wasserlöschposten (Zusatz)</span>
+                  <span className="inline-flex items-center relative group">
+                    <HelpCircle className="h-4 w-4 text-gray-600 align-middle" />
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 rounded-md bg-black/80 text-white text-xs px-2 py-1 opacity-0 group-hover:opacity-100 pointer-events-none max-w-[28rem] w-max whitespace-normal text-left">
+                      W3 Anschlussleitung zu mehreren WLP für den Einsatz eines einzelnen auslegen; Ruhedruck ≥ 300 kPa, Zuleitung mind. DN32, Anschluss nach dem Wasserzähler.
+                    </span>
                   </span>
                 </span>
+                <span className="text-xs text-gray-500 leading-none mt-0">Fügt einmalig +0.27 l/s zu QD hinzu.</span>
               </span>
             </label>
           </div>
