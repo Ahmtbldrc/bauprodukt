@@ -260,10 +260,6 @@ export default function ProtocolCreatePage() {
 
   const handleDialogClose = () => {
     setShowSuccessDialog(false)
-    // Redirect after dialog closes
-    setTimeout(() => {
-      router.push('/plumber/calculator')
-    }, 100)
   }
 
   return (
