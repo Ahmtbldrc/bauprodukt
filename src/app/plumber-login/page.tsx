@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import { Suspense } from 'react'
+import Link from 'next/link'
 import { PlumberLoginForm } from '@/components/auth/PlumberLoginForm'
 import { PlumberAuthProvider } from '@/contexts/PlumberAuthContext'
 
@@ -18,6 +19,15 @@ export default function PlumberLoginPage() {
             <Suspense fallback={null}>
               <PlumberLoginForm />
             </Suspense>
+            <div className="mt-6 text-center">
+              <Link 
+                href="/plumber-login/register" 
+                className="font-medium transition-colors text-sm"
+                style={{ color: '#F39236' }}
+              >
+                Installateur registrieren
+              </Link>
+            </div>
           </div>
         </div>
       </div>

@@ -1,4 +1,6 @@
 export { LoginForm } from './LoginForm'
 export { RegisterForm } from './RegisterForm'
 export { AdminLoginForm } from './AdminLoginForm'
+export { PlumberLoginForm } from './PlumberLoginForm'
+export { PlumberRegisterForm } from './PlumberRegisterForm'
 export { AdminRoute } from './AdminRoute' 

@@ -176,8 +176,78 @@ export const PlumberAuthProvider: React.FC<PlumberAuthProviderProps> = ({ childr
     dispatch({ type: 'CLEAR_ERROR' })
   }
 
-  const register = async (): Promise<void> => {
-    throw new Error('Plumber registration not supported')
+  const register = async (data: import('@/types/auth').RegisterData): Promise<void> => {
+    dispatch({ type: 'LOGIN_START' })
+    try {
+      if (data.password !== data.confirmPassword) {
+        throw new Error('Passwörter stimmen nicht überein')
+      }
+
+      if (!data.acceptTerms) {
+        throw new Error('Sie müssen die Nutzungsbedingungen akzeptieren')
+      }
+
+      // Create auth user in plumber realm
+      const { data: authData, error: authError } = await supabasePlumberClient.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            first_name: data.firstName,
+            last_name: data.lastName,
+            full_name: `${data.firstName} ${data.lastName}`,
+          },
+        },
+      })
+
+      if (authError) throw new Error(authError.message)
+      if (!authData.user) throw new Error('Registrierung fehlgeschlagen')
+
+      // Get plumber role
+      const { data: plumberRole } = await (supabasePlumberClient as any)
+        .from('roles')
+        .select('*')
+        .eq('slug', 'plumber')
+        .single()
+
+      // Create profile with plumber role
+      const { error: profileError } = await (supabasePlumberClient as any)
+        .from('profiles')
+        .insert({
+          user_id: authData.user.id,
+          first_name: data.firstName,
+          last_name: data.lastName,
+          phone: data.phone,
+          role_id: plumberRole?.id,
+          is_active: true,
+        })
+
+      if (profileError) {
+        console.error('Plumber profile creation error:', profileError)
+      }
+
+      const user: import('@/types/auth').User = {
+        id: authData.user.id,
+        email: authData.user.email!,
+        firstName: data.firstName,
+        lastName: data.lastName,
+        fullName: `${data.firstName} ${data.lastName}`,
+        role: 'plumber' as any,
+        phone: data.phone || '',
+        createdAt: new Date(authData.user.created_at),
+        supabaseUser: authData.user,
+      }
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(user))
+      }
+
+      dispatch({ type: 'LOGIN_SUCCESS', payload: user })
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Bei der Registrierung ist ein Fehler aufgetreten'
+      dispatch({ type: 'LOGIN_ERROR', payload: message })
+      throw e
+    }
   }
 
   const value: AuthContextType = {
